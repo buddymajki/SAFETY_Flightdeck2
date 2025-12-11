@@ -1,0 +1,46 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "flightdeck-v2",
+          "appId": "1:598912312840:android:ef8e631f6b6a4cdd2013bd",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "flightdeck-v2",
+          "configurations": {
+            "android": "1:598912312840:android:ef8e631f6b6a4cdd2013bd",
+            "ios": "1:598912312840:ios:c19478b1b300b36d2013bd",
+            "macos": "1:598912312840:ios:c19478b1b300b36d2013bd",
+            "web": "1:598912312840:web:bdb3941f7e6288c82013bd",
+            "windows": "1:598912312840:web:16461bd19965812a2013bd"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint"
+      ]
+    }
+  ]
+}

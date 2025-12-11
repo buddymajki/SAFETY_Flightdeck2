@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuth() { return request.auth != null; }
+    function isOwner(uid) { return request.auth.uid == uid; }
+    function isAdmin() { return isAuth() && (request.auth.token.admin == true || request.auth.token.fireCMSUser == true); }
+
+    // Global Collections (Public Read, Admin Write)
+    match /globalChecklists/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /globalFlighttypes/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /globalLocations/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /globalManeuverlist/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /globalSchoolmaneuvers/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /schools/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // User Data Access (Owner-Only with Admin Override)
+    match /users/{uid} {
+      // Read, create, update allowed for owner only. Delete restricted to Admin.
+      allow read, create, update: if isOwner(uid);
+      allow delete: if isAdmin();
+
+      // Sub-collections: Read, create, update, delete allowed for owner only.
+      match /flightlog/{document=**} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+
+      match /checklistprogress/{document=**} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+    }
+  }
+}

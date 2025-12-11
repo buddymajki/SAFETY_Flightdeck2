@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "598912312840",
+    "project_id": "flightdeck-v2",
+    "storage_bucket": "flightdeck-v2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:598912312840:android:67472370b739ec032013bd",
+        "android_client_info": {
+          "package_name": "com.example.flightdeck2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAulXfjOrWZvk7TFIwv-IFZAwH7s6WS0iQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:598912312840:android:ef8e631f6b6a4cdd2013bd",
+        "android_client_info": {
+          "package_name": "com.example.flightdeck_firebase"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAulXfjOrWZvk7TFIwv-IFZAwH7s6WS0iQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:598912312840:android:03bd8df4fa0de8a12013bd",
+        "android_client_info": {
+          "package_name": "com.example.flightdeck_new_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAulXfjOrWZvk7TFIwv-IFZAwH7s6WS0iQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
