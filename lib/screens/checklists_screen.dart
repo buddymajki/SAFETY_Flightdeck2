@@ -1,12 +1,152 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/checklist_item.dart';
+import '../services/global_data_service.dart';
+import '../services/user_data_service.dart';
+import '../services/app_config_service.dart';
 
 class ChecklistsScreen extends StatelessWidget {
   const ChecklistsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Checklists Screen', style: TextStyle(fontSize: 24)),
+    final theme = Theme.of(context);
+    final global = context.watch<GlobalDataService>();
+    final user = context.watch<UserDataService>();
+    final lang = context.watch<AppConfigService>().currentLanguageCode;
+
+    final isLoaded = global.isInitialized && user.isInitialized;
+
+    if (!isLoaded) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(color: theme.colorScheme.primary),
+        ),
+      );
+    }
+
+    final items = global.allChecklistItems;
+    if (items.isEmpty) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Center(
+          child: Text(
+            'No checklists available.',
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+      );
+    }
+
+    // Group items by category
+    final itemsByCategory = _groupByCategory(items);
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Iterate through fixed category order
+          for (final categoryId in GlobalDataService.categoryOrder)
+            if (itemsByCategory.containsKey(categoryId))
+              _buildCategoryCard(
+                context,
+                categoryId,
+                itemsByCategory[categoryId]!,
+                lang,
+              ),
+        ],
+      ),
     );
+  }
+
+  /// Build a card for a single category with its checklist items.
+  Widget _buildCategoryCard(
+    BuildContext context,
+    String categoryId,
+    List<ChecklistItem> items,
+    String languageCode,
+  ) {
+    final theme = Theme.of(context);
+    final global = context.read<GlobalDataService>();
+    final user = context.read<UserDataService>();
+
+    // Get translated category title
+    final categoryTitle = global.getCategoryTitle(categoryId, languageCode);
+
+    return Card(
+      color: theme.cardColor,
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                categoryTitle,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const Divider(height: 1),
+            ...items.map((item) {
+              final checked = user.isChecklistItemCompleted(item.id);
+              final title = languageCode == 'de' ? item.title_de : item.title_en;
+              final desc = languageCode == 'de' ? item.description_de : item.description_en;
+              return CheckboxListTile(
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(child: Text(title, style: theme.textTheme.titleSmall)),
+                    IconButton(
+                      icon: const Icon(Icons.info_outline),
+                      color: theme.colorScheme.primary,
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: theme.cardColor,
+                            title: Text(title),
+                            content: Text(
+                              (desc == null || desc.isEmpty) ? 'No description' : desc,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Close'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                value: checked,
+                activeColor: theme.primaryColor,
+                onChanged: (value) {
+                  if (value != null) {
+                    context.read<UserDataService>().toggleProgress(item.id, value);
+                  }
+                },
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Map<String, List<ChecklistItem>> _groupByCategory(List<ChecklistItem> items) {
+    final Map<String, List<ChecklistItem>> grouped = {};
+    for (final item in items) {
+      final key = (item.category.isEmpty) ? 'Uncategorized' : item.category;
+      grouped.putIfAbsent(key, () => []).add(item);
+    }
+    return grouped;
   }
 }

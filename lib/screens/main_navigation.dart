@@ -6,6 +6,7 @@ import 'profile_screen.dart';
 import 'theory_screen.dart';
 import 'checklists_screen.dart';
 import 'flightbook_screen.dart';
+import '../services/app_config_service.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -131,6 +132,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [
+          // Language selector
+          Consumer<AppConfigService>(
+            builder: (context, cfg, _) {
+              final code = cfg.displayLanguageCode.toUpperCase();
+              return PopupMenuButton<String>(
+                tooltip: 'Language',
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: Center(
+                    child: Text(
+                      code,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                onSelected: (value) {
+                  context.read<AppConfigService>().setLanguage(value);
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem<String>(value: 'en', child: Text('EN')),
+                  const PopupMenuItem<String>(value: 'de', child: Text('DE')),
+                ],
+              );
+            },
+          ),
+        ],
       ),
       body: PageView(
         controller: _pageController,

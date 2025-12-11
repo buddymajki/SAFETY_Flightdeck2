@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 import 'config/app_theme.dart';
 import 'services/global_data_service.dart';
 import 'services/user_data_service.dart';
+import 'services/app_config_service.dart';
 import 'auth/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -34,6 +35,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => GlobalDataService()),
         ChangeNotifierProvider(create: (_) => UserDataService()),
+        ChangeNotifierProvider(create: (_) => AppConfigService()),
         Provider(create: (_) => AuthService()),
       ],
       child: MaterialApp(
