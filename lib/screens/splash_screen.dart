@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
       log('[Splash] Data load complete. globals=${global.globalChecklists?.length ?? 0} uid=$uid');
 
       if (!mounted) return;
-      _goTo(const MainNavigation());
+      _goTo(const MainNavigationScreen());
     } catch (e, st) {
       log('[Splash] preload error: $e', stackTrace: st);
       if (!mounted) return;

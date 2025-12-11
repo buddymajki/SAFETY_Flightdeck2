@@ -1,254 +1,240 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
-import '../config/app_theme.dart';
-import '../services/global_data_service.dart';
-import '../services/user_data_service.dart';
+import 'dashboard_screen.dart';
+import 'profile_screen.dart';
+import 'theory_screen.dart';
+import 'checklists_screen.dart';
+import 'flightbook_screen.dart';
 
-class MainNavigation extends StatelessWidget {
-  const MainNavigation({super.key});
+class MainNavigationScreen extends StatefulWidget {
+  const MainNavigationScreen({super.key});
+
+  @override
+  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  int _selectedIndex = 0;
+  String _currentTitle = 'Dashboard';
+  late PageController _pageController;
+
+  final List<Widget> _widgetOptions = <Widget>[
+    const DashboardScreen(),
+    const ChecklistsScreen(),
+    const FlightBookScreen(),
+    const TheoryScreen(),
+    const ProfileScreen(),
+  ];
+
+  final List<String> _titles = <String>[
+    'Dashboard',
+    'Checklist',
+    'Flight Book',
+    'Theory',
+    'Profile',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      _currentTitle = _titles[index];
+    });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _selectedIndex = index;
+      _currentTitle = _titles[index];
+    });
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await context.read<AuthService>().signOut(context);
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error during logout: $e')),
+        );
+      }
+    }
+  }
+
+  void _showBottomMenu(BuildContext context) {
+    final navBarColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.black;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        color: navBarColor,
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(8),
+          children: [
+            ListTile(
+              leading: const Icon(Icons.settings, color: Colors.white),
+              title: const Text('Settings', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _onItemTapped(4); // Go to Profile
+              },
+            ),
+            const Divider(color: Colors.grey),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Logout', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _handleLogout(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final navBarColor = theme.appBarTheme.backgroundColor ?? Colors.black;
+    final primaryColor = theme.primaryColor;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FlightDeck'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await context.read<AuthService>().signOut(context);
-              if (context.mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/login',
-                  (route) => false,
-                );
-              }
-            },
-          ),
-        ],
-      ),
-      body: Consumer2<GlobalDataService, UserDataService>(
-        builder: (context, globalDataService, userDataService, _) {
-          return SingleChildScrollView(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 32),
-                    // User UID Card
-                    Card(
-                      color: AppTheme.cardBackground,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'Logged-In User',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              userDataService.uid ?? 'N/A',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.white70,
-                                fontFamily: 'monospace',
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // User Profile Fields
-                    Card(
-                      color: AppTheme.cardBackground,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'User Profile',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            ..._buildProfileDetails(userDataService.profile),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Global Data Counts
-                    Card(
-                      color: AppTheme.cardBackground,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'Global Data Loaded',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildCountRow('Global Checklists', globalDataService.globalChecklists?.length ?? 0),
-                            _buildCountRow('Flight Types', globalDataService.globalFlighttypes?.length ?? 0),
-                            _buildCountRow('Locations', globalDataService.globalLocations?.length ?? 0),
-                            _buildCountRow('Maneuvers', globalDataService.globalManeuverlist?.length ?? 0),
-                            _buildCountRow('School Maneuvers', globalDataService.globalSchoolmaneuvers?.length ?? 0),
-                            _buildCountRow('Schools', globalDataService.schools?.length ?? 0),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // User Data Counts
-                    Card(
-                      color: AppTheme.cardBackground,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'User Data Loaded',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildCountRow('Flight Log Entries', userDataService.flightlog.length),
-                            _buildCountRow('Checklist Progress', userDataService.checklistprogress.length),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    // Sign Out Button
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        await context.read<AuthService>().signOut(context);
-                        if (context.mounted) {
-                          Navigator.of(context).pushNamedAndRemoveUntil(
-                            '/login',
-                            (route) => false,
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      ),
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Sign Out'),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildCountRow(String label, int count) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.white70,
-            ),
-          ),
-          Text(
-            count.toString(),
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildProfileDetails(Map<String, dynamic>? profile) {
-    if (profile == null || profile.isEmpty) {
-      return const [
-        Text(
-          'No profile data loaded.',
-          style: TextStyle(fontSize: 14, color: Colors.white70),
+        title: Text(
+          _currentTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-      ];
-    }
-
-    final entries = profile.entries
-        .where((e) => e.key != 'id')
-        .toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-
-    if (entries.isEmpty) {
-      return const [
-        Text(
-          'Profile has no fields.',
-          style: TextStyle(fontSize: 14, color: Colors.white70),
-        ),
-      ];
-    }
-
-    return entries
-        .map((e) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        centerTitle: true,
+      ),
+      body: PageView(
+        controller: _pageController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: _widgetOptions,
+        onPageChanged: _onPageChanged,
+      ),
+      bottomNavigationBar: Container(
+        color: navBarColor,
+        height: 70,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavBarItem(
+              icon: Icons.dashboard,
+              label: 'Dashboard',
+              isSelected: _selectedIndex == 0,
+              onTap: () => _onItemTapped(0),
+              primaryColor: primaryColor,
+            ),
+            _buildNavBarItem(
+              icon: Icons.fact_check,
+              label: 'Checklist',
+              isSelected: _selectedIndex == 1,
+              onTap: () => _onItemTapped(1),
+              primaryColor: primaryColor,
+            ),
+            _buildNavBarItem(
+              icon: Icons.book,
+              label: 'Flight Book',
+              isSelected: _selectedIndex == 2,
+              onTap: () => _onItemTapped(2),
+              primaryColor: primaryColor,
+            ),
+            _buildNavBarItem(
+              icon: Icons.school,
+              label: 'Theory',
+              isSelected: _selectedIndex == 3,
+              onTap: () => _onItemTapped(3),
+              primaryColor: primaryColor,
+            ),
+            _buildNavBarItem(
+              icon: Icons.settings,
+              label: 'Profile',
+              isSelected: _selectedIndex == 4,
+              onTap: () => _onItemTapped(4),
+              primaryColor: primaryColor,
+            ),
+            InkWell(
+              onTap: () => _showBottomMenu(context),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Text(
-                      e.key,
-                      style: const TextStyle(fontSize: 14, color: Colors.white70),
-                    ),
+                  Icon(
+                    Icons.menu,
+                    size: 24,
+                    color: Colors.grey.shade400,
                   ),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: Text(
-                      _stringify(e.value),
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(fontSize: 14, color: Colors.white),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
+                  const SizedBox(height: 4),
+                  Text(
+                    'Menu',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade400,
                     ),
                   ),
                 ],
               ),
-            ))
-        .toList();
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  String _stringify(Object? value) {
-    if (value == null) return '—';
-    if (value is Timestamp) return value.toDate().toIso8601String();
-    return value.toString();
+  Widget _buildNavBarItem({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color primaryColor,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 24,
+            color: isSelected ? primaryColor : Colors.grey.shade400,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: isSelected ? primaryColor : Colors.grey.shade400,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
