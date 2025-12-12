@@ -153,6 +153,7 @@ class ProfileService extends ChangeNotifier {
   bool _isLoading = false;
   final ValueNotifier<int> _syncSuccessNotifier = ValueNotifier<int>(0);
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _profileSubscription;
+  Completer<void>? _initializationCompleter; // Track initialization completion
 
   UserProfile? get userProfile => _userProfile;
   List<Map<String, String>> get schools => _schools;
@@ -226,6 +227,9 @@ class ProfileService extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    // Reset initialization completer for this new initialization
+    _initializationCompleter = Completer<void>();
+
     await _profileSubscription?.cancel();
 
     final profileCompleter = Completer<bool>();
@@ -283,7 +287,24 @@ class ProfileService extends ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+
+    // Signal that initialization is complete
+    if (_initializationCompleter != null && !_initializationCompleter!.isCompleted) {
+      _initializationCompleter!.complete();
+    }
+
     return profileResult;
+  }
+
+  /// Wait for initial profile data to be loaded from Firestore.
+  /// This is used by the SplashScreen to ensure data is ready before navigating.
+  Future<void> waitForInitialData() async {
+    // If initialization hasn't started, nothing to wait for
+    if (_initializationCompleter == null) {
+      return;
+    }
+    // Wait for the initialization completer to complete
+    await _initializationCompleter!.future;
   }
 
   /// Reset service state when user logs out

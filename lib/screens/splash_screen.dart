@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../services/global_data_service.dart';
 import '../services/user_data_service.dart';
+import '../services/profile_service.dart';
 import 'login_screen.dart';
 import 'main_navigation.dart';
 
@@ -39,13 +40,15 @@ class _SplashScreenState extends State<SplashScreen> {
     final uid = currentUser.uid;
 
     try {
-      // Initialize global + user data in parallel
+      // Initialize global + user + profile data in parallel
       final global = context.read<GlobalDataService>();
       final user = context.read<UserDataService>();
+      final profile = context.read<ProfileService>();
 
       await Future.wait([
         global.initializeData(),
         user.initializeData(uid),
+        profile.waitForInitialData(),
       ]);
 
       log('[Splash] Data load complete. globals=${global.globalChecklists?.length ?? 0} uid=$uid');

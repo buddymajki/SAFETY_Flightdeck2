@@ -287,7 +287,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (_emergencyNameController.text != profile.emergencyContactName) {
           _emergencyNameController.text = profile.emergencyContactName;
       }
-      // JAVÍTÁS: emergencyContactPhone
       if (_emergencyPhoneController.text != (profile.emergencyContactPhone ?? '')) {
           _emergencyPhoneController.text = profile.emergencyContactPhone ?? '';
       }
@@ -459,19 +458,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final lang = appConfig.currentLanguageCode;
     final profile = service.userProfile;
 
-    // JAVÍTOTT, SZIGORÚ VÉDELEM: Ha a profil null, akkor mutassunk töltő/hibaüzenetet.
+    // Profile is guaranteed to be non-null at this point because
+    // the SplashScreen waits for ProfileService.waitForInitialData() before navigation
     if (profile == null) {
+      // Fallback (should rarely happen, but kept as safety)
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         body: Center(
-            child: service.isLoading 
-                ? CircularProgressIndicator(color: theme.colorScheme.primary)
-                : const Text("Hiba: Profiladatok betöltése sikertelen. Kérem, próbálja újra.") 
+          child: CircularProgressIndicator(color: theme.colorScheme.primary),
         ),
       );
     }
 
-    // Innen már biztos, hogy a 'profile' objektum NEM null, és biztonságosan használható
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
 
