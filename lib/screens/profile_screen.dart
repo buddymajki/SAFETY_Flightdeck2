@@ -1,3 +1,5 @@
+// File: lib/screens/profile_screen.dart (Teljes kód a javításokkal)
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -39,10 +41,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   DateTime? _birthday;
   double _height = 170.0;
   double _weight = 65.0;
-  bool _dialogShown = false;
   bool _formInitialized = false;
   bool _obscureOldPassword = true;
   bool _obscureNewPassword = true;
+  String? _lastProfileUid;
+  ValueNotifier<int>? _syncNotifier;
+  VoidCallback? _syncListener;
+  int _lastSeenSyncTick = 0;
+  bool _suppressAutoSave = false;
 
   // Top countries for quick access
   static const List<String> _topCountries = [
@@ -110,6 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Student': {'en': 'Student', 'de': 'Schüler'},
     'Pilot': {'en': 'Pilot', 'de': 'Pilot'},
     'Select_School': {'en': 'Select school', 'de': 'Schule auswählen'},
+    'Synced_Cloud': {'en': 'Synced with cloud', 'de': 'Mit Cloud synchronisiert'},
     'Password_Error': {'en': 'Error changing password', 'de': 'Fehler beim Ändern des Passworts'},
     'Empty_Password_Fields': {'en': 'Both password fields are required', 'de': 'Beide Passwortfelder sind erforderlich'},
   };
@@ -122,6 +129,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _attachChangeListeners();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _setupSyncListener();
+    });
   }
 
   @override
@@ -140,6 +150,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _birthdayController.dispose();
     _oldPasswordController.dispose();
     _newPasswordController.dispose();
+    if (_syncNotifier != null && _syncListener != null) {
+      _syncNotifier!.removeListener(_syncListener!);
+    }
     super.dispose();
   }
 
@@ -162,33 +175,143 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // Controllerek és állapotaik nullázása
+  void _clearControllers() {
+    _familyNameController.clear();
+    _forenameController.clear();
+    _nicknameController.clear();
+    _phoneController.clear();
+    _address1Controller.clear();
+    _address2Controller.clear();
+    _address3Controller.clear();
+    _emergencyNameController.clear();
+    _emergencyPhoneController.clear();
+    _gliderController.clear();
+    _shvNumberController.clear();
+    _birthdayController.clear();
+    _oldPasswordController.clear();
+    _newPasswordController.clear();
+    setState(() {
+      _selectedLicense = 'Student';
+      _selectedSchoolId = null;
+      _selectedNationality = null;
+      _selectedCountry = null;
+      _birthday = null;
+      _height = 170.0;
+      _weight = 65.0;
+    });
+  }
+
+  // JAVÍTOTT: A didChangeDependencies logikája a stream frissítések kezelésére
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final service = context.watch<ProfileService>();
     final profile = service.userProfile;
 
-    if (profile != null && !_formInitialized) {
-      _loadProfile(profile);
+    // Ha a service töltődik és még nincs profil, kivárjuk. 
+    // Itt NEM térünk vissza feltétel nélkül, hogy a build() le tudja kezelni a loading állapotot
+    if (service.isLoading && profile == null) {
+        return; 
     }
+    
+    if (profile != null) {
+      final isNewUserOrUninitialized = !_formInitialized || _lastProfileUid != profile.uid;
 
-    if (!_dialogShown && !service.isLoading && profile != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final svc = context.read<ProfileService>();
-        if (!svc.isProfileComplete()) {
-          _showProfileIncompleteDialog();
-        }
-        _dialogShown = true;
-      });
+      if (isNewUserOrUninitialized) {
+          // 1. KEZDETI INICIALIZÁLÁS: Töltjük az ÖSSZES Controllert és State-et.
+          _loadProfile(profile, forceSync: true); 
+          _lastProfileUid = profile.uid;
+          _formInitialized = true;
+      } else {
+          // 2. STREAM FRISSÍTÉS: Csak az eltérő értékeket frissítjük a streamről.
+          _updateProfileFromStream(profile); 
+      }
+      
+    } else if (profile == null && _formInitialized) {
+      // Profil kiürítése (pl. logout)
+      _formInitialized = false;
+      _lastProfileUid = null;
+      _clearControllers(); 
     }
   }
 
-  void _loadProfile(UserProfile profile) {
+
+  // ÚJ METÓDUS: Csak a stream által küldött adatok frissítése, 
+  // ha azok eltérnek a Controller aktuális tartalmától
+  void _updateProfileFromStream(UserProfile profile) {
+      _suppressAutoSave = true;
+
+      // Frissítjük a State-hez kötött változókat (setState szükséges)
+      setState(() {
+          _selectedNationality = profile.nationality;
+          _selectedCountry = profile.address4;
+          _height = (profile.height != null && profile.height! > 0) ? profile.height!.toDouble() : 170.0;
+          _weight = (profile.weight != null && profile.weight! > 0) ? profile.weight!.toDouble() : 65.0;
+          
+          final rawLicense = profile.license ?? 'Student';
+          _selectedLicense = rawLicense.toLowerCase() == 'student' ? 'Student' : 'Pilot';
+          _selectedSchoolId = profile.schoolId;
+          
+          _birthday = profile.birthday;
+          final birthdayText = _birthday != null ? DateFormat('yyyy-MM-dd').format(_birthday!) : '';
+          
+          // Controller frissítése csak setState blokkon belül, ha a dátumot állítottuk
+          if (_birthdayController.text != birthdayText) {
+               _birthdayController.text = birthdayText;
+          }
+      });
+
+      // Frissítjük a Controller-eket, de CSAK akkor, ha az új érték eltér a Controller aktuális tartalmától.
+      if (_familyNameController.text != profile.familyname) {
+          _familyNameController.text = profile.familyname;
+      }
+      if (_forenameController.text != profile.forename) {
+          _forenameController.text = profile.forename;
+      }
+      if (_nicknameController.text != (profile.nickname ?? '')) {
+          _nicknameController.text = profile.nickname ?? '';
+      }
+      if (_phoneController.text != (profile.phonenumber ?? '')) {
+          _phoneController.text = profile.phonenumber ?? '';
+      }
+      if (_address1Controller.text != (profile.address1 ?? '')) {
+          _address1Controller.text = profile.address1 ?? '';
+      }
+      if (_address2Controller.text != (profile.address2 ?? '')) {
+          _address2Controller.text = profile.address2 ?? '';
+      }
+      if (_address3Controller.text != (profile.address3 ?? '')) {
+          _address3Controller.text = profile.address3 ?? '';
+      }
+      if (_emergencyNameController.text != profile.emergencyContactName) {
+          _emergencyNameController.text = profile.emergencyContactName;
+      }
+      // JAVÍTÁS: emergencyContactPhone
+      if (_emergencyPhoneController.text != (profile.emergencyContactPhone ?? '')) {
+          _emergencyPhoneController.text = profile.emergencyContactPhone ?? '';
+      }
+      if (_gliderController.text != (profile.glider ?? '')) {
+          _gliderController.text = profile.glider ?? '';
+      }
+      if (_shvNumberController.text != (profile.shvnumber ?? '')) {
+          _shvNumberController.text = profile.shvnumber ?? '';
+      }
+
+      _suppressAutoSave = false;
+  }
+  
+  // Eredeti _loadProfile, amelyet CSAK az első inicializáláskor hívunk meg
+  void _loadProfile(UserProfile profile, {bool forceSync = false}) {
+    
+    _suppressAutoSave = true;
+
+    // Mindig állítsuk be a kontrollereket, mert ez csak az első inicializálás.
     _familyNameController.text = profile.familyname;
     _forenameController.text = profile.forename;
     _nicknameController.text = profile.nickname ?? '';
     _phoneController.text = profile.phonenumber ?? '';
+    
     _selectedNationality = profile.nationality;
     _address1Controller.text = profile.address1 ?? '';
     _address2Controller.text = profile.address2 ?? '';
@@ -196,19 +319,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _selectedCountry = profile.address4;
     _emergencyNameController.text = profile.emergencyContactName;
     _emergencyPhoneController.text = profile.emergencyContactPhone;
+
     _height = (profile.height != null && profile.height! > 0) ? profile.height!.toDouble() : 170.0;
     _weight = (profile.weight != null && profile.weight! > 0) ? profile.weight!.toDouble() : 65.0;
+
     _gliderController.text = profile.glider ?? '';
     _shvNumberController.text = profile.shvnumber ?? '';
 
     // Normalize license value (convert old lowercase to new capitalized format)
-    final rawLicense = profile.license ?? 'student';
+    final rawLicense = profile.license ?? 'Student';
     _selectedLicense = rawLicense.toLowerCase() == 'student' ? 'Student' : 'Pilot';
     _selectedSchoolId = profile.schoolId;
+    
     _birthday = profile.birthday;
-    _birthdayController.text = _birthday != null ? DateFormat('yyyy-MM-dd').format(_birthday!) : '';
+    final birthdayText = _birthday != null ? DateFormat('yyyy-MM-dd').format(_birthday!) : '';
+    _birthdayController.text = birthdayText;
 
-    _formInitialized = true;
+    // setState az állapothoz kötött elemek frissítéséhez
+    setState(() {
+      _height = _height;
+      _weight = _weight;
+      _selectedLicense = _selectedLicense;
+      _selectedSchoolId = _selectedSchoolId;
+      _selectedNationality = _selectedNationality;
+      _selectedCountry = _selectedCountry;
+      _birthday = _birthday;
+    });
+
+    _suppressAutoSave = false;
   }
 
   Future<void> _pickBirthday() async {
@@ -230,6 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _autoSaveProfile() {
+    if (_suppressAutoSave) return;
     final service = context.read<ProfileService>();
     final profile = service.userProfile;
     
@@ -285,54 +424,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _showSnack(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+  void _setupSyncListener() {
+    final notifier = context.read<ProfileService>().syncSuccessNotifier;
+    _syncNotifier = notifier;
+    _lastSeenSyncTick = notifier.value;
+    _syncListener = () {
+      final current = notifier.value;
+      if (current != _lastSeenSyncTick) {
+        _lastSeenSyncTick = current;
+        // Az alábbi sor KIVÉVE, ahogy kérted, hogy ne villanjon fel a "Synced with cloud" üzenet.
+        // final lang = context.read<AppConfigService>().currentLanguageCode;
+        // _showSnack(_t('Synced_Cloud', lang), backgroundColor: Colors.green);
+      }
+    };
+    notifier.addListener(_syncListener!);
   }
 
-  void _showProfileIncompleteDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final theme = Theme.of(context);
-        return AlertDialog(
-          backgroundColor: theme.cardColor,
-          title: const Text('Profile Incomplete'),
-          content: const Text('Please complete all required profile fields.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+  void _showSnack(String message, {Color? backgroundColor}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Ensure rebuild when ProfileService changes
     final service = context.watch<ProfileService>();
     final appConfig = context.watch<AppConfigService>();
     final lang = appConfig.currentLanguageCode;
     final profile = service.userProfile;
 
-    if (service.isLoading && profile == null) {
+    // JAVÍTOTT, SZIGORÚ VÉDELEM: Ha a profil null, akkor mutassunk töltő/hibaüzenetet.
+    if (profile == null) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        body: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
+        body: Center(
+            child: service.isLoading 
+                ? CircularProgressIndicator(color: theme.colorScheme.primary)
+                : const Text("Hiba: Profiladatok betöltése sikertelen. Kérem, próbálja újra.") 
+        ),
       );
     }
 
+    // Innen már biztos, hogy a 'profile' objektum NEM null, és biztonságosan használható
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
-      ),
+
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -364,7 +506,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   _buildTextField(
                     label: _t('Email_Address', lang),
-                    initialValue: profile?.email ?? '',
+                    initialValue: profile.email, 
                     readOnly: true,
                   ),
                   _buildTextField(
@@ -427,7 +569,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     label: _t('SHV_Number', lang),
                     controller: _shvNumberController,
                   ),
-                  _buildLicenseDropdown(profile?.license, lang),
+                  _buildLicenseDropdown(profile.license, lang),
                   if (_selectedLicense == 'Student') _buildSchoolDropdown(lang),
                 ],
               ),
@@ -594,14 +736,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Divider
             const DropdownMenuItem<String>(
               enabled: false,
-              value: null,
+              value: 'divider', 
               child: Divider(),
             ),
             // Rest of world section
             ...restOfWorld.map((country) {
               return DropdownMenuItem(value: country, child: Text(country));
             }),
-          ],
+          ].where((item) => item.value != null).cast<DropdownMenuItem<String>>().toList(), 
           onChanged: onChanged,
         ),
       ),
@@ -691,7 +833,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String? _requiredValidator(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Required';
+      return _t('Required_Field', context.read<AppConfigService>().currentLanguageCode);
     }
     return null;
   }

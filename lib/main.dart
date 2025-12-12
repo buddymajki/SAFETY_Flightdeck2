@@ -24,7 +24,39 @@ Future<void> main() async {
     FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: true);
   } catch (_) {}
 
-  runApp(const MyApp());
+  runApp(const AppRestartWrapper(child: MyApp()));
+}
+
+class AppRestartWrapper extends StatefulWidget {
+  const AppRestartWrapper({super.key, required this.child});
+
+  final Widget child;
+
+  static void restartApp(BuildContext context) {
+    final state = context.findAncestorStateOfType<_AppRestartWrapperState>();
+    state?._restart();
+  }
+
+  @override
+  State<AppRestartWrapper> createState() => _AppRestartWrapperState();
+}
+
+class _AppRestartWrapperState extends State<AppRestartWrapper> {
+  Key _appKey = UniqueKey();
+
+  void _restart() {
+    setState(() {
+      _appKey = UniqueKey();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(
+      key: _appKey,
+      child: widget.child,
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {

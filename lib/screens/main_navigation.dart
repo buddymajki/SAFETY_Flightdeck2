@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
+import '../main.dart';
 import 'dashboard_screen.dart';
 import 'profile_screen.dart';
 import 'theory_screen.dart';
@@ -71,10 +72,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     try {
       await context.read<AuthService>().signOut(context);
       if (context.mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/login',
-          (route) => false,
-        );
+        AppRestartWrapper.restartApp(context);
       }
     } catch (e) {
       if (context.mounted) {

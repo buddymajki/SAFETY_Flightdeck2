@@ -75,41 +75,45 @@ class ChecklistsScreen extends StatelessWidget {
 
     // Get translated category title
     final categoryTitle = global.getCategoryTitle(categoryId, languageCode);
+    final completedCount = items.where((item) => user.isChecklistItemCompleted(item.id)).length;
+    final progressText = '$completedCount/${items.length}';
 
     return Card(
       color: theme.cardColor,
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: ExpansionTile(
+        initiallyExpanded: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            Expanded(
               child: Text(
                 categoryTitle,
                 style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
-            const Divider(height: 1),
-            ...items.map((item) {
-              final checked = user.isChecklistItemCompleted(item.id);
-              final title = languageCode == 'de' ? item.title_de : item.title_en;
-              final desc = languageCode == 'de' ? item.description_de : item.description_en;
-              return CheckboxListTile(
+            Text(progressText, style: theme.textTheme.bodyMedium),
+          ],
+        ),
+        children: [
+          for (final item in items)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: CheckboxListTile(
                 title: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: Text(title, style: theme.textTheme.titleSmall)),
+                    Expanded(child: Text(languageCode == 'de' ? item.title_de : item.title_en, style: theme.textTheme.titleSmall)),
                     IconButton(
                       icon: const Icon(Icons.info_outline),
                       color: theme.colorScheme.primary,
                       onPressed: () {
+                        final desc = languageCode == 'de' ? item.description_de : item.description_en;
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
                             backgroundColor: theme.cardColor,
-                            title: Text(title),
+                            title: Text(languageCode == 'de' ? item.title_de : item.title_en),
                             content: Text(
                               (desc == null || desc.isEmpty) ? 'No description' : desc,
                               style: theme.textTheme.bodyMedium,
@@ -126,17 +130,16 @@ class ChecklistsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                value: checked,
+                value: user.isChecklistItemCompleted(item.id),
                 activeColor: theme.primaryColor,
                 onChanged: (value) {
                   if (value != null) {
                     context.read<UserDataService>().toggleProgress(item.id, value);
                   }
                 },
-              );
-            }),
-          ],
-        ),
+              ),
+            ),
+        ],
       ),
     );
   }
