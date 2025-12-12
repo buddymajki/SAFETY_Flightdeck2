@@ -7,8 +7,6 @@ import 'package:flutter/foundation.dart';
 class UserDataService extends ChangeNotifier {
   String? _uid;
   String? get uid => _uid;
-
-  Map<String, dynamic>? profile;
   List<Map<String, dynamic>> flightlog = const [];
   List<Map<String, dynamic>> checklistprogress = const [];
   // Map of itemId -> { completed: bool, completedAt: DateTime? }
@@ -26,20 +24,14 @@ class UserDataService extends ChangeNotifier {
       final userRef = fs.collection('users').doc(uid);
 
       final results = await Future.wait([
-        userRef.get(opts),
         userRef.collection('flightlog').orderBy('date', descending: true).get(opts),
         userRef.collection('checklistprogress').doc('progress').get(opts),
       ]);
 
-      final profileSnap = results[0] as DocumentSnapshot<Map<String, dynamic>>;
-      profile = profileSnap.data() != null
-          ? {'id': profileSnap.id, ...profileSnap.data()!}
-          : <String, dynamic>{'id': profileSnap.id};
-
-      final flightlogSnap = results[1] as QuerySnapshot<Map<String, dynamic>>;
+      final flightlogSnap = results[0] as QuerySnapshot<Map<String, dynamic>>;
       flightlog = flightlogSnap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
 
-      final checklistDoc = results[2] as DocumentSnapshot<Map<String, dynamic>>;
+      final checklistDoc = results[1] as DocumentSnapshot<Map<String, dynamic>>;
       final progressData = checklistDoc.data() ?? <String, dynamic>{};
       _userChecklistProgress = progressData.map((key, value) {
         if (value is bool) {
@@ -100,7 +92,6 @@ class UserDataService extends ChangeNotifier {
 
   void resetService() {
     _uid = null;
-    profile = null;
     flightlog = const [];
     checklistprogress = const [];
     _userChecklistProgress = const {};
@@ -115,7 +106,7 @@ class UserDataService extends ChangeNotifier {
     return (v != null) ? (v['completed'] as bool? ?? false) : false;
   }
 
-    int get checklistProgressCount => _userChecklistProgress.values
+  int get checklistProgressCount => _userChecklistProgress.values
       .where((v) => (v['completed'] as bool? ?? false))
       .length;
 

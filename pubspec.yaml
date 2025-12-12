@@ -15,12 +15,13 @@ dependencies:
   # -------------------------------------
   # Firebase Core - A legfrissebb elérhető stabil Major verziók (available számokra alapozva)
   # A Caret (^) jel garantálja az alverziók automatikus frissítését.
-  firebase_core: ^4.2.1  # Legújabb stabil 2.x
-  firebase_auth: ^6.1.2  # Legújabb stabil 4.x
-  cloud_firestore: ^6.1.0 # Legújabb stabil 4.x
+  firebase_core: ^4.2.1  # Legújabb stabil 4.x
+  firebase_auth: ^6.1.2  # Legújabb stabil 6.x
+  cloud_firestore: ^6.1.0 # Aligned with firebase_auth/firebase_core
   
   # Állapotkezelés
   provider: ^6.1.1
+  shared_preferences: ^2.2.2
   
   # Segédprogramok
   intl: ^0.20.2 
