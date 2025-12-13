@@ -10,6 +10,7 @@ import 'services/global_data_service.dart';
 import 'services/user_data_service.dart';
 import 'services/app_config_service.dart';
 import 'services/profile_service.dart';
+import 'services/flight_service.dart';
 import 'auth/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -91,6 +92,28 @@ class MyApp extends StatelessWidget {
             final uid = authService.currentUser?.uid;
             if (uid != null) {
               service.initializeData(uid);
+            } else {
+              service.resetService();
+            }
+            return service;
+          },
+        ),
+        // FlightService lifecycle: reload when auth state or profile changes
+        ChangeNotifierProxyProvider2<AuthService, ProfileService, FlightService>(
+          create: (_) => FlightService(),
+          update: (_, authService, profileService, flightService) {
+            final service = flightService ?? FlightService();
+            final uid = authService.currentUser?.uid;
+            final schoolId = profileService.userProfile?.schoolId;
+            if (uid != null && schoolId != null && schoolId.isNotEmpty) {
+              service.initializeData(uid, schoolId);
+            } else if (uid != null && schoolId == null) {
+              // Profile not loaded yet, wait briefly
+              Future.delayed(const Duration(milliseconds: 500)).then((_) {
+                if (profileService.userProfile?.schoolId != null) {
+                  service.initializeData(uid, profileService.userProfile!.schoolId!);
+                }
+              });
             } else {
               service.resetService();
             }
