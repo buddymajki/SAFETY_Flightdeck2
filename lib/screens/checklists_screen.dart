@@ -5,6 +5,7 @@ import '../models/checklist_item.dart';
 import '../services/global_data_service.dart';
 import '../services/user_data_service.dart';
 import '../services/app_config_service.dart';
+import '../widgets/responsive_layout.dart';
 
 class ChecklistsScreen extends StatelessWidget {
   const ChecklistsScreen({super.key});
@@ -45,8 +46,7 @@ class ChecklistsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: ResponsiveListView(
         children: [
           // Iterate through fixed category order
           for (final categoryId in GlobalDataService.categoryOrder)
@@ -82,7 +82,7 @@ class ChecklistsScreen extends StatelessWidget {
       color: theme.cardColor,
       margin: const EdgeInsets.only(bottom: 16),
       child: ExpansionTile(
-        initiallyExpanded: false,
+        key: PageStorageKey(categoryId), // Ezzel a Flutter automatikusan megjegyzi az állapotot!
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

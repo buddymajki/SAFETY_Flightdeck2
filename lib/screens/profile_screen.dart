@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../services/profile_service.dart';
 import '../services/app_config_service.dart';
+import '../widgets/responsive_layout.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -472,13 +473,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-
       body: Form(
         key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
+        child: ResponsiveListView(
+          children: [
               _buildSection(
                 title: _t('Personal_Details', lang),
                 children: [
@@ -599,8 +597,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildSection({required String title, required List<Widget> children}) {

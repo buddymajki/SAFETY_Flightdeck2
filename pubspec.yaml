@@ -24,7 +24,8 @@ dependencies:
   shared_preferences: ^2.2.2
   
   # Segédprogramok
-  intl: ^0.20.2 
+  intl: ^0.20.2
+  url_launcher: ^6.2.4
   
   # UI
   cupertino_icons: ^1.0.6 

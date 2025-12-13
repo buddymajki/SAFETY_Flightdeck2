@@ -176,7 +176,23 @@ class ProfileService extends ChangeNotifier {
 
   Future<void> _cacheUserSettings(Map<String, dynamic> settings) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_profileCacheKey, json.encode(settings));
+    // Convert Timestamp objects to ISO 8601 strings for JSON serialization
+    final cacheableData = _makeSerializable(settings);
+    await prefs.setString(_profileCacheKey, json.encode(cacheableData));
+  }
+
+  /// Convert Firestore data with Timestamp objects to JSON-serializable data
+  Map<String, dynamic> _makeSerializable(Map<String, dynamic> data) {
+    final result = <String, dynamic>{};
+    for (final entry in data.entries) {
+      if (entry.value is Timestamp) {
+        // Convert Timestamp to ISO 8601 string
+        result[entry.key] = (entry.value as Timestamp).toDate().toIso8601String();
+      } else {
+        result[entry.key] = entry.value;
+      }
+    }
+    return result;
   }
 
   Future<Map<String, dynamic>?> _getUsersSettingsFromCache() async {

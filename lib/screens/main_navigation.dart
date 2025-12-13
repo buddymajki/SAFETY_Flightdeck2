@@ -8,6 +8,7 @@ import 'theory_screen.dart';
 import 'checklists_screen.dart';
 import 'flightbook_screen.dart';
 import '../services/app_config_service.dart';
+import '../widgets/responsive_layout.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -158,11 +159,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
         ],
       ),
-      body: PageView(
-        controller: _pageController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: _widgetOptions,
-        onPageChanged: _onPageChanged,
+      body: ResponsiveContainer(
+        maxWidth: 1200,
+        padding: EdgeInsets.zero,
+        child: PageView(
+          controller: _pageController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: _widgetOptions,
+          onPageChanged: _onPageChanged,
+        ),
       ),
       bottomNavigationBar: Container(
         color: navBarColor,
