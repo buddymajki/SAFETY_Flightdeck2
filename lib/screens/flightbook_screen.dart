@@ -474,6 +474,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     'Date': {'en': 'Date *', 'de': 'Datum *'},
     'Takeoff_Location': {'en': 'Takeoff Location *', 'de': 'Startplatz *'},
     'Or_Select': {'en': 'Or select from school locations', 'de': 'Oder aus Schulpunkten auswählen'},
+    'Type_Or_Select': {'en': 'Start typing or tap to select', 'de': 'Tippen oder antippen zum Auswählen'},
     'Takeoff_Altitude': {'en': 'Takeoff Altitude (m) *', 'de': 'Starthöhe (m) *'},
     'Auto_Filled': {'en': 'Auto-filled from location', 'de': 'Automatisch aus Standort gefüllt'},
     'Landing_Location': {'en': 'Landing Location *', 'de': 'Landeplatz *'},
@@ -856,50 +857,69 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             ),
             const SizedBox(height: 12),
 
-            // Takeoff
-            TextField(
-              controller: _takeoffController,
-              readOnly: !canEditDateAndLocation,
-              onChanged: (value) {
-                // If user manually edits, mark as not from dropdown
-                if (_takeoffFromDropdown && value.isNotEmpty) {
-                  setState(() => _takeoffFromDropdown = false);
+            // Takeoff Location - Combined Autocomplete + Dropdown
+            Autocomplete<Map<String, dynamic>>(
+              initialValue: TextEditingValue(text: _takeoffController.text),
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (!canEditDateAndLocation) {
+                  return const Iterable<Map<String, dynamic>>.empty();
                 }
+                
+                if (textEditingValue.text.isEmpty) {
+                  // Show all locations when empty
+                  return _filteredTakeoffLocations;
+                }
+                
+                // Filter locations by name (case-insensitive contains)
+                final query = textEditingValue.text.toLowerCase();
+                return _filteredTakeoffLocations.where((location) {
+                  final name = (location['name'] ?? '').toString().toLowerCase();
+                  return name.contains(query);
+                });
               },
-              decoration: InputDecoration(
-                labelText: _t('Takeoff_Location', lang),
-                prefixIcon: const Icon(Icons.flight_takeoff),
-                border: const OutlineInputBorder(),
-                enabled: canEditDateAndLocation,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Takeoff Location Dropdown (if locations available)
-            if (_filteredTakeoffLocations.isNotEmpty && canEditDateAndLocation)
-              DropdownButton<String>(
-                isExpanded: true,
-                hint: Text(_t('Or_Select', lang)),
-                value: null,
-                onChanged: (String? locationId) {
-                  if (locationId != null) {
-                    final location = _filteredTakeoffLocations
-                        .firstWhere((loc) => loc['id'] == locationId);
-                    setState(() {
-                      _takeoffController.text = location['name'] ?? '';
-                      _takeoffAltitudeController.text =
-                          (location['altitude']?.toString() ?? '1000');
-                      _takeoffFromDropdown = true; // Mark as from dropdown
-                    });
+              displayStringForOption: (Map<String, dynamic> option) => option['name'] ?? '',
+              onSelected: (Map<String, dynamic> selection) {
+                setState(() {
+                  _takeoffController.text = selection['name'] ?? '';
+                  _takeoffAltitudeController.text = (selection['altitude']?.toString() ?? '1000');
+                  _takeoffFromDropdown = true;
+                });
+              },
+              fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                // Sync our controller with the autocomplete controller
+                if (controller.text != _takeoffController.text) {
+                  controller.text = _takeoffController.text;
+                  controller.selection = TextSelection.collapsed(offset: controller.text.length);
+                }
+                
+                controller.addListener(() {
+                  if (controller.text != _takeoffController.text) {
+                    _takeoffController.text = controller.text;
+                    if (_takeoffFromDropdown) {
+                      setState(() => _takeoffFromDropdown = false);
+                    }
                   }
-                },
-                items: _filteredTakeoffLocations.map((location) {
-                  return DropdownMenuItem<String>(
-                    value: location['id'],
-                    child: Text(location['name'] ?? 'Unknown'),
-                  );
-                }).toList(),
-              ),
+                });
+                
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  readOnly: !canEditDateAndLocation,
+                  decoration: InputDecoration(
+                    labelText: _t('Takeoff_Location', lang),
+                    prefixIcon: const Icon(Icons.flight_takeoff),
+                    suffixIcon: canEditDateAndLocation && _filteredTakeoffLocations.isNotEmpty
+                        ? const Icon(Icons.arrow_drop_down)
+                        : null,
+                    border: const OutlineInputBorder(),
+                    enabled: canEditDateAndLocation,
+                    helperText: _filteredTakeoffLocations.isNotEmpty
+                        ? _t('Type_Or_Select', lang)
+                        : null,
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 12),
 
             // Takeoff Altitude
@@ -921,50 +941,69 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             ),
             const SizedBox(height: 12),
 
-            // Landing
-            TextField(
-              controller: _landingController,
-              readOnly: !canEditDateAndLocation,
-              onChanged: (value) {
-                // If user manually edits, mark as not from dropdown
-                if (_landingFromDropdown && value.isNotEmpty) {
-                  setState(() => _landingFromDropdown = false);
+            // Landing Location - Combined Autocomplete + Dropdown
+            Autocomplete<Map<String, dynamic>>(
+              initialValue: TextEditingValue(text: _landingController.text),
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (!canEditDateAndLocation) {
+                  return const Iterable<Map<String, dynamic>>.empty();
                 }
+                
+                if (textEditingValue.text.isEmpty) {
+                  // Show all locations when empty
+                  return _filteredLandingLocations;
+                }
+                
+                // Filter locations by name (case-insensitive contains)
+                final query = textEditingValue.text.toLowerCase();
+                return _filteredLandingLocations.where((location) {
+                  final name = (location['name'] ?? '').toString().toLowerCase();
+                  return name.contains(query);
+                });
               },
-              decoration: InputDecoration(
-                labelText: _t('Landing_Location', lang),
-                prefixIcon: const Icon(Icons.flight_land),
-                border: const OutlineInputBorder(),
-                enabled: canEditDateAndLocation,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Landing Location Dropdown (if locations available)
-            if (_filteredLandingLocations.isNotEmpty && canEditDateAndLocation)
-              DropdownButton<String>(
-                isExpanded: true,
-                hint: Text(_t('Or_Select', lang)),
-                value: null,
-                onChanged: (String? locationId) {
-                  if (locationId != null) {
-                    final location = _filteredLandingLocations
-                        .firstWhere((loc) => loc['id'] == locationId);
-                    setState(() {
-                      _landingController.text = location['name'] ?? '';
-                      _landingAltitudeController.text =
-                          (location['altitude']?.toString() ?? '500');
-                      _landingFromDropdown = true; // Mark as from dropdown
-                    });
+              displayStringForOption: (Map<String, dynamic> option) => option['name'] ?? '',
+              onSelected: (Map<String, dynamic> selection) {
+                setState(() {
+                  _landingController.text = selection['name'] ?? '';
+                  _landingAltitudeController.text = (selection['altitude']?.toString() ?? '500');
+                  _landingFromDropdown = true;
+                });
+              },
+              fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                // Sync our controller with the autocomplete controller
+                if (controller.text != _landingController.text) {
+                  controller.text = _landingController.text;
+                  controller.selection = TextSelection.collapsed(offset: controller.text.length);
+                }
+                
+                controller.addListener(() {
+                  if (controller.text != _landingController.text) {
+                    _landingController.text = controller.text;
+                    if (_landingFromDropdown) {
+                      setState(() => _landingFromDropdown = false);
+                    }
                   }
-                },
-                items: _filteredLandingLocations.map((location) {
-                  return DropdownMenuItem<String>(
-                    value: location['id'],
-                    child: Text(location['name'] ?? 'Unknown'),
-                  );
-                }).toList(),
-              ),
+                });
+                
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  readOnly: !canEditDateAndLocation,
+                  decoration: InputDecoration(
+                    labelText: _t('Landing_Location', lang),
+                    prefixIcon: const Icon(Icons.flight_land),
+                    suffixIcon: canEditDateAndLocation && _filteredLandingLocations.isNotEmpty
+                        ? const Icon(Icons.arrow_drop_down)
+                        : null,
+                    border: const OutlineInputBorder(),
+                    enabled: canEditDateAndLocation,
+                    helperText: _filteredLandingLocations.isNotEmpty
+                        ? _t('Type_Or_Select', lang)
+                        : null,
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 12),
 
             // Landing Altitude
