@@ -11,6 +11,9 @@ class UserDataService extends ChangeNotifier {
   List<Map<String, dynamic>> checklistprogress = const [];
   // Map of itemId -> { completed: bool, completedAt: DateTime? }
   Map<String, Map<String, dynamic>> _userChecklistProgress = const {};
+  
+  // Callback for stats updates (set by external service)
+  Function()? onChecklistDataChanged;
 
   bool _initialized = false;
   bool get isInitialized => _initialized && _uid != null;
@@ -139,5 +142,8 @@ class UserDataService extends ChangeNotifier {
 
     // Confirm update and notify again after remote write
     notifyListeners();
+    
+    // Trigger stats update
+    onChecklistDataChanged?.call();
   }
 }

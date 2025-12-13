@@ -11,6 +11,7 @@ import 'services/user_data_service.dart';
 import 'services/app_config_service.dart';
 import 'services/profile_service.dart';
 import 'services/flight_service.dart';
+import 'services/stats_service.dart';
 import 'auth/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -120,16 +121,65 @@ class MyApp extends StatelessWidget {
             return service;
           },
         ),
+        // StatsService lifecycle: reload when auth state changes
+        ChangeNotifierProxyProvider<AuthService, StatsService>(
+          create: (_) => StatsService(),
+          update: (_, authService, statsService) {
+            final service = statsService ?? StatsService();
+            final uid = authService.currentUser?.uid;
+            if (uid != null) {
+              service.initializeData(uid);
+            } else {
+              service.resetService();
+            }
+            return service;
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'FlightDeck',
         theme: AppTheme.dark(),
-        home: const SplashScreen(),
+        home: const StatsUpdateWatcher(child: SplashScreen()),
         routes: {
           '/login': (context) => const LoginScreen(),
           '/home': (context) => const MainNavigationScreen(),
         },
       ),
     );
+  }
+}
+
+/// Widget that connects flight and checklist services to stats updates
+class StatsUpdateWatcher extends StatefulWidget {
+  final Widget child;
+  
+  const StatsUpdateWatcher({super.key, required this.child});
+
+  @override
+  State<StatsUpdateWatcher> createState() => _StatsUpdateWatcherState();
+}
+
+class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Wire up stats update callbacks
+    final statsService = context.read<StatsService>();
+    final flightService = context.read<FlightService>();
+    final userDataService = context.read<UserDataService>();
+    
+    flightService.onFlightDataChanged = () {
+      statsService.updateStats();
+    };
+    
+    userDataService.onChecklistDataChanged = () {
+      statsService.updateStats();
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }

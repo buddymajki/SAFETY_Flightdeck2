@@ -24,6 +24,9 @@ class FlightService extends ChangeNotifier {
   String? _currentSchoolId;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _flightsSubscription;
   Completer<void>? _initializationCompleter;
+  
+  // Callback for stats updates (set by external service)
+  Function()? onFlightDataChanged;
 
   List<Flight> get flights => List.unmodifiable(_flights);
   bool get isLoading => _isLoading;
@@ -180,6 +183,9 @@ class FlightService extends ChangeNotifier {
       await _firestore.collection('users').doc(uid).collection('flightlog').doc(tempId).set(payload);
 
       log('[FlightService] Flight added: $tempId');
+      
+      // Trigger stats update
+      onFlightDataChanged?.call();
     } catch (e) {
       debugPrint('[FlightService] Background sync error: $e');
       // Keep in cache even if sync fails
@@ -247,6 +253,9 @@ class FlightService extends ChangeNotifier {
           .update(patch);
 
       log('[FlightService] Flight updated: ${updatedFlight.id}');
+      
+      // Trigger stats update
+      onFlightDataChanged?.call();
     } catch (e) {
       debugPrint('[FlightService] Update sync error: $e');
     }
@@ -274,6 +283,9 @@ class FlightService extends ChangeNotifier {
           .delete();
 
       log('[FlightService] Flight deleted: $flightId');
+      
+      // Trigger stats update
+      onFlightDataChanged?.call();
     } catch (e) {
       debugPrint('[FlightService] Delete sync error: $e');
     }
