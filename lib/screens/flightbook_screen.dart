@@ -80,7 +80,7 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(top: 8, bottom: 80),
       itemCount: flights.length,
       itemBuilder: (context, index) {
         final flight = flights[index];
