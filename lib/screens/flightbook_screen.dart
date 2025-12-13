@@ -78,9 +78,6 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
       );
     }
 
-    final licenseType = profileService.userProfile?.license;
-    final isStudent = licenseType == 'student';
-
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: flights.length,
@@ -92,7 +89,6 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
           flight,
           rowNumber,
           lang,
-          isStudent,
           flightService,
           profileService,
         );
@@ -105,7 +101,6 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
     Flight flight,
     int rowNumber,
     String lang,
-    bool isStudent,
     FlightService flightService,
     ProfileService profileService,
   ) {
@@ -115,9 +110,9 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
     final formattedDate = dateFormatter.format(flightDate);
     final duration = '${flight.flightTimeMinutes ~/ 60}h ${flight.flightTimeMinutes % 60}m';
 
-    // Status icon
+    // Status icon - show only if flight was logged as Student
     Widget statusIcon;
-    if (isStudent) {
+    if (flight.licenseType == 'student') {
       if (flight.status == 'accepted') {
         statusIcon = const Icon(
           Icons.check_circle,
@@ -158,8 +153,8 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (isStudent) statusIcon,
-                    if (isStudent) const SizedBox(width: 8),
+                    if (flight.licenseType == 'student') statusIcon,
+                    if (flight.licenseType == 'student') const SizedBox(width: 8),
                     _buildActionButtons(
                       context,
                       flight,
@@ -498,6 +493,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   List<Map<String, dynamic>> _availableLocations = [];
   List<Map<String, dynamic>> _filteredTakeoffLocations = [];
   List<Map<String, dynamic>> _filteredLandingLocations = [];
+  bool _takeoffFromDropdown = false; // Track if takeoff was selected from dropdown
+  bool _landingFromDropdown = false; // Track if landing was selected from dropdown
 
   @override
   void initState() {
@@ -562,6 +559,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
       _hours = flight.flightTimeMinutes ~/ 60;
       _minutes = flight.flightTimeMinutes % 60;
+      _takeoffFromDropdown = false;
+      _landingFromDropdown = false;
     } else {
       _dateController = TextEditingController(
         text: DateFormat('dd.MM.yyyy').format(DateTime.now()),
@@ -573,9 +572,11 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       _commentController = TextEditingController();
       _selectedFlightTypeId = null;
       _selectedManeuvers = {};
+      _takeoffFromDropdown = false;
+      _landingFromDropdown = false;
 
-      _hours = 1;
-      _minutes = 30;
+      _hours = 0;
+      _minutes = 10;
     }
   }
 
@@ -693,6 +694,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
   Widget _buildFlightTypeDropdown() {
     final globalService = context.read<GlobalDataService>();
+    final appConfig = context.watch<AppConfigService>();
+    final lang = appConfig.currentLanguageCode;
     final flightTypes = globalService.globalFlighttypes ?? [];
 
     return Column(
@@ -711,9 +714,13 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             });
           },
           items: flightTypes.map((type) {
+            // Use localized label with fallback to English
+            final labelKey = lang == 'de' ? 'label_de' : 'label_en';
+            final fallbackKey = 'label_en';
+            final label = (type[labelKey] as String?) ?? (type[fallbackKey] as String?) ?? 'Unknown';
             return DropdownMenuItem<String>(
               value: type['id'],
-              child: Text(type['name'] ?? 'Unknown'),
+              child: Text(label),
             );
           }).toList(),
         ),
@@ -797,6 +804,12 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             TextField(
               controller: _takeoffController,
               readOnly: !canEditDateAndLocation,
+              onChanged: (value) {
+                // If user manually edits, mark as not from dropdown
+                if (_takeoffFromDropdown && value.isNotEmpty) {
+                  setState(() => _takeoffFromDropdown = false);
+                }
+              },
               decoration: InputDecoration(
                 labelText: 'Takeoff Location *',
                 prefixIcon: const Icon(Icons.flight_takeoff),
@@ -820,6 +833,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                       _takeoffController.text = location['name'] ?? '';
                       _takeoffAltitudeController.text =
                           (location['altitude']?.toString() ?? '1000');
+                      _takeoffFromDropdown = true; // Mark as from dropdown
                     });
                   }
                 },
@@ -835,11 +849,14 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             // Takeoff Altitude
             TextField(
               controller: _takeoffAltitudeController,
+              readOnly: _takeoffFromDropdown && canEditDateAndLocation, // Read-only if from dropdown
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Takeoff Altitude (m) *',
-                prefixIcon: Icon(Icons.height),
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.height),
+                border: const OutlineInputBorder(),
+                enabled: canEditDateAndLocation,
+                helperText: _takeoffFromDropdown ? 'Auto-filled from location' : null,
               ),
             ),
             const SizedBox(height: 12),
@@ -848,6 +865,12 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             TextField(
               controller: _landingController,
               readOnly: !canEditDateAndLocation,
+              onChanged: (value) {
+                // If user manually edits, mark as not from dropdown
+                if (_landingFromDropdown && value.isNotEmpty) {
+                  setState(() => _landingFromDropdown = false);
+                }
+              },
               decoration: InputDecoration(
                 labelText: 'Landing Location *',
                 prefixIcon: const Icon(Icons.flight_land),
@@ -871,6 +894,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                       _landingController.text = location['name'] ?? '';
                       _landingAltitudeController.text =
                           (location['altitude']?.toString() ?? '500');
+                      _landingFromDropdown = true; // Mark as from dropdown
                     });
                   }
                 },
@@ -886,89 +910,84 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             // Landing Altitude
             TextField(
               controller: _landingAltitudeController,
+              readOnly: _landingFromDropdown && canEditDateAndLocation, // Read-only if from dropdown
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Landing Altitude (m) *',
-                prefixIcon: Icon(Icons.height),
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.height),
+                border: const OutlineInputBorder(),
+                enabled: canEditDateAndLocation,
+                helperText: _landingFromDropdown ? 'Auto-filled from location' : null,
               ),
             ),
             const SizedBox(height: 12),
 
-            // Flight Time
+            // Flight Time (Hours & Minutes) - Improved modern picker
             Row(
               children: [
+                // Hours
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Hours *'),
+                      const Text('Hours (0-10) *'),
                       const SizedBox(height: 8),
-                      TextField(
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          border: const OutlineInputBorder(),
-                          suffixIcon: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                height: 20,
-                                child: IconButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () => setState(() => _hours++),
-                                  icon: const Icon(Icons.arrow_drop_up, size: 20),
-                                ),
-                              ),
-                              SizedBox(
-                                height: 20,
-                                child: IconButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: _hours > 0 ? () => setState(() => _hours--) : null,
-                                  icon: const Icon(Icons.arrow_drop_down, size: 20),
-                                ),
-                              ),
-                            ],
-                          ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        controller: TextEditingController(text: _hours.toString()),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              onPressed: _hours > 0 ? () => setState(() => _hours--) : null,
+                              icon: const Icon(Icons.remove),
+                            ),
+                            Text(
+                              _hours.toString(),
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            IconButton(
+                              onPressed: _hours < 10 ? () => setState(() => _hours++) : null,
+                              icon: const Icon(Icons.add),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
+                // Minutes
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Minutes *'),
+                      const Text('Minutes (0-59) *'),
                       const SizedBox(height: 8),
-                      TextField(
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          border: const OutlineInputBorder(),
-                          suffixIcon: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                height: 20,
-                                child: IconButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () => setState(() => _minutes = (_minutes + 5) % 60),
-                                  icon: const Icon(Icons.arrow_drop_up, size: 20),
-                                ),
-                              ),
-                              SizedBox(
-                                height: 20,
-                                child: IconButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () => setState(() => _minutes = (_minutes - 5 + 60) % 60),
-                                  icon: const Icon(Icons.arrow_drop_down, size: 20),
-                                ),
-                              ),
-                            ],
-                          ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        controller: TextEditingController(text: _minutes.toString()),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              onPressed: _minutes > 0 ? () => setState(() => _minutes--) : null,
+                              icon: const Icon(Icons.remove),
+                            ),
+                            Text(
+                              _minutes.toString().padLeft(2, '0'),
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            IconButton(
+                              onPressed: _minutes < 59 ? () => setState(() => _minutes++) : null,
+                              icon: const Icon(Icons.add),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
