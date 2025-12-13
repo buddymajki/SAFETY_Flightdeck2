@@ -121,12 +121,18 @@ class MyApp extends StatelessWidget {
             return service;
           },
         ),
-        // StatsService lifecycle: reload when auth state changes
-        ChangeNotifierProxyProvider<AuthService, StatsService>(
+        // StatsService lifecycle: depends on all data services
+        ChangeNotifierProxyProvider4<AuthService, FlightService, UserDataService, GlobalDataService, StatsService>(
           create: (_) => StatsService(),
-          update: (_, authService, statsService) {
+          update: (_, authService, flightService, userDataService, globalDataService, statsService) {
             final service = statsService ?? StatsService();
             final uid = authService.currentUser?.uid;
+            
+            // Inject service references for offline-first calculation
+            service.flightService = flightService;
+            service.userDataService = userDataService;
+            service.globalDataService = globalDataService;
+            
             if (uid != null) {
               service.initializeData(uid);
             } else {

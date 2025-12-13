@@ -169,6 +169,12 @@ class TakeoffPlaceStats {
 }
 
 /// StatsService: Offline-first dashboard statistics management
+/// 
+/// PRIMARY DATA SOURCE: Local in-memory data from FlightService and UserDataService
+/// SECONDARY BACKUP: Firestore cloud document (for multi-device sync only)
+/// 
+/// Stats are calculated directly from service data and persisted locally.
+/// Firestore is used only for backup and cross-device synchronization.
 class StatsService extends ChangeNotifier {
   static const String _statsCacheKey = 'dashboard_stats';
 
@@ -180,6 +186,11 @@ class StatsService extends ChangeNotifier {
   String? _currentUid;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _statsSubscription;
   Completer<void>? _initializationCompleter;
+
+  // References to data services (set externally)
+  dynamic flightService;
+  dynamic userDataService;
+  dynamic globalDataService;
 
   DashboardStats get stats => _stats;
   bool get isLoading => _isLoading;
@@ -228,12 +239,29 @@ class StatsService extends ChangeNotifier {
     _isLoading = true;
     _currentUid = uid;
 
+    // Load from local cache first (instant display)
+    final cached = await _getStatsFromCache();
+    if (cached != null) {
+      _stats = cached;
+    }
+
     notifyListeners();
 
     _initializationCompleter = Completer<void>();
 
-    await _statsSubscription?.cancel();
+    // Calculate stats from local data immediately
+    await recalculateStats();
 
+    _isLoading = false;
+    notifyListeners();
+
+    if (!_initializationCompleter!.isCompleted) {
+      _initializationCompleter!.complete();
+    }
+
+    // Optional: Set up background sync listener (not used for primary data)
+    // This is only for detecting cloud changes made from other devices
+    await _statsSubscription?.cancel();
     _statsSubscription = _firestore
         .collection('users')
         .doc(uid)
@@ -242,29 +270,20 @@ class StatsService extends ChangeNotifier {
         .snapshots()
         .listen(
       (snapshot) async {
+        // Only update if remote data is newer than local
         if (snapshot.exists && snapshot.data() != null) {
-          final stats = DashboardStats.fromJson(snapshot.data()!);
-          _stats = stats;
-          await _cacheStats(stats);
-        } else {
-          // No stats document yet, calculate initial stats
-          await recalculateStats();
-        }
-
-        _isLoading = false;
-        notifyListeners();
-
-        if (!_initializationCompleter!.isCompleted) {
-          _initializationCompleter!.complete();
+          final remoteStats = DashboardStats.fromJson(snapshot.data()!);
+          if (remoteStats.updatedAt.isAfter(_stats.updatedAt)) {
+            debugPrint('[StatsService] Remote stats are newer, updating local cache');
+            _stats = remoteStats;
+            await _cacheStats(remoteStats);
+            notifyListeners();
+          }
         }
       },
       onError: (error) {
-        debugPrint('[StatsService] Stream error: $error');
-        _isLoading = false;
-        notifyListeners();
-        if (!_initializationCompleter!.isCompleted) {
-          _initializationCompleter!.complete();
-        }
+        debugPrint('[StatsService] Background sync error (ignored): $error');
+        // Errors here are non-critical since local data is primary
       },
     );
   }
@@ -278,41 +297,25 @@ class StatsService extends ChangeNotifier {
   // --- Stats Calculation ---
 
   /// Recalculate all stats from scratch (called when data changes)
+  /// 
+  /// CRITICAL: This method operates purely on local in-memory data.
+  /// It reads from FlightService.flights and UserDataService without any Firestore calls.
+  /// Stats are persisted locally first, then synced to Firestore in background.
   Future<void> recalculateStats() async {
     final uid = _currentUid ?? _auth.currentUser?.uid;
     if (uid == null) return;
 
     try {
-      // Fetch all required data
-      final flightsSnapshot = await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('flightlog')
-          .get(GetOptions(source: Source.cache));
+      // Get data from in-memory services (no Firestore calls)
+      final flights = flightService?.flights as List<Flight>? ?? [];
+      final progressData = userDataService?.userChecklistProgress as Map<String, Map<String, dynamic>>? ?? {};
+      final checklistItems = globalDataService?.allChecklistItems ?? [];
 
-      final progressSnapshot = await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('checklistprogress')
-          .doc('progress')
-          .get(GetOptions(source: Source.cache));
-
-      final globalChecklistsSnapshot = await _firestore
-          .collection('globalChecklists')
-          .get(GetOptions(source: Source.cache));
-
-      // Parse flights
-      final flights = flightsSnapshot.docs
-          .map((doc) => Flight.fromFirestore(doc.data(), doc.id, uid))
-          .toList();
-
-      // Calculate flight stats
+      // Calculate flight stats from in-memory data
       final flightStats = _calculateFlightStats(flights);
 
-      // Calculate progress stats
-      final progressData = progressSnapshot.data() ?? {};
-      final checklistItems = globalChecklistsSnapshot.docs;
-      final progressStats = _calculateProgressStats(progressData, checklistItems);
+      // Calculate progress stats from in-memory data
+      final progressStats = _calculateProgressStatsFromItems(progressData, checklistItems);
 
       // Create new stats object
       final newStats = DashboardStats(
@@ -328,21 +331,32 @@ class StatsService extends ChangeNotifier {
         updatedAt: DateTime.now(),
       );
 
-      // Update local state and cache immediately
+      // Update local state and cache immediately (PRIMARY)
       _stats = newStats;
       await _cacheStats(newStats);
       notifyListeners();
 
-      // Update Firestore in background
-      await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('stats')
-          .doc('dashboard')
-          .set(newStats.toJson(), SetOptions(merge: true));
+      // Sync to Firestore in background (SECONDARY - fire and forget)
+      _syncToFirestoreBackground(uid, newStats);
     } catch (e) {
       debugPrint('[StatsService] Recalculation error: $e');
     }
+  }
+
+  /// Background sync to Firestore (non-blocking)
+  void _syncToFirestoreBackground(String uid, DashboardStats stats) {
+    _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('stats')
+        .doc('dashboard')
+        .set(stats.toJson(), SetOptions(merge: true))
+        .then((_) {
+      debugPrint('[StatsService] Stats synced to Firestore');
+    }).catchError((error) {
+      debugPrint('[StatsService] Firestore sync failed (non-critical): $error');
+      // Failure here is acceptable - local data remains valid
+    });
   }
 
   /// Calculate flight-related statistics
@@ -356,14 +370,20 @@ class StatsService extends ChangeNotifier {
     final Map<String, int> takeoffPlaceCounts = {};
 
     for (final flight in flights) {
-      // Takeoffs
-      if (flight.takeoffId != null && flight.takeoffId!.isNotEmpty) {
-        uniqueTakeoffs.add(flight.takeoffId!);
+      // Takeoffs - count unique places (use ID if available, otherwise name)
+      final takeoffKey = (flight.takeoffId?.isNotEmpty ?? false) 
+          ? flight.takeoffId! 
+          : flight.takeoffName;
+      if (takeoffKey.isNotEmpty) {
+        uniqueTakeoffs.add(takeoffKey);
       }
 
-      // Landings
-      if (flight.landingId != null && flight.landingId!.isNotEmpty) {
-        uniqueLandings.add(flight.landingId!);
+      // Landings - count unique places (use ID if available, otherwise name)
+      final landingKey = (flight.landingId?.isNotEmpty ?? false)
+          ? flight.landingId!
+          : flight.landingName;
+      if (landingKey.isNotEmpty) {
+        uniqueLandings.add(landingKey);
       }
 
       // Flying days
@@ -386,8 +406,7 @@ class StatsService extends ChangeNotifier {
         maneuverUsage[maneuver] = (maneuverUsage[maneuver] ?? 0) + 1;
       }
 
-      // Takeoff place counts
-      final takeoffKey = flight.takeoffId ?? flight.takeoffName;
+      // Takeoff place counts (reuse takeoffKey already calculated above)
       if (takeoffKey.isNotEmpty) {
         takeoffPlaceCounts[takeoffKey] = (takeoffPlaceCounts[takeoffKey] ?? 0) + 1;
       }
@@ -422,25 +441,36 @@ class StatsService extends ChangeNotifier {
     };
   }
 
-  /// Calculate progress statistics with category breakdown
-  ProgressStats _calculateProgressStats(
-    Map<String, dynamic> progressData,
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> checklistItems,
+  /// Calculate progress statistics from ChecklistItem objects (in-memory)
+  ProgressStats _calculateProgressStatsFromItems(
+    Map<String, Map<String, dynamic>> progressData,
+    List<dynamic> checklistItems,
   ) {
     // Group items by category
     final Map<String, List<String>> itemsByCategory = {};
     final Map<String, String> categoryLabels = {};
 
-    for (final doc in checklistItems) {
-      final data = doc.data();
-      final category = data['category'] as String? ?? 'uncategorized';
-      final itemId = doc.id;
+    for (final item in checklistItems) {
+      // Handle both ChecklistItem objects and maps
+      final String itemId;
+      final String category;
+      
+      if (item is Map<String, dynamic>) {
+        itemId = item['id'] as String? ?? '';
+        category = item['category'] as String? ?? 'uncategorized';
+      } else {
+        // Assume it's a ChecklistItem object
+        itemId = (item as dynamic).id as String;
+        category = (item as dynamic).category as String? ?? 'uncategorized';
+      }
+
+      if (itemId.isEmpty) continue;
 
       itemsByCategory.putIfAbsent(category, () => []).add(itemId);
 
       // Store label if available (fallback to category id)
       if (!categoryLabels.containsKey(category)) {
-        categoryLabels[category] = data['category_label'] as String? ?? category;
+        categoryLabels[category] = category;
       }
     }
 
@@ -454,9 +484,7 @@ class StatsService extends ChangeNotifier {
         final itemProgress = progressData[itemId];
         bool isCompleted = false;
 
-        if (itemProgress is bool) {
-          isCompleted = itemProgress;
-        } else if (itemProgress is Map<String, dynamic>) {
+        if (itemProgress != null) {
           isCompleted = itemProgress['completed'] as bool? ?? false;
         }
 
