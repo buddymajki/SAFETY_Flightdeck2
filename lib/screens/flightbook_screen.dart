@@ -689,6 +689,23 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     final lang = appConfig.currentLanguageCode;
     final flightTypes = globalService.globalFlighttypes ?? [];
 
+    // Create dropdown menu items
+    final items = flightTypes.map((type) {
+      // Use localized type field (type_en, type_de, etc.) with fallback to type_en
+      final typeKey = 'type_$lang';
+      final typeLabel = (type[typeKey] as String?) ?? (type['type_en'] as String?) ?? 'Unknown';
+      return DropdownMenuItem<String>(
+        value: type['id'],
+        child: Text(typeLabel),
+      );
+    }).toList();
+
+    // Ensure the selected value is in the items list, or reset to null
+    String? currentValue = _selectedFlightTypeId;
+    if (currentValue != null && !items.any((item) => item.value == currentValue)) {
+      currentValue = null;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -697,22 +714,14 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         DropdownButton<String>(
           isExpanded: true,
           hint: const Text('Select flight type'),
-          value: _selectedFlightTypeId,
+          value: currentValue,
           onChanged: (String? newValue) {
             setState(() {
               _selectedFlightTypeId = newValue;
               _selectedManeuvers.clear(); // Clear maneuvers when type changes
             });
           },
-          items: flightTypes.map((type) {
-            // Use localized type field (type_en, type_de, etc.) with fallback to type_en
-            final typeKey = 'type_$lang';
-            final typeLabel = (type[typeKey] as String?) ?? (type['type_en'] as String?) ?? 'Unknown';
-            return DropdownMenuItem<String>(
-              value: type['id'],
-              child: Text(typeLabel),
-            );
-          }).toList(),
+          items: items,
         ),
       ],
     );
