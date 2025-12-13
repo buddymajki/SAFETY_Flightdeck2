@@ -86,6 +86,7 @@ class FlightService extends ChangeNotifier {
         .doc(uid)
         .collection('flightlog')
         .orderBy('date', descending: true)
+        .orderBy('created_at', descending: false)
         .snapshots()
         .listen(
       (snapshot) async {

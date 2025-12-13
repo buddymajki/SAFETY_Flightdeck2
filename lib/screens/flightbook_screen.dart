@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -636,6 +637,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         schoolManeuvers: const [],
         licenseType: profile.license ?? 'student',
         status: widget.flight?.status ?? 'pending',
+        createdAt: widget.flight?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
       );
 
       if (widget.flight == null) {
@@ -864,8 +867,12 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             // Takeoff Altitude
             TextField(
               controller: _takeoffAltitudeController,
-              readOnly: _takeoffFromDropdown && canEditDateAndLocation, // Read-only if from dropdown
-              keyboardType: TextInputType.number,
+              readOnly: _takeoffFromDropdown && canEditDateAndLocation,
+              enabled: !(_takeoffFromDropdown && canEditDateAndLocation),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
               decoration: InputDecoration(
                 labelText: 'Takeoff Altitude (m) *',
                 prefixIcon: const Icon(Icons.height),
@@ -925,8 +932,12 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             // Landing Altitude
             TextField(
               controller: _landingAltitudeController,
-              readOnly: _landingFromDropdown && canEditDateAndLocation, // Read-only if from dropdown
-              keyboardType: TextInputType.number,
+              readOnly: _landingFromDropdown && canEditDateAndLocation,
+              enabled: !(_landingFromDropdown && canEditDateAndLocation),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
               decoration: InputDecoration(
                 labelText: 'Landing Altitude (m) *',
                 prefixIcon: const Icon(Icons.height),
