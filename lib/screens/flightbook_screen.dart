@@ -110,24 +110,12 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
     final formattedDate = dateFormatter.format(flightDate);
     final duration = '${flight.flightTimeMinutes ~/ 60}h ${flight.flightTimeMinutes % 60}m';
 
-    // Status icon - show only if flight was logged as Student
-    Widget statusIcon;
-    if (flight.licenseType == 'student') {
-      if (flight.status == 'accepted') {
-        statusIcon = const Icon(
-          Icons.check_circle,
-          color: Colors.green,
-          size: 20,
-        );
-      } else {
-        statusIcon = const Icon(
-          Icons.access_time,
-          color: Colors.amber,
-          size: 20,
-        );
-      }
-    } else {
-      statusIcon = const SizedBox.shrink();
+    // Status icon - show only if flight was logged as Student (case-sensitive)
+    Widget statusIcon = const SizedBox.shrink();
+    if (flight.licenseType == 'Student') {
+      statusIcon = flight.status == 'accepted'
+          ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+          : const Icon(Icons.access_time, color: Colors.amber, size: 20);
     }
 
     return Card(
@@ -153,8 +141,8 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (flight.licenseType == 'student') statusIcon,
-                    if (flight.licenseType == 'student') const SizedBox(width: 8),
+                    statusIcon,
+                    if (flight.licenseType == 'Student') const SizedBox(width: 8),
                     _buildActionButtons(
                       context,
                       flight,
@@ -714,13 +702,12 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             });
           },
           items: flightTypes.map((type) {
-            // Use localized label with fallback to English
-            final labelKey = lang == 'de' ? 'label_de' : 'label_en';
-            final fallbackKey = 'label_en';
-            final label = (type[labelKey] as String?) ?? (type[fallbackKey] as String?) ?? 'Unknown';
+            // Use localized type field (type_en, type_de, etc.) with fallback to type_en
+            final typeKey = 'type_$lang';
+            final typeLabel = (type[typeKey] as String?) ?? (type['type_en'] as String?) ?? 'Unknown';
             return DropdownMenuItem<String>(
               value: type['id'],
-              child: Text(label),
+              child: Text(typeLabel),
             );
           }).toList(),
         ),
@@ -730,9 +717,36 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
   Widget _buildManeuversSelection() {
     final globalService = context.read<GlobalDataService>();
-    final allManeuvers = globalService.globalManeuverlist ?? [];
+    final appConfig = context.watch<AppConfigService>();
+    final lang = appConfig.currentLanguageCode;
+    final flightTypes = globalService.globalFlighttypes ?? [];
 
-    // For now, show all maneuvers (future: filter by flight type if needed)
+    // Get maneuvers from the selected flight type
+    if (_selectedFlightTypeId == null) {
+      return const SizedBox.shrink();
+    }
+
+    final selectedFlightType = flightTypes.firstWhere(
+      (type) => type['id'] == _selectedFlightTypeId,
+      orElse: () => <String, dynamic>{},
+    );
+
+    if (selectedFlightType.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Get localized maneuvers array (maneuvers_en, maneuvers_de, etc.)
+    final maneuvereKey = 'maneuvers_$lang';
+    List<dynamic> maneuversList =
+        (selectedFlightType[maneuvereKey] as List<dynamic>?) ??
+        (selectedFlightType['maneuvers_en'] as List<dynamic>?) ??
+        [];
+
+    // If no maneuvers available for this flight type, don't show the field
+    if (maneuversList.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -740,18 +754,19 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          children: allManeuvers.map((maneuver) {
-            final maneuverId = maneuver['id'] ?? '';
-            final isSelected = _selectedManeuvers.contains(maneuverId);
+          children: maneuversList.map((maneuver) {
+            // Maneuvers are stored as strings in the array
+            final maneuverName = maneuver.toString();
+            final isSelected = _selectedManeuvers.contains(maneuverName);
             return FilterChip(
-              label: Text(maneuver['name'] ?? 'Unknown'),
+              label: Text(maneuverName),
               selected: isSelected,
               onSelected: (bool selected) {
                 setState(() {
                   if (selected) {
-                    _selectedManeuvers.add(maneuverId);
+                    _selectedManeuvers.add(maneuverName);
                   } else {
-                    _selectedManeuvers.remove(maneuverId);
+                    _selectedManeuvers.remove(maneuverName);
                   }
                 });
               },

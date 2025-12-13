@@ -23,8 +23,6 @@ class GlobalDataService extends ChangeNotifier {
   List<Map<String, dynamic>>? globalChecklists;
   List<Map<String, dynamic>>? globalFlighttypes;
   List<Map<String, dynamic>>? globalLocations;
-  List<Map<String, dynamic>>? globalManeuverlist;
-  List<Map<String, dynamic>>? globalSchoolmaneuvers;
   List<Map<String, dynamic>>? schools;
 
   Map<String, dynamic>? _globalChecklists;
@@ -41,8 +39,6 @@ class GlobalDataService extends ChangeNotifier {
         fs.collection('globalChecklists').get(opts),
         fs.collection('globalFlighttypes').get(opts),
         fs.collection('globalLocations').get(opts),
-        fs.collection('globalManeuverlist').get(opts),
-        fs.collection('globalSchoolmaneuvers').get(opts),
         fs.collection('schools').get(opts),
       ]);
 
@@ -52,9 +48,7 @@ class GlobalDataService extends ChangeNotifier {
       globalChecklists = results[0].docs.map((d) => _withId(d)).toList();
       globalFlighttypes = results[1].docs.map((d) => _withId(d)).toList();
       globalLocations = results[2].docs.map((d) => _withId(d)).toList();
-      globalManeuverlist = results[3].docs.map((d) => _withId(d)).toList();
-      globalSchoolmaneuvers = results[4].docs.map((d) => _withId(d)).toList();
-      schools = results[5].docs.map((d) => _withId(d)).toList();
+      schools = results[3].docs.map((d) => _withId(d)).toList();
 
       _initialized = true;
       notifyListeners();
@@ -73,8 +67,6 @@ class GlobalDataService extends ChangeNotifier {
     globalChecklists = null;
     globalFlighttypes = null;
     globalLocations = null;
-    globalManeuverlist = null;
-    globalSchoolmaneuvers = null;
     schools = null;
     _initialized = false;
     notifyListeners();
