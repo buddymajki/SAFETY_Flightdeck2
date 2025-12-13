@@ -167,11 +167,6 @@ class ProfileService extends ChangeNotifier {
     _loadDataFromCacheOnly();
   }
 
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
-  }
-
   // --- Caching Helper Methods ---
 
   Future<void> _cacheUserSettings(Map<String, dynamic> settings) async {
@@ -202,7 +197,6 @@ class ProfileService extends ChangeNotifier {
       try {
         return json.decode(jsonString) as Map<String, dynamic>;
       } catch (e) {
-        print("ProfileService: Error decoding cache: $e");
         return null;
       }
     }
@@ -232,7 +226,6 @@ class ProfileService extends ChangeNotifier {
         };
       }).toList();
     } catch (e) {
-      print("ProfileService: Error loading schools: $e");
       _schools = [];
     }
   }

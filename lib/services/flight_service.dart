@@ -20,6 +20,7 @@ class FlightService extends ChangeNotifier {
   List<Flight> _flights = [];
   bool _isLoading = false;
   String? _currentUid;
+  // ignore: unused_field
   String? _currentSchoolId;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _flightsSubscription;
   Completer<void>? _initializationCompleter;

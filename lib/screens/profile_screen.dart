@@ -288,12 +288,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (_emergencyNameController.text != profile.emergencyContactName) {
           _emergencyNameController.text = profile.emergencyContactName;
       }
+      // ignore: dead_null_aware_expression
       if (_emergencyPhoneController.text != (profile.emergencyContactPhone ?? '')) {
+          // ignore: dead_null_aware_expression
           _emergencyPhoneController.text = profile.emergencyContactPhone ?? '';
       }
+      // ignore: dead_null_aware_expression
       if (_gliderController.text != (profile.glider ?? '')) {
           _gliderController.text = profile.glider ?? '';
       }
+      // ignore: dead_null_aware_expression
       if (_shvNumberController.text != (profile.shvnumber ?? '')) {
           _shvNumberController.text = profile.shvnumber ?? '';
       }

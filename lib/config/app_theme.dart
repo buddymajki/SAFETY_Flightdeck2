@@ -24,14 +24,12 @@ class AppTheme {
       colorScheme: ColorScheme.dark(
         primary: primaryColor,      // Lila gombok háttere
         surface: cardBackground,    // Kártyák, sheet-ek háttere
-        background: contentBackground, // Scaffold háttere
         
         // --- KRITIKUS JAVÍTÁS ---
         // A 'primary' színen lévő szöveg/ikon színe (pl. gombokon)
         onPrimary: Colors.white, 
         // A 'surface' (kártyák) és 'background' (Scaffold) tetején lévő szöveg színe
-        onSurface: textColor, 
-        onBackground: textColor,
+        onSurface: textColor,
         // -------------------------
       ),
       
@@ -50,7 +48,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: navBarColor,
         indicatorColor: primaryColor,
-        labelTextStyle: MaterialStateProperty.all(const TextStyle(color: textColor)),
+        labelTextStyle: WidgetStateProperty.all(const TextStyle(color: textColor)),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: navBarColor,

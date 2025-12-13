@@ -15,7 +15,6 @@ class AppConfigService extends ChangeNotifier {
       _currentLanguageCode = code;
       // In a real app, this is where you would save to SharedPrefs.
       notifyListeners();
-      print('AppConfigService: Language set to $_currentLanguageCode');
     }
   }
 

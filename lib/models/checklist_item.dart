@@ -1,21 +1,30 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// ignore: non_constant_identifier_names
 class ChecklistItem {
   final String id;
+  // ignore: non_constant_identifier_names
   final String title_en;
+  // ignore: non_constant_identifier_names
   final String title_de;
   final String category;
+  // ignore: non_constant_identifier_names
   final String? description_en;
+  // ignore: non_constant_identifier_names
   final String? description_de;
   final bool isCompleted;
   final DateTime? completedAt;
 
   const ChecklistItem({
     required this.id,
+    // ignore: non_constant_identifier_names
     required this.title_en,
+    // ignore: non_constant_identifier_names
     required this.title_de,
     required this.category,
+    // ignore: non_constant_identifier_names
     this.description_en,
+    // ignore: non_constant_identifier_names
     this.description_de,
     this.isCompleted = false,
     this.completedAt,

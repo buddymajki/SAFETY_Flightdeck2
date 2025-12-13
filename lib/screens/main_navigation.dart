@@ -165,8 +165,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         child: PageView(
           controller: _pageController,
           physics: const AlwaysScrollableScrollPhysics(),
-          children: _widgetOptions,
           onPageChanged: _onPageChanged,
+          children: _widgetOptions,
         ),
       ),
       bottomNavigationBar: Container(
