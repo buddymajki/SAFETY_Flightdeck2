@@ -467,6 +467,33 @@ class _AddEditFlightForm extends StatefulWidget {
 }
 
 class _AddEditFlightFormState extends State<_AddEditFlightForm> {
+  // Translation dictionary for the form
+  static const Map<String, Map<String, String>> _formTexts = {
+    'Edit_Flight': {'en': 'Edit Flight', 'de': 'Flug bearbeiten'},
+    'Add_New_Flight': {'en': 'Add New Flight', 'de': 'Neuen Flug hinzufügen'},
+    'Date': {'en': 'Date *', 'de': 'Datum *'},
+    'Takeoff_Location': {'en': 'Takeoff Location *', 'de': 'Startplatz *'},
+    'Or_Select': {'en': 'Or select from school locations', 'de': 'Oder aus Schulpunkten auswählen'},
+    'Takeoff_Altitude': {'en': 'Takeoff Altitude (m) *', 'de': 'Starthöhe (m) *'},
+    'Auto_Filled': {'en': 'Auto-filled from location', 'de': 'Automatisch aus Standort gefüllt'},
+    'Landing_Location': {'en': 'Landing Location *', 'de': 'Landeplatz *'},
+    'Landing_Altitude': {'en': 'Landing Altitude (m) *', 'de': 'Landehöhe (m) *'},
+    'Hours': {'en': 'Hours (0-10) *', 'de': 'Stunden (0-10) *'},
+    'Minutes': {'en': 'Minutes (0-59) *', 'de': 'Minuten (0-59) *'},
+    'Flight_Type': {'en': 'Flight Type', 'de': 'Flugtyp'},
+    'Select_Flight_Type': {'en': 'Select flight type', 'de': 'Flugtyp auswählen'},
+    'Maneuvers': {'en': 'Maneuvers', 'de': 'Kunststücke'},
+    'Select_Maneuvers': {'en': 'Select maneuvers performed', 'de': 'Durchgeführte Kunststücke auswählen'},
+    'Comment': {'en': 'Comment', 'de': 'Kommentar'},
+    'Save': {'en': 'Save', 'de': 'Speichern'},
+    'Cancel': {'en': 'Cancel', 'de': 'Abbrechen'},
+    'Validation_Error': {'en': 'Please fill in all required fields', 'de': 'Bitte füllen Sie alle erforderlichen Felder aus'},
+  };
+
+  String _t(String key, String lang) {
+    return _formTexts[key]?[lang] ?? key;
+  }
+
   late TextEditingController _dateController;
   late TextEditingController _takeoffController;
   late TextEditingController _landingController;
@@ -709,11 +736,11 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Flight Type'),
+        Text(_t('Flight_Type', lang)),
         const SizedBox(height: 8),
         DropdownButton<String>(
           isExpanded: true,
-          hint: const Text('Select flight type'),
+          hint: Text(_t('Select_Flight_Type', lang)),
           value: currentValue,
           onChanged: (String? newValue) {
             setState(() {
@@ -762,7 +789,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Maneuvers (Optional)'),
+        Text(_t('Maneuvers', lang)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -794,6 +821,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     final theme = Theme.of(context);
     final isEdit = widget.flight != null;
     final canEditDateAndLocation = !isEdit || widget.flight!.canEdit();
+    final appConfig = context.watch<AppConfigService>();
+    final lang = appConfig.currentLanguageCode;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -806,7 +835,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              isEdit ? 'Edit Flight' : 'Add New Flight',
+              isEdit ? _t('Edit_Flight', lang) : _t('Add_New_Flight', lang),
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -819,7 +848,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
               readOnly: true,
               onTap: canEditDateAndLocation ? _selectDate : null,
               decoration: InputDecoration(
-                labelText: 'Date *',
+                labelText: _t('Date', lang),
                 prefixIcon: const Icon(Icons.calendar_today),
                 border: const OutlineInputBorder(),
                 enabled: canEditDateAndLocation,
@@ -838,7 +867,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                 }
               },
               decoration: InputDecoration(
-                labelText: 'Takeoff Location *',
+                labelText: _t('Takeoff_Location', lang),
                 prefixIcon: const Icon(Icons.flight_takeoff),
                 border: const OutlineInputBorder(),
                 enabled: canEditDateAndLocation,
@@ -850,7 +879,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             if (_filteredTakeoffLocations.isNotEmpty && canEditDateAndLocation)
               DropdownButton<String>(
                 isExpanded: true,
-                hint: const Text('Or select from school locations'),
+                hint: Text(_t('Or_Select', lang)),
                 value: null,
                 onChanged: (String? locationId) {
                   if (locationId != null) {
@@ -883,11 +912,11 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],
               decoration: InputDecoration(
-                labelText: 'Takeoff Altitude (m) *',
+                labelText: _t('Takeoff_Altitude', lang),
                 prefixIcon: const Icon(Icons.height),
                 border: const OutlineInputBorder(),
                 enabled: canEditDateAndLocation,
-                helperText: _takeoffFromDropdown ? 'Auto-filled from location' : null,
+                helperText: _takeoffFromDropdown ? _t('Auto_Filled', lang) : null,
               ),
             ),
             const SizedBox(height: 12),
@@ -903,7 +932,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                 }
               },
               decoration: InputDecoration(
-                labelText: 'Landing Location *',
+                labelText: _t('Landing_Location', lang),
                 prefixIcon: const Icon(Icons.flight_land),
                 border: const OutlineInputBorder(),
                 enabled: canEditDateAndLocation,
@@ -915,7 +944,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             if (_filteredLandingLocations.isNotEmpty && canEditDateAndLocation)
               DropdownButton<String>(
                 isExpanded: true,
-                hint: const Text('Or select from school locations'),
+                hint: Text(_t('Or_Select', lang)),
                 value: null,
                 onChanged: (String? locationId) {
                   if (locationId != null) {
@@ -948,11 +977,11 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],
               decoration: InputDecoration(
-                labelText: 'Landing Altitude (m) *',
+                labelText: _t('Landing_Altitude', lang),
                 prefixIcon: const Icon(Icons.height),
                 border: const OutlineInputBorder(),
                 enabled: canEditDateAndLocation,
-                helperText: _landingFromDropdown ? 'Auto-filled from location' : null,
+                helperText: _landingFromDropdown ? _t('Auto_Filled', lang) : null,
               ),
             ),
             const SizedBox(height: 12),
@@ -965,7 +994,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Hours (0-10) *'),
+                      Text(_t('Hours', lang)),
                       const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
@@ -999,7 +1028,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Minutes (0-59) *'),
+                      Text(_t('Minutes', lang)),
                       const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
@@ -1043,9 +1072,9 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             TextField(
               controller: _commentController,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Comment',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: _t('Comment', lang),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 24),
@@ -1061,7 +1090,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(isEdit ? 'Update Flight' : 'Save Flight'),
+                    : Text(isEdit ? _t('Edit_Flight', lang) : _t('Save', lang)),
               ),
             ),
           ],
