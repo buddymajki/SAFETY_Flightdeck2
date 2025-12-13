@@ -164,7 +164,7 @@ class FlightService extends ChangeNotifier {
     await _cacheFlights(_flights);
     notifyListeners();
 
-    // Background sync
+    // Background sync (only write to user's flightlog collection)
     try {
       final now = FieldValue.serverTimestamp();
       final payload = {
@@ -173,31 +173,9 @@ class FlightService extends ChangeNotifier {
         'updated_at': now,
       };
 
-      // Write to user flightlog
+      // Write ONLY to user flightlog
+      // Cloud Functions will handle cross-user and school processing
       await _firestore.collection('users').doc(uid).collection('flightlog').doc(tempId).set(payload);
-
-      // Write to public flights
-      await _firestore.collection('flights').doc(tempId).set(payload);
-
-      // If student, create pending entry for school
-      if (flightWithId.licenseType == 'student' && _currentSchoolId != null) {
-        await _firestore
-            .collection('schools')
-            .doc(_currentSchoolId!)
-            .collection('pendingFlights')
-            .doc(tempId)
-            .set({
-              'flightId': tempId,
-              'student_uid': uid,
-              'school_id': _currentSchoolId,
-              'date': payload['date'],
-              'flightTimeMinutes': payload['flightTimeMinutes'],
-              'status': 'pending',
-              'takeoffName': payload['takeoffName'],
-              'landingName': payload['landingName'],
-              'created_at': now,
-            });
-      }
 
       log('[FlightService] Flight added: $tempId');
     } catch (e) {
@@ -253,18 +231,18 @@ class FlightService extends ChangeNotifier {
     await _cacheFlights(_flights);
     notifyListeners();
 
-    // Background sync
+    // Background sync (only write to user's flightlog collection)
     try {
       patch['updated_at'] = FieldValue.serverTimestamp();
 
+      // Update ONLY in user flightlog
+      // Cloud Functions will handle cross-user and school processing
       await _firestore
           .collection('users')
           .doc(uid)
           .collection('flightlog')
           .doc(updatedFlight.id)
           .update(patch);
-
-      await _firestore.collection('flights').doc(updatedFlight.id).update(patch);
 
       log('[FlightService] Flight updated: ${updatedFlight.id}');
     } catch (e) {
@@ -273,7 +251,7 @@ class FlightService extends ChangeNotifier {
   }
 
   /// Delete a flight (offline-first)
-  Future<void> deleteFlight(String flightId, String? schoolId) async {
+  Future<void> deleteFlight(String flightId) async {
     final uid = _currentUid ?? _auth.currentUser?.uid;
     if (uid == null) throw StateError('User not authenticated');
 
@@ -282,20 +260,16 @@ class FlightService extends ChangeNotifier {
     await _cacheFlights(_flights);
     notifyListeners();
 
-    // Background sync
+    // Background sync (only delete from user's flightlog collection)
     try {
-      final batch = _firestore.batch();
-
-      batch.delete(_firestore.collection('users').doc(uid).collection('flightlog').doc(flightId));
-      batch.delete(_firestore.collection('flights').doc(flightId));
-
-      if (schoolId != null) {
-        batch.delete(
-          _firestore.collection('schools').doc(schoolId).collection('pendingFlights').doc(flightId),
-        );
-      }
-
-      await batch.commit();
+      // Delete ONLY from user flightlog
+      // Cloud Functions will handle cross-user and school cleanup
+      await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('flightlog')
+          .doc(flightId)
+          .delete();
 
       log('[FlightService] Flight deleted: $flightId');
     } catch (e) {

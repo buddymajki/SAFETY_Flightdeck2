@@ -6,6 +6,7 @@ import '../models/flight.dart';
 import '../services/flight_service.dart';
 import '../services/profile_service.dart';
 import '../services/app_config_service.dart';
+import '../services/global_data_service.dart';
 import '../widgets/responsive_layout.dart';
 
 class FlightBookScreen extends StatefulWidget {
@@ -49,10 +50,7 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
     return ResponsiveContainer(
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: Text(_t('Flight_Logbook', lang)),
-          centerTitle: true,
-        ),
+
         body: _buildBody(flightService, lang, profileService),
         floatingActionButton: FloatingActionButton(
           onPressed: () => _showAddFlightModal(context, flightService, profileService, lang),
@@ -88,9 +86,11 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
       itemCount: flights.length,
       itemBuilder: (context, index) {
         final flight = flights[index];
+        final rowNumber = flights.length - index; // #1 is oldest
         return _buildFlightCard(
           context,
           flight,
+          rowNumber,
           lang,
           isStudent,
           flightService,
@@ -103,6 +103,7 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
   Widget _buildFlightCard(
     BuildContext context,
     Flight flight,
+    int rowNumber,
     String lang,
     bool isStudent,
     FlightService flightService,
@@ -141,20 +142,24 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: Date and Status
+            // Header: #number  TAKEOFF → LANDING   [STATUS_ICON]
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  formattedDate,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    '#$rowNumber  ${flight.takeoffName} → ${flight.landingName}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    statusIcon,
-                    const SizedBox(width: 12),
+                    if (isStudent) statusIcon,
+                    if (isStudent) const SizedBox(width: 8),
                     _buildActionButtons(
                       context,
                       flight,
@@ -166,23 +171,17 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
                 ),
               ],
             ),
-            const Divider(height: 12),
+            const Divider(height: 16, thickness: 1),
 
-            // Flight info
+            // Flight date and info
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _infoRow(
-                    _t('Takeoff', lang),
-                    flight.takeoffName,
-                    theme,
-                  ),
-                  const SizedBox(height: 4),
-                  _infoRow(
-                    _t('Landing', lang),
-                    flight.landingName,
+                    _t('Date', lang),
+                    formattedDate,
                     theme,
                   ),
                   const SizedBox(height: 4),
@@ -379,7 +378,7 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await flightService.deleteFlight(flight.id!, flight.schoolId);
+                await flightService.deleteFlight(flight.id!);
                 if (mounted) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -494,11 +493,51 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   int _hours = 0;
   int _minutes = 0;
   bool _isLoading = false;
+  String? _selectedFlightTypeId;
+  Set<String> _selectedManeuvers = {};
+  List<Map<String, dynamic>> _availableLocations = [];
+  List<Map<String, dynamic>> _filteredTakeoffLocations = [];
+  List<Map<String, dynamic>> _filteredLandingLocations = [];
 
   @override
   void initState() {
     super.initState();
     _initControllers();
+    _loadGlobalData();
+  }
+
+  void _loadGlobalData() {
+    final globalService = context.read<GlobalDataService>();
+    if (globalService.isInitialized) {
+      _loadLocations();
+    }
+  }
+
+  void _loadLocations() {
+    final globalService = context.read<GlobalDataService>();
+    final profile = widget.profileService.userProfile;
+    final schoolId = profile?.schoolId;
+
+    // Get all locations
+    _availableLocations = globalService.globalLocations ?? [];
+
+    // Filter by school if student
+    if (profile?.license == 'student' && schoolId != null && schoolId.isNotEmpty) {
+      _filteredTakeoffLocations = _availableLocations
+          .where((loc) =>
+              (loc['type'] == 'takeoff') &&
+              (loc['schools'] as List?)?.contains(schoolId) == true)
+          .toList();
+      _filteredLandingLocations = _availableLocations
+          .where((loc) =>
+              (loc['type'] == 'landing') &&
+              (loc['schools'] as List?)?.contains(schoolId) == true)
+          .toList();
+    } else {
+      // Non-students see all locations
+      _filteredTakeoffLocations = _availableLocations.where((loc) => loc['type'] == 'takeoff').toList();
+      _filteredLandingLocations = _availableLocations.where((loc) => loc['type'] == 'landing').toList();
+    }
   }
 
   void _initControllers() {
@@ -518,6 +557,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         text: flight.landingAltitude.toStringAsFixed(0),
       );
       _commentController = TextEditingController(text: flight.comment);
+      _selectedFlightTypeId = flight.flightTypeId;
+      _selectedManeuvers = Set.from(flight.advancedManeuvers);
 
       _hours = flight.flightTimeMinutes ~/ 60;
       _minutes = flight.flightTimeMinutes % 60;
@@ -530,6 +571,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       _takeoffAltitudeController = TextEditingController(text: '1000');
       _landingAltitudeController = TextEditingController(text: '500');
       _commentController = TextEditingController();
+      _selectedFlightTypeId = null;
+      _selectedManeuvers = {};
 
       _hours = 1;
       _minutes = 30;
@@ -599,8 +642,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         altitudeDifference: altDiff,
         flightTimeMinutes: (_hours * 60) + _minutes,
         comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
-        flightTypeId: null,
-        advancedManeuvers: const [],
+        flightTypeId: _selectedFlightTypeId,
+        advancedManeuvers: _selectedManeuvers.toList(),
         schoolManeuvers: const [],
         licenseType: profile.license ?? 'student',
         status: widget.flight?.status ?? 'pending',
@@ -646,6 +689,70 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         _dateController.text = DateFormat('dd.MM.yyyy').format(picked);
       });
     }
+  }
+
+  Widget _buildFlightTypeDropdown() {
+    final globalService = context.read<GlobalDataService>();
+    final flightTypes = globalService.globalFlighttypes ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Flight Type'),
+        const SizedBox(height: 8),
+        DropdownButton<String>(
+          isExpanded: true,
+          hint: const Text('Select flight type'),
+          value: _selectedFlightTypeId,
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedFlightTypeId = newValue;
+              _selectedManeuvers.clear(); // Clear maneuvers when type changes
+            });
+          },
+          items: flightTypes.map((type) {
+            return DropdownMenuItem<String>(
+              value: type['id'],
+              child: Text(type['name'] ?? 'Unknown'),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildManeuversSelection() {
+    final globalService = context.read<GlobalDataService>();
+    final allManeuvers = globalService.globalManeuverlist ?? [];
+
+    // For now, show all maneuvers (future: filter by flight type if needed)
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Maneuvers (Optional)'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: allManeuvers.map((maneuver) {
+            final maneuverId = maneuver['id'] ?? '';
+            final isSelected = _selectedManeuvers.contains(maneuverId);
+            return FilterChip(
+              label: Text(maneuver['name'] ?? 'Unknown'),
+              selected: isSelected,
+              onSelected: (bool selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedManeuvers.add(maneuverId);
+                  } else {
+                    _selectedManeuvers.remove(maneuverId);
+                  }
+                });
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
   }
 
   @override
@@ -697,6 +804,32 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                 enabled: canEditDateAndLocation,
               ),
             ),
+            const SizedBox(height: 8),
+
+            // Takeoff Location Dropdown (if locations available)
+            if (_filteredTakeoffLocations.isNotEmpty && canEditDateAndLocation)
+              DropdownButton<String>(
+                isExpanded: true,
+                hint: const Text('Or select from school locations'),
+                value: null,
+                onChanged: (String? locationId) {
+                  if (locationId != null) {
+                    final location = _filteredTakeoffLocations
+                        .firstWhere((loc) => loc['id'] == locationId);
+                    setState(() {
+                      _takeoffController.text = location['name'] ?? '';
+                      _takeoffAltitudeController.text =
+                          (location['altitude']?.toString() ?? '1000');
+                    });
+                  }
+                },
+                items: _filteredTakeoffLocations.map((location) {
+                  return DropdownMenuItem<String>(
+                    value: location['id'],
+                    child: Text(location['name'] ?? 'Unknown'),
+                  );
+                }).toList(),
+              ),
             const SizedBox(height: 12),
 
             // Takeoff Altitude
@@ -722,6 +855,32 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                 enabled: canEditDateAndLocation,
               ),
             ),
+            const SizedBox(height: 8),
+
+            // Landing Location Dropdown (if locations available)
+            if (_filteredLandingLocations.isNotEmpty && canEditDateAndLocation)
+              DropdownButton<String>(
+                isExpanded: true,
+                hint: const Text('Or select from school locations'),
+                value: null,
+                onChanged: (String? locationId) {
+                  if (locationId != null) {
+                    final location = _filteredLandingLocations
+                        .firstWhere((loc) => loc['id'] == locationId);
+                    setState(() {
+                      _landingController.text = location['name'] ?? '';
+                      _landingAltitudeController.text =
+                          (location['altitude']?.toString() ?? '500');
+                    });
+                  }
+                },
+                items: _filteredLandingLocations.map((location) {
+                  return DropdownMenuItem<String>(
+                    value: location['id'],
+                    child: Text(location['name'] ?? 'Unknown'),
+                  );
+                }).toList(),
+              ),
             const SizedBox(height: 12),
 
             // Landing Altitude
@@ -817,6 +976,14 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
               ],
             ),
             const SizedBox(height: 12),
+
+            // Flight Type Dropdown
+            _buildFlightTypeDropdown(),
+            const SizedBox(height: 12),
+
+            // Maneuvers Selection
+            if (_selectedFlightTypeId != null) _buildManeuversSelection(),
+            if (_selectedFlightTypeId != null) const SizedBox(height: 12),
 
             // Comment
             TextField(
