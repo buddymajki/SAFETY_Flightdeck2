@@ -6,7 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Flight {
   final String? id;
   final String studentUid;
-  final String schoolId;
+  final String mainSchoolId; // user's home school
+  final String thisFlightSchoolId; // school chosen for this specific flight (can differ for guest flights)
   String date; // ISO 8601 string for cache compatibility
   String takeoffName;
   String? takeoffId;
@@ -29,7 +30,8 @@ class Flight {
   Flight({
     this.id,
     required this.studentUid,
-    required this.schoolId,
+    required this.mainSchoolId,
+    required this.thisFlightSchoolId,
     required this.date,
     required this.takeoffName,
     this.takeoffId,
@@ -55,7 +57,8 @@ class Flight {
     return Flight(
       id: docId,
       studentUid: studentUid,
-      schoolId: data['school_id'] ?? '',
+      mainSchoolId: data['main_school_id'] ?? data['mainschool_id'] ?? data['school_id'] ?? '',
+      thisFlightSchoolId: data['thisflight_school_id'] ?? data['school_id'] ?? data['main_school_id'] ?? data['mainschool_id'] ?? '',
       date: _parseDate(data['date']),
       takeoffName: data['takeoffName'] ?? '',
       takeoffId: data['takeoffId'],
@@ -82,7 +85,8 @@ class Flight {
     return Flight(
       id: data['id'],
       studentUid: studentUid,
-      schoolId: data['school_id'] ?? '',
+      mainSchoolId: data['main_school_id'] ?? data['mainschool_id'] ?? data['school_id'] ?? '',
+      thisFlightSchoolId: data['thisflight_school_id'] ?? data['school_id'] ?? data['main_school_id'] ?? data['mainschool_id'] ?? '',
       date: data['date'] ?? DateTime.now().toIso8601String(),
       takeoffName: data['takeoffName'] ?? '',
       takeoffId: data['takeoffId'],
@@ -107,7 +111,8 @@ class Flight {
   /// Convert to Firestore map
   Map<String, dynamic> toFirestore() {
     return {
-      'school_id': schoolId,
+      'main_school_id': mainSchoolId,
+      'thisflight_school_id': thisFlightSchoolId,
       'date': Timestamp.fromDate(DateTime.parse(date)),
       'takeoffName': takeoffName,
       'takeoffId': takeoffId,
@@ -133,7 +138,8 @@ class Flight {
   Map<String, dynamic> toCache() {
     return {
       'id': id,
-      'school_id': schoolId,
+      'main_school_id': mainSchoolId,
+      'thisflight_school_id': thisFlightSchoolId,
       'date': date,
       'takeoffName': takeoffName,
       'takeoffId': takeoffId,

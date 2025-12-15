@@ -252,7 +252,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           
           final rawLicense = profile.license ?? 'Student';
           _selectedLicense = rawLicense.toLowerCase() == 'student' ? 'Student' : 'Pilot';
-          _selectedSchoolId = profile.schoolId;
+          _selectedSchoolId = profile.mainSchoolId;
           
           _birthday = profile.birthday;
           final birthdayText = _birthday != null ? DateFormat('yyyy-MM-dd').format(_birthday!) : '';
@@ -269,6 +269,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
       if (_forenameController.text != profile.forename) {
           _forenameController.text = profile.forename;
+      }
+      // Update _selectedSchoolId from stream; safe now since license change no longer clears it
+      if (_selectedSchoolId != profile.mainSchoolId) {
+          setState(() => _selectedSchoolId = profile.mainSchoolId);
       }
       if (_nicknameController.text != (profile.nickname ?? '')) {
           _nicknameController.text = profile.nickname ?? '';
@@ -333,7 +337,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Normalize license value (convert old lowercase to new capitalized format)
     final rawLicense = profile.license ?? 'Student';
     _selectedLicense = rawLicense.toLowerCase() == 'student' ? 'Student' : 'Pilot';
-    _selectedSchoolId = profile.schoolId;
+    _selectedSchoolId = profile.mainSchoolId;
     
     _birthday = profile.birthday;
     final birthdayText = _birthday != null ? DateFormat('yyyy-MM-dd').format(_birthday!) : '';
@@ -398,7 +402,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       glider: _gliderController.text.trim().isEmpty ? null : _gliderController.text.trim(),
       shvnumber: _shvNumberController.text.trim().isEmpty ? null : _shvNumberController.text.trim(),
       license: _selectedLicense,
-      schoolId: _selectedLicense == 'Student' ? _selectedSchoolId : null,
+      mainSchoolId: _selectedSchoolId,
     );
 
     // Silent auto-save
@@ -790,9 +794,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (value == null) return;
             setState(() {
               _selectedLicense = value;
-              if (_selectedLicense != 'Student') {
-                _selectedSchoolId = null;
-              }
+              // IMPORTANT: Do NOT clear _selectedSchoolId when changing license.
+              // mainSchoolId is independent of license and should be preserved.
+              // It only changes if the user explicitly selects a new school.
             });
             _autoSaveProfile();
           },
@@ -804,6 +808,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildSchoolDropdown(String lang) {
     final theme = Theme.of(context);
     final schools = context.watch<ProfileService>().schools;
+    final normalizedSelected = schools.any((s) => s['id'] == _selectedSchoolId)
+        ? _selectedSchoolId
+        : null;
     return InputDecorator(
       decoration: InputDecoration(
         labelText: _t('School', lang),
@@ -812,7 +819,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String?>(
-          value: _selectedSchoolId,
+          value: normalizedSelected,
           isExpanded: true,
           items: [
             DropdownMenuItem<String?>(value: null, child: Text(_t('Select_School', lang))),

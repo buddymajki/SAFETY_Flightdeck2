@@ -105,16 +105,11 @@ class MyApp extends StatelessWidget {
           update: (_, authService, profileService, flightService) {
             final service = flightService ?? FlightService();
             final uid = authService.currentUser?.uid;
-            final schoolId = profileService.userProfile?.schoolId;
-            if (uid != null && schoolId != null && schoolId.isNotEmpty) {
-              service.initializeData(uid, schoolId);
-            } else if (uid != null && schoolId == null) {
-              // Profile not loaded yet, wait briefly
-              Future.delayed(const Duration(milliseconds: 500)).then((_) {
-                if (profileService.userProfile?.schoolId != null) {
-                  service.initializeData(uid, profileService.userProfile!.schoolId!);
-                }
-              });
+            final mainSchoolId = profileService.userProfile?.mainSchoolId;
+
+            if (uid != null) {
+              // Flights should load even if the main school is not yet set; pass empty string when missing
+              service.initializeData(uid, mainSchoolId ?? '');
             } else {
               service.resetService();
             }

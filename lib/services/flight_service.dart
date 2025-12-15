@@ -143,7 +143,8 @@ class FlightService extends ChangeNotifier {
     final flightWithId = Flight(
       id: tempId,
       studentUid: uid,
-      schoolId: flight.schoolId,
+      mainSchoolId: flight.mainSchoolId,
+      thisFlightSchoolId: flight.thisFlightSchoolId,
       date: flight.date,
       takeoffName: flight.takeoffName,
       takeoffId: flight.takeoffId,
@@ -214,7 +215,8 @@ class FlightService extends ChangeNotifier {
     updatedFlight = Flight(
       id: updatedFlight.id,
       studentUid: uid,
-      schoolId: updatedFlight.schoolId,
+      mainSchoolId: updatedFlight.mainSchoolId,
+      thisFlightSchoolId: updatedFlight.thisFlightSchoolId,
       date: updatedFlight.date,
       takeoffName: updatedFlight.takeoffName,
       takeoffId: updatedFlight.takeoffId,

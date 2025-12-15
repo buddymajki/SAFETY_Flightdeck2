@@ -29,7 +29,7 @@ class UserProfile {
   String? glider;
   String? shvnumber;
   String? license; // 'student' or 'pilot'
-  String? schoolId;
+  String? mainSchoolId;
 
   UserProfile({
     this.uid,
@@ -51,7 +51,7 @@ class UserProfile {
     this.glider,
     this.shvnumber,
     this.license,
-    this.schoolId,
+    this.mainSchoolId,
   });
 
   factory UserProfile.fromFirestore(Map<String, dynamic> data, String uid, String email) {
@@ -80,7 +80,8 @@ class UserProfile {
       glider: data['glider'],
       shvnumber: data['shvnumber'],
       license: data['license'],
-      schoolId: data['school_id'],
+      // Migration: prefer mainschool_id, fallback to legacy school_id
+      mainSchoolId: data['mainschool_id'] ?? data['school_id'],
     );
   }
 
@@ -108,7 +109,7 @@ class UserProfile {
       'glider': _toNullIfEmpty(glider),
       'shvnumber': _toNullIfEmpty(shvnumber),
       'license': _toNullIfEmpty(license),
-      'school_id': _toNullIfEmpty(schoolId),
+      'mainschool_id': _toNullIfEmpty(mainSchoolId),
     };
   }
 
@@ -158,7 +159,7 @@ class ProfileService extends ChangeNotifier {
   UserProfile? get userProfile => _userProfile;
   List<Map<String, String>> get schools => _schools;
   bool get isLoading => _isLoading;
-  String? get currentSchoolId => _userProfile?.schoolId;
+  String? get currentMainSchoolId => _userProfile?.mainSchoolId;
   ValueNotifier<int> get syncSuccessNotifier => _syncSuccessNotifier;
 
   // Constructor: kick off cache load immediately for fast startup
@@ -257,6 +258,26 @@ class ProfileService extends ChangeNotifier {
           };
           _userProfile = UserProfile.fromFirestore(firestoreData, uid, email);
           _originalProfile = UserProfile.fromFirestore(firestoreData, uid, email);
+
+          // Migration: if mainschool_id is missing but legacy school_id exists, copy and persist once
+          if ((_userProfile?.mainSchoolId == null || _userProfile!.mainSchoolId!.isEmpty) &&
+              (firestoreData['school_id'] != null && (firestoreData['school_id'] as String).isNotEmpty)) {
+            final legacySchool = firestoreData['school_id'] as String;
+            debugPrint('[ProfileService] Migrating legacy school_id -> mainschool_id: $legacySchool');
+            _userProfile = UserProfile.fromFirestore(
+              {
+                ...firestoreData,
+                'mainschool_id': legacySchool,
+              },
+              uid,
+              email,
+            );
+            // Persist migration
+            await _firestore.collection('users').doc(uid).set(
+              {'mainschool_id': legacySchool, 'school_id': FieldValue.delete()},
+              SetOptions(merge: true),
+            );
+          }
           
           await _cacheUserSettings(_userProfile!.toFirestore()); 
           

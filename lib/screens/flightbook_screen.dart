@@ -35,6 +35,8 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
     'Duration': {'en': 'Duration', 'de': 'Dauer'},
     'Type': {'en': 'Type', 'de': 'Typ'},
     'Altitude_Diff': {'en': 'Altitude Diff', 'de': 'Höhendifferenz'},
+    'School': {'en': 'School', 'de': 'Schule'},
+    'Select_School': {'en': 'Select school', 'de': 'Schule auswählen'},
   };
 
   String _t(String key, String lang) {
@@ -489,6 +491,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     'Save': {'en': 'Save', 'de': 'Speichern'},
     'Cancel': {'en': 'Cancel', 'de': 'Abbrechen'},
     'Validation_Error': {'en': 'Please fill in all required fields', 'de': 'Bitte füllen Sie alle erforderlichen Felder aus'},
+    'School_This_Flight': {'en': 'School (this flight)', 'de': 'Schule (für diesen Flug)'},
   };
 
   String _t(String key, String lang) {
@@ -514,8 +517,9 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   bool _landingFromDropdown = false; // Track if landing was selected from dropdown
 
   // Track previous profile state to detect changes
-  String? _previousSchoolId;
+  String? _previousMainSchoolId;
   String? _previousLicense;
+  String? _selectedFormSchoolId; // school chosen for this flight (can differ for guest flights)
 
   @override
   void initState() {
@@ -528,8 +532,13 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   /// Initialize profile tracking with current values
   void _initializeProfileTracking() {
     final profile = widget.profileService.userProfile;
-    _previousSchoolId = profile?.schoolId;
+    _previousMainSchoolId = profile?.mainSchoolId;
     _previousLicense = profile?.license;
+
+    // Default selected school for the form: existing flight's school override, else user's main
+    _selectedFormSchoolId = widget.flight?.thisFlightSchoolId
+        ?? widget.flight?.mainSchoolId
+        ?? profile?.mainSchoolId;
   }
 
   /// Detect profile changes via didChangeDependencies
@@ -549,22 +558,22 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   /// Check if profile (school/license) has changed and reload locations if needed
   void _checkProfileChangesAndReloadLocations() {
     final profile = widget.profileService.userProfile;
-    final currentSchoolId = profile?.schoolId;
+    final currentSchoolId = profile?.mainSchoolId;
     final currentLicense = profile?.license;
 
     debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] Checking for profile changes');
-    debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] Previous: schoolId=$_previousSchoolId, license=$_previousLicense');
+    debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] Previous: schoolId=$_previousMainSchoolId, license=$_previousLicense');
     debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] Current: schoolId=$currentSchoolId, license=$currentLicense');
 
     // Check if school or license has changed
-    final schoolChanged = _previousSchoolId != currentSchoolId;
+    final schoolChanged = _previousMainSchoolId != currentSchoolId;
     final licenseChanged = _previousLicense != currentLicense;
 
     debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] School changed: $schoolChanged, License changed: $licenseChanged');
 
     if (schoolChanged || licenseChanged) {
       debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] PROFILE CHANGED - reloading locations');
-      _previousSchoolId = currentSchoolId;
+      _previousMainSchoolId = currentSchoolId;
       _previousLicense = currentLicense;
 
       // Reload locations with new profile
@@ -622,25 +631,25 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   void _loadLocations() {
     final globalService = context.read<GlobalDataService>();
     final profile = widget.profileService.userProfile;
-    final schoolId = profile?.schoolId;
+    final selectedSchoolId = _selectedFormSchoolId ?? profile?.mainSchoolId;
     final license = profile?.license?.toLowerCase() ?? ''; // Case-insensitive
 
     // Get all locations
     _availableLocations = globalService.globalLocations ?? [];
     
     debugPrint('[FlightForm._loadLocations] Starting location filtering');
-    debugPrint('[FlightForm._loadLocations] Profile: license=$license, schoolId=$schoolId');
+    debugPrint('[FlightForm._loadLocations] Profile: license=$license, selectedSchoolId=$selectedSchoolId');
     debugPrint('[FlightForm._loadLocations] Total available locations: ${_availableLocations.length}');
 
     // Filter by school if student
     if (license == 'student') {
-      if (schoolId == null || schoolId.isEmpty) {
+      if (selectedSchoolId == null || selectedSchoolId.isEmpty) {
         debugPrint('[FlightForm._loadLocations] ERROR: User is student but schoolId is null/empty!');
         debugPrint('[FlightForm._loadLocations] No locations will be shown (as per safety requirement)');
         _filteredTakeoffLocations = [];
         _filteredLandingLocations = [];
       } else {
-        debugPrint('[FlightForm._loadLocations] Filtering by schoolId: $schoolId');
+        debugPrint('[FlightForm._loadLocations] Filtering by schoolId: $selectedSchoolId');
         
         // Debug: show what school IDs are in the locations
         final locationsWithSchools = _availableLocations
@@ -657,12 +666,12 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         _filteredTakeoffLocations = _availableLocations
             .where((loc) =>
                 (loc['type'] == 'takeoff') &&
-                (loc['schools'] as List?)?.contains(schoolId) == true)
+            (loc['schools'] as List?)?.contains(selectedSchoolId) == true)
             .toList();
         _filteredLandingLocations = _availableLocations
             .where((loc) =>
                 (loc['type'] == 'landing') &&
-                (loc['schools'] as List?)?.contains(schoolId) == true)
+            (loc['schools'] as List?)?.contains(selectedSchoolId) == true)
             .toList();
         
         debugPrint('[FlightForm._loadLocations] Filtered takeoff locations: ${_filteredTakeoffLocations.length}');
@@ -779,12 +788,14 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       final altDiff = takeoffAlt - landingAlt;
 
       final profile = widget.profileService.userProfile!;
-      final schoolId = profile.schoolId ?? '';
+      final mainSchoolId = profile.mainSchoolId ?? '';
+      final thisFlightSchoolId = _selectedFormSchoolId ?? mainSchoolId;
 
       final flight = Flight(
         id: widget.flight?.id,
-        studentUid: widget.flight?.studentUid ?? '',
-        schoolId: schoolId,
+        studentUid: widget.flight?.studentUid ?? profile.uid ?? '',
+        mainSchoolId: mainSchoolId,
+        thisFlightSchoolId: thisFlightSchoolId,
         date: parsedDate.toIso8601String(),
         takeoffName: _takeoffController.text.trim(),
         takeoffId: null,
@@ -844,6 +855,95 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         _dateController.text = DateFormat('dd.MM.yyyy').format(picked);
       });
     }
+  }
+
+  /// Build date and school selection row
+  /// For students: Date (50%) + School selector (50%)
+  /// For pilots: Date (100%)
+  Widget _buildDateAndSchoolRow(bool canEditDateAndLocation, String lang) {
+    final profile = widget.profileService.userProfile;
+    final isStudent = profile?.license?.toLowerCase() == 'student';
+
+    if (isStudent) {
+      // Row with Date (50%) and School (50%)
+      return Row(
+        children: [
+          Expanded(
+            flex: 1,
+            child: TextField(
+              controller: _dateController,
+              readOnly: true,
+              onTap: canEditDateAndLocation ? _selectDate : null,
+              decoration: InputDecoration(
+                labelText: _t('Date', lang),
+                prefixIcon: const Icon(Icons.calendar_today),
+                border: const OutlineInputBorder(),
+                enabled: canEditDateAndLocation,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 1,
+            child: _buildFlightSchoolSelector(lang),
+          ),
+        ],
+      );
+    } else {
+      // Full width date for pilots
+      return TextField(
+        controller: _dateController,
+        readOnly: true,
+        onTap: canEditDateAndLocation ? _selectDate : null,
+        decoration: InputDecoration(
+          labelText: _t('Date', lang),
+          prefixIcon: const Icon(Icons.calendar_today),
+          border: const OutlineInputBorder(),
+          enabled: canEditDateAndLocation,
+        ),
+      );
+    }
+  }
+
+  /// Build school selector for the flight form (students only)
+  Widget _buildFlightSchoolSelector(String lang) {
+    final globalService = context.watch<GlobalDataService>();
+    final schools = globalService.schools ?? [];
+
+    // Ensure selected school is valid (in the loaded schools list)
+    final validatedSelection = schools.any((s) => s['id'] == _selectedFormSchoolId)
+        ? _selectedFormSchoolId
+        : null;
+
+    return DropdownButtonFormField<String?>(
+      value: validatedSelection,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: _t('School_This_Flight', lang),
+        border: const OutlineInputBorder(),
+      ),
+      hint: Text(_t('Select_School', lang)),
+      items: [
+        ...schools.map((s) => DropdownMenuItem<String?>(
+          value: s['id'],
+          child: Text(s['name'] ?? 'Unknown'),
+        )),
+      ],
+      onChanged: (value) {
+        setState(() {
+          _selectedFormSchoolId = value;
+          // Re-run location filtering with the new school selection
+          _loadLocations();
+          // Clear previously selected takeoff/landing locations since they might not be valid for the new school
+          _takeoffController.clear();
+          _landingController.clear();
+          _takeoffAltitudeController.text = '1000';
+          _landingAltitudeController.text = '500';
+          _takeoffFromDropdown = false;
+          _landingFromDropdown = false;
+        });
+      },
+    );
   }
 
   Widget _buildFlightTypeDropdown() {
@@ -978,18 +1078,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             ),
             const SizedBox(height: 16),
 
-            // Date
-            TextField(
-              controller: _dateController,
-              readOnly: true,
-              onTap: canEditDateAndLocation ? _selectDate : null,
-              decoration: InputDecoration(
-                labelText: _t('Date', lang),
-                prefixIcon: const Icon(Icons.calendar_today),
-                border: const OutlineInputBorder(),
-                enabled: canEditDateAndLocation,
-              ),
-            ),
+            // Date and School (for students) or Date full width (for pilots)
+            _buildDateAndSchoolRow(canEditDateAndLocation, lang),
             const SizedBox(height: 12),
 
             // Takeoff Location - Combined Autocomplete + Dropdown
