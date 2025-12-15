@@ -552,12 +552,18 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     final currentSchoolId = profile?.schoolId;
     final currentLicense = profile?.license;
 
+    debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] Checking for profile changes');
+    debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] Previous: schoolId=$_previousSchoolId, license=$_previousLicense');
+    debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] Current: schoolId=$currentSchoolId, license=$currentLicense');
+
     // Check if school or license has changed
     final schoolChanged = _previousSchoolId != currentSchoolId;
     final licenseChanged = _previousLicense != currentLicense;
 
+    debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] School changed: $schoolChanged, License changed: $licenseChanged');
+
     if (schoolChanged || licenseChanged) {
-      debugPrint('[FlightForm] Profile changed: school=$schoolChanged, license=$licenseChanged');
+      debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] PROFILE CHANGED - reloading locations');
       _previousSchoolId = currentSchoolId;
       _previousLicense = currentLicense;
 
@@ -568,6 +574,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       _validateAndClearInvalidLocations();
 
       setState(() {});
+      debugPrint('[FlightForm._checkProfileChangesAndReloadLocations] Profile update complete, UI refreshed');
     }
   }
 
@@ -577,13 +584,20 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     final currentTakeoff = _takeoffController.text;
     final currentLanding = _landingController.text;
 
+    debugPrint('[FlightForm._validateAndClearInvalidLocations] Validating selected locations');
+    debugPrint('[FlightForm._validateAndClearInvalidLocations] Current takeoff: "$currentTakeoff"');
+    debugPrint('[FlightForm._validateAndClearInvalidLocations] Current landing: "$currentLanding"');
+    debugPrint('[FlightForm._validateAndClearInvalidLocations] Available filtered takeoffs: ${_filteredTakeoffLocations.length}');
+    debugPrint('[FlightForm._validateAndClearInvalidLocations] Available filtered landings: ${_filteredLandingLocations.length}');
+
     // Check if takeoff location is still valid
     if (currentTakeoff.isNotEmpty) {
       final takeoffStillValid = _filteredTakeoffLocations.any(
         (loc) => (loc['name'] ?? '').toString() == currentTakeoff,
       );
+      debugPrint('[FlightForm._validateAndClearInvalidLocations] Takeoff "$currentTakeoff" valid: $takeoffStillValid');
       if (!takeoffStillValid) {
-        debugPrint('[FlightForm] Takeoff location "$currentTakeoff" no longer valid, clearing');
+        debugPrint('[FlightForm._validateAndClearInvalidLocations] CLEARING takeoff location "$currentTakeoff" (no longer valid)');
         _takeoffController.clear();
         _takeoffAltitudeController.text = '1000';
         _takeoffFromDropdown = false;
@@ -595,8 +609,9 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       final landingStillValid = _filteredLandingLocations.any(
         (loc) => (loc['name'] ?? '').toString() == currentLanding,
       );
+      debugPrint('[FlightForm._validateAndClearInvalidLocations] Landing "$currentLanding" valid: $landingStillValid');
       if (!landingStillValid) {
-        debugPrint('[FlightForm] Landing location "$currentLanding" no longer valid, clearing');
+        debugPrint('[FlightForm._validateAndClearInvalidLocations] CLEARING landing location "$currentLanding" (no longer valid)');
         _landingController.clear();
         _landingAltitudeController.text = '500';
         _landingFromDropdown = false;
@@ -608,26 +623,69 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     final globalService = context.read<GlobalDataService>();
     final profile = widget.profileService.userProfile;
     final schoolId = profile?.schoolId;
+    final license = profile?.license?.toLowerCase() ?? ''; // Case-insensitive
 
     // Get all locations
     _availableLocations = globalService.globalLocations ?? [];
+    
+    debugPrint('[FlightForm._loadLocations] Starting location filtering');
+    debugPrint('[FlightForm._loadLocations] Profile: license=$license, schoolId=$schoolId');
+    debugPrint('[FlightForm._loadLocations] Total available locations: ${_availableLocations.length}');
 
     // Filter by school if student
-    if (profile?.license == 'student' && schoolId != null && schoolId.isNotEmpty) {
-      _filteredTakeoffLocations = _availableLocations
-          .where((loc) =>
-              (loc['type'] == 'takeoff') &&
-              (loc['schools'] as List?)?.contains(schoolId) == true)
-          .toList();
-      _filteredLandingLocations = _availableLocations
-          .where((loc) =>
-              (loc['type'] == 'landing') &&
-              (loc['schools'] as List?)?.contains(schoolId) == true)
-          .toList();
+    if (license == 'student') {
+      if (schoolId == null || schoolId.isEmpty) {
+        debugPrint('[FlightForm._loadLocations] ERROR: User is student but schoolId is null/empty!');
+        debugPrint('[FlightForm._loadLocations] No locations will be shown (as per safety requirement)');
+        _filteredTakeoffLocations = [];
+        _filteredLandingLocations = [];
+      } else {
+        debugPrint('[FlightForm._loadLocations] Filtering by schoolId: $schoolId');
+        
+        // Debug: show what school IDs are in the locations
+        final locationsWithSchools = _availableLocations
+            .where((loc) => (loc['schools'] as List?)?.isNotEmpty ?? false)
+            .toList();
+        debugPrint('[FlightForm._loadLocations] Locations with school associations: ${locationsWithSchools.length}');
+        
+        // Show sample of school IDs in locations
+        if (locationsWithSchools.isNotEmpty) {
+          final sampleLocation = locationsWithSchools.first;
+          debugPrint('[FlightForm._loadLocations] Sample location schools: ${sampleLocation['schools']}');
+        }
+
+        _filteredTakeoffLocations = _availableLocations
+            .where((loc) =>
+                (loc['type'] == 'takeoff') &&
+                (loc['schools'] as List?)?.contains(schoolId) == true)
+            .toList();
+        _filteredLandingLocations = _availableLocations
+            .where((loc) =>
+                (loc['type'] == 'landing') &&
+                (loc['schools'] as List?)?.contains(schoolId) == true)
+            .toList();
+        
+        debugPrint('[FlightForm._loadLocations] Filtered takeoff locations: ${_filteredTakeoffLocations.length}');
+        debugPrint('[FlightForm._loadLocations] Filtered landing locations: ${_filteredLandingLocations.length}');
+        
+        // Debug: show names of filtered locations
+        if (_filteredTakeoffLocations.isNotEmpty) {
+          final takeoffNames = _filteredTakeoffLocations.map((l) => l['name']).join(', ');
+          debugPrint('[FlightForm._loadLocations] Takeoff locations: $takeoffNames');
+        }
+        if (_filteredLandingLocations.isNotEmpty) {
+          final landingNames = _filteredLandingLocations.map((l) => l['name']).join(', ');
+          debugPrint('[FlightForm._loadLocations] Landing locations: $landingNames');
+        }
+      }
     } else {
       // Non-students see all locations
+      debugPrint('[FlightForm._loadLocations] User is not a student (license=$license), showing all locations');
       _filteredTakeoffLocations = _availableLocations.where((loc) => loc['type'] == 'takeoff').toList();
       _filteredLandingLocations = _availableLocations.where((loc) => loc['type'] == 'landing').toList();
+      
+      debugPrint('[FlightForm._loadLocations] All takeoff locations: ${_filteredTakeoffLocations.length}');
+      debugPrint('[FlightForm._loadLocations] All landing locations: ${_filteredLandingLocations.length}');
     }
   }
 
