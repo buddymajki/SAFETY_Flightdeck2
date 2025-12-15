@@ -513,17 +513,94 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   bool _takeoffFromDropdown = false; // Track if takeoff was selected from dropdown
   bool _landingFromDropdown = false; // Track if landing was selected from dropdown
 
+  // Track previous profile state to detect changes
+  String? _previousSchoolId;
+  String? _previousLicense;
+
   @override
   void initState() {
     super.initState();
     _initControllers();
     _loadGlobalData();
+    _initializeProfileTracking();
+  }
+
+  /// Initialize profile tracking with current values
+  void _initializeProfileTracking() {
+    final profile = widget.profileService.userProfile;
+    _previousSchoolId = profile?.schoolId;
+    _previousLicense = profile?.license;
+  }
+
+  /// Detect profile changes via didChangeDependencies
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkProfileChangesAndReloadLocations();
   }
 
   void _loadGlobalData() {
     final globalService = context.read<GlobalDataService>();
     if (globalService.isInitialized) {
       _loadLocations();
+    }
+  }
+
+  /// Check if profile (school/license) has changed and reload locations if needed
+  void _checkProfileChangesAndReloadLocations() {
+    final profile = widget.profileService.userProfile;
+    final currentSchoolId = profile?.schoolId;
+    final currentLicense = profile?.license;
+
+    // Check if school or license has changed
+    final schoolChanged = _previousSchoolId != currentSchoolId;
+    final licenseChanged = _previousLicense != currentLicense;
+
+    if (schoolChanged || licenseChanged) {
+      debugPrint('[FlightForm] Profile changed: school=$schoolChanged, license=$licenseChanged');
+      _previousSchoolId = currentSchoolId;
+      _previousLicense = currentLicense;
+
+      // Reload locations with new profile
+      _loadLocations();
+
+      // Check and clear invalid selected locations
+      _validateAndClearInvalidLocations();
+
+      setState(() {});
+    }
+  }
+
+  /// Check if currently selected locations are still valid in the new filtered lists
+  /// If not, clear the location and altitude fields
+  void _validateAndClearInvalidLocations() {
+    final currentTakeoff = _takeoffController.text;
+    final currentLanding = _landingController.text;
+
+    // Check if takeoff location is still valid
+    if (currentTakeoff.isNotEmpty) {
+      final takeoffStillValid = _filteredTakeoffLocations.any(
+        (loc) => (loc['name'] ?? '').toString() == currentTakeoff,
+      );
+      if (!takeoffStillValid) {
+        debugPrint('[FlightForm] Takeoff location "$currentTakeoff" no longer valid, clearing');
+        _takeoffController.clear();
+        _takeoffAltitudeController.text = '1000';
+        _takeoffFromDropdown = false;
+      }
+    }
+
+    // Check if landing location is still valid
+    if (currentLanding.isNotEmpty) {
+      final landingStillValid = _filteredLandingLocations.any(
+        (loc) => (loc['name'] ?? '').toString() == currentLanding,
+      );
+      if (!landingStillValid) {
+        debugPrint('[FlightForm] Landing location "$currentLanding" no longer valid, clearing');
+        _landingController.clear();
+        _landingAltitudeController.text = '500';
+        _landingFromDropdown = false;
+      }
     }
   }
 
