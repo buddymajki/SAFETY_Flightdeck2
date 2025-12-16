@@ -906,32 +906,37 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   }
 
   /// Build school selector for the flight form (students only)
+  /// Searchable autocomplete similar to location selector
   Widget _buildFlightSchoolSelector(String lang) {
     final globalService = context.watch<GlobalDataService>();
     final schools = globalService.schools ?? [];
 
-    // Ensure selected school is valid (in the loaded schools list)
-    final validatedSelection = schools.any((s) => s['id'] == _selectedFormSchoolId)
-        ? _selectedFormSchoolId
-        : null;
+    // Find the currently selected school name
+    final selectedSchoolName = _selectedFormSchoolId != null
+        ? schools.firstWhere(
+            (s) => s['id'] == _selectedFormSchoolId,
+            orElse: () => <String, dynamic>{},
+          )['name'] ?? ''
+        : '';
 
-    return DropdownButtonFormField<String?>(
-      value: validatedSelection,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: _t('School_This_Flight', lang),
-        border: const OutlineInputBorder(),
-      ),
-      hint: Text(_t('Select_School', lang)),
-      items: [
-        ...schools.map((s) => DropdownMenuItem<String?>(
-          value: s['id'],
-          child: Text(s['name'] ?? 'Unknown'),
-        )),
-      ],
-      onChanged: (value) {
+    return Autocomplete<Map<String, dynamic>>(
+      optionsBuilder: (TextEditingValue textEditingValue) {
+        if (textEditingValue.text.isEmpty) {
+          // Show all schools when empty
+          return schools;
+        }
+        
+        // Filter schools by name (case-insensitive contains)
+        final query = textEditingValue.text.toLowerCase();
+        return schools.where((school) {
+          final name = (school['name'] ?? '').toString().toLowerCase();
+          return name.contains(query);
+        });
+      },
+      displayStringForOption: (Map<String, dynamic> option) => option['name'] ?? '',
+      onSelected: (Map<String, dynamic> selection) {
         setState(() {
-          _selectedFormSchoolId = value;
+          _selectedFormSchoolId = selection['id'];
           // Re-run location filtering with the new school selection
           _loadLocations();
           // Clear previously selected takeoff/landing locations since they might not be valid for the new school
@@ -942,6 +947,40 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
           _takeoffFromDropdown = false;
           _landingFromDropdown = false;
         });
+      },
+      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+        // Keep controller in sync with our selected school
+        if (controller.text != selectedSchoolName) {
+          controller.text = selectedSchoolName;
+          controller.selection = TextSelection.collapsed(offset: controller.text.length);
+        }
+        
+        controller.addListener(() {
+          // Prevent free text entry - revert to last valid selection if user types invalid text
+          final typedText = controller.text;
+          final isValidSelection = schools.any((s) => (s['name'] ?? '') == typedText);
+          
+          if (typedText.isNotEmpty && !isValidSelection) {
+            // User is typing, allow it temporarily for autocomplete
+            // The onSelected callback will handle setting the valid ID
+          }
+        });
+        
+        return TextField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+            labelText: _t('School_This_Flight', lang),
+            prefixIcon: const Icon(Icons.school),
+            suffixIcon: schools.isNotEmpty
+                ? const Icon(Icons.arrow_drop_down)
+                : null,
+            border: const OutlineInputBorder(),
+            helperText: schools.isNotEmpty
+                ? _t('Type_Or_Select', lang)
+                : null,
+          ),
+        );
       },
     );
   }
@@ -1084,6 +1123,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
             // Takeoff Location - Combined Autocomplete + Dropdown
             Autocomplete<Map<String, dynamic>>(
+              key: ValueKey<String?>(_selectedFormSchoolId),
               initialValue: TextEditingValue(text: _takeoffController.text),
               optionsBuilder: (TextEditingValue textEditingValue) {
                 if (!canEditDateAndLocation) {
@@ -1168,6 +1208,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
             // Landing Location - Combined Autocomplete + Dropdown
             Autocomplete<Map<String, dynamic>>(
+              key: ValueKey<String?>(_selectedFormSchoolId),
               initialValue: TextEditingValue(text: _landingController.text),
               optionsBuilder: (TextEditingValue textEditingValue) {
                 if (!canEditDateAndLocation) {
