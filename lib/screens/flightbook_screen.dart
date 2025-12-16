@@ -505,6 +505,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   late TextEditingController _landingAltitudeController;
   late TextEditingController _commentController;
 
+  DateTime? _selectedDate; // Store the full date with year
   int _hours = 0;
   int _minutes = 0;
   bool _isLoading = false;
@@ -706,6 +707,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       final isStudent = profile?.license?.toLowerCase() == 'student';
       final dateFormat = isStudent ? 'dd.MM' : 'dd.MM.yyyy';
 
+      _selectedDate = date; // Store the full date
       _dateController = TextEditingController(
         text: DateFormat(dateFormat).format(date),
       );
@@ -729,8 +731,10 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       final profile = widget.profileService.userProfile;
       final isStudent = profile?.license?.toLowerCase() == 'student';
       final dateFormat = isStudent ? 'dd.MM' : 'dd.MM.yyyy';
+      final now = DateTime.now();
+      _selectedDate = now; // Store the full date
       _dateController = TextEditingController(
-        text: DateFormat(dateFormat).format(DateTime.now()),
+        text: DateFormat(dateFormat).format(now),
       );
       _takeoffController = TextEditingController();
       _landingController = TextEditingController();
@@ -781,15 +785,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     setState(() => _isLoading = true);
 
     try {
-      final dateStr = _dateController.text;
-      final dateParts = dateStr.split('.');
-      
-      // Handle both DD.MM (2 parts) and DD.MM.YYYY (3 parts) formats
-      final day = int.parse(dateParts[0]);
-      final month = int.parse(dateParts[1]);
-      final year = dateParts.length > 2 ? int.parse(dateParts[2]) : DateTime.now().year;
-      
-      final parsedDate = DateTime(year, month, day);
+      // Use the stored date that includes the year selected by user in the date picker
+      final parsedDate = _selectedDate ?? DateTime.now();
 
       final takeoffAlt = double.parse(_takeoffAltitudeController.text);
       final landingAlt = double.parse(_landingAltitudeController.text);
@@ -851,15 +848,17 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   }
 
   Future<void> _selectDate() async {
+    final initialDate = _selectedDate ?? DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: initialDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
 
     if (picked != null) {
       setState(() {
+        _selectedDate = picked; // Store the full date with year
         final profile = widget.profileService.userProfile;
         final isStudent = profile?.license?.toLowerCase() == 'student';
         final dateFormat = isStudent ? 'dd.MM' : 'dd.MM.yyyy';
