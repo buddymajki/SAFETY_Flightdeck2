@@ -1123,7 +1123,6 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
             // Takeoff Location - Combined Autocomplete + Dropdown
             Autocomplete<Map<String, dynamic>>(
-              key: ValueKey<String>('takeoff_${_selectedFormSchoolId ?? ""}'),
               initialValue: TextEditingValue(text: _takeoffController.text),
               optionsBuilder: (TextEditingValue textEditingValue) {
                 if (!canEditDateAndLocation) {
@@ -1208,7 +1207,6 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
             // Landing Location - Combined Autocomplete + Dropdown
             Autocomplete<Map<String, dynamic>>(
-              key: ValueKey<String>('landing_${_selectedFormSchoolId ?? ""}'),
               initialValue: TextEditingValue(text: _landingController.text),
               optionsBuilder: (TextEditingValue textEditingValue) {
                 if (!canEditDateAndLocation) {
