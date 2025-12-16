@@ -852,7 +852,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
     if (picked != null) {
       setState(() {
-        _dateController.text = DateFormat('dd.MM.yyyy').format(picked);
+        _dateController.text = DateFormat('dd.MM').format(picked);
       });
     }
   }
@@ -868,7 +868,14 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       // Row with Date (50%) and School (50%)
       return Row(
         children: [
-          Expanded(
+           Expanded(
+            flex: 2,
+            child: _buildFlightSchoolSelector(lang),
+          ),
+  
+            const SizedBox(width: 12),
+
+            Expanded(
             flex: 1,
             child: TextField(
               controller: _dateController,
@@ -882,11 +889,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 1,
-            child: _buildFlightSchoolSelector(lang),
-          ),
+
+
         ],
       );
     } else {
@@ -1217,6 +1221,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                       prefixIcon: const Icon(Icons.height),
                       border: const OutlineInputBorder(),
                       isDense: true,
+                      contentPadding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
                       enabled: canEditDateAndLocation,
                       helperText: _takeoffFromDropdown ? _t('Auto_Filled', lang) : ' ',
                     ),
@@ -1318,6 +1323,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                       prefixIcon: const Icon(Icons.height),
                       border: const OutlineInputBorder(),
                       isDense: true,
+                      contentPadding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
                       enabled: canEditDateAndLocation,
                       helperText: _landingFromDropdown ? _t('Auto_Filled', lang) : ' ',
                     ),
