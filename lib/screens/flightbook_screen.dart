@@ -702,9 +702,12 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     if (widget.flight != null) {
       final flight = widget.flight!;
       final date = DateTime.parse(flight.date);
+      final profile = widget.profileService.userProfile;
+      final isStudent = profile?.license?.toLowerCase() == 'student';
+      final dateFormat = isStudent ? 'dd.MM' : 'dd.MM.yyyy';
 
       _dateController = TextEditingController(
-        text: DateFormat('dd.MM').format(date),
+        text: DateFormat(dateFormat).format(date),
       );
       _takeoffController = TextEditingController(text: flight.takeoffName);
       _landingController = TextEditingController(text: flight.landingName);
@@ -723,8 +726,11 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       _takeoffFromDropdown = false;
       _landingFromDropdown = false;
     } else {
+      final profile = widget.profileService.userProfile;
+      final isStudent = profile?.license?.toLowerCase() == 'student';
+      final dateFormat = isStudent ? 'dd.MM' : 'dd.MM.yyyy';
       _dateController = TextEditingController(
-        text: DateFormat('dd.MM').format(DateTime.now()),
+        text: DateFormat(dateFormat).format(DateTime.now()),
       );
       _takeoffController = TextEditingController();
       _landingController = TextEditingController();
@@ -852,7 +858,10 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
     if (picked != null) {
       setState(() {
-        _dateController.text = DateFormat('dd.MM').format(picked);
+        final profile = widget.profileService.userProfile;
+        final isStudent = profile?.license?.toLowerCase() == 'student';
+        final dateFormat = isStudent ? 'dd.MM' : 'dd.MM.yyyy';
+        _dateController.text = DateFormat(dateFormat).format(picked);
       });
     }
   }
