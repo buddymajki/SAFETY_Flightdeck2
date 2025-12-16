@@ -955,6 +955,13 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
           controller.selection = TextSelection.collapsed(offset: controller.text.length);
         }
         
+        // Select all text when field gains focus
+        focusNode.addListener(() {
+          if (focusNode.hasFocus && controller.text.isNotEmpty) {
+            controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
+          }
+        });
+        
         controller.addListener(() {
           // Prevent free text entry - revert to last valid selection if user types invalid text
           final typedText = controller.text;
@@ -1123,6 +1130,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
             // Takeoff Location - Combined Autocomplete + Dropdown
             Autocomplete<Map<String, dynamic>>(
+              key: ValueKey<String>('takeoff_${_selectedFormSchoolId ?? 'none'}'),
               initialValue: TextEditingValue(text: _takeoffController.text),
               optionsBuilder: (TextEditingValue textEditingValue) {
                 if (!canEditDateAndLocation) {
@@ -1155,6 +1163,13 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                   controller.text = _takeoffController.text;
                   controller.selection = TextSelection.collapsed(offset: controller.text.length);
                 }
+                
+                // Select all text when field gains focus
+                focusNode.addListener(() {
+                  if (focusNode.hasFocus && controller.text.isNotEmpty) {
+                    controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
+                  }
+                });
                 
                 controller.addListener(() {
                   if (controller.text != _takeoffController.text) {
@@ -1207,6 +1222,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
 
             // Landing Location - Combined Autocomplete + Dropdown
             Autocomplete<Map<String, dynamic>>(
+              key: ValueKey<String>('landing_${_selectedFormSchoolId ?? 'none'}'),
               initialValue: TextEditingValue(text: _landingController.text),
               optionsBuilder: (TextEditingValue textEditingValue) {
                 if (!canEditDateAndLocation) {
@@ -1239,6 +1255,13 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                   controller.text = _landingController.text;
                   controller.selection = TextSelection.collapsed(offset: controller.text.length);
                 }
+                
+                // Select all text when field gains focus
+                focusNode.addListener(() {
+                  if (focusNode.hasFocus && controller.text.isNotEmpty) {
+                    controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
+                  }
+                });
                 
                 controller.addListener(() {
                   if (controller.text != _landingController.text) {
