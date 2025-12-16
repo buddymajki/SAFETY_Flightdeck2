@@ -783,11 +783,13 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     try {
       final dateStr = _dateController.text;
       final dateParts = dateStr.split('.');
-      final parsedDate = DateTime(
-        int.parse(dateParts[2]),
-        int.parse(dateParts[1]),
-        int.parse(dateParts[0]),
-      );
+      
+      // Handle both DD.MM (2 parts) and DD.MM.YYYY (3 parts) formats
+      final day = int.parse(dateParts[0]);
+      final month = int.parse(dateParts[1]);
+      final year = dateParts.length > 2 ? int.parse(dateParts[2]) : DateTime.now().year;
+      
+      final parsedDate = DateTime(year, month, day);
 
       final takeoffAlt = double.parse(_takeoffAltitudeController.text);
       final landingAlt = double.parse(_landingAltitudeController.text);
