@@ -983,9 +983,6 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                 ? const Icon(Icons.arrow_drop_down)
                 : null,
             border: const OutlineInputBorder(),
-            helperText: schools.isNotEmpty
-                ? _t('Type_Or_Select', lang)
-                : null,
           ),
         );
       },
