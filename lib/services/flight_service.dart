@@ -90,7 +90,6 @@ class FlightService extends ChangeNotifier {
         .doc(uid)
         .collection('flightlog')
         .orderBy('date', descending: true)
-        .orderBy('created_at', descending: true)
         .snapshots()
         .listen(
       (snapshot) async {
@@ -99,6 +98,18 @@ class FlightService extends ChangeNotifier {
           final flight = Flight.fromFirestore(doc.data(), doc.id, uid);
           flights.add(flight);
         }
+
+        // Sort by date descending (newest first), then by created_at descending for same-date flights
+        flights.sort((a, b) {
+          final dateComparison = DateTime.parse(b.date).compareTo(DateTime.parse(a.date));
+          if (dateComparison != 0) {
+            return dateComparison;
+          }
+          // If dates are equal, sort by created_at descending (newer created_at first)
+          final aCreatedAt = a.createdAt ?? DateTime.now();
+          final bCreatedAt = b.createdAt ?? DateTime.now();
+          return bCreatedAt.compareTo(aCreatedAt);
+        });
 
         _flights = flights;
         await _cacheFlights(_flights);
