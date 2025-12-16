@@ -704,7 +704,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       final date = DateTime.parse(flight.date);
 
       _dateController = TextEditingController(
-        text: DateFormat('dd.MM.yyyy').format(date),
+        text: DateFormat('dd.MM').format(date),
       );
       _takeoffController = TextEditingController(text: flight.takeoffName);
       _landingController = TextEditingController(text: flight.landingName);
@@ -724,7 +724,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       _landingFromDropdown = false;
     } else {
       _dateController = TextEditingController(
-        text: DateFormat('dd.MM.yyyy').format(DateTime.now()),
+        text: DateFormat('dd.MM').format(DateTime.now()),
       );
       _takeoffController = TextEditingController();
       _landingController = TextEditingController();
