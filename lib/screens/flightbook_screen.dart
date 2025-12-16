@@ -477,10 +477,10 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     'Takeoff_Location': {'en': 'Takeoff Location *', 'de': 'Startplatz *'},
     'Or_Select': {'en': 'Or select from school locations', 'de': 'Oder aus Schulpunkten auswählen'},
     'Type_Or_Select': {'en': 'Start typing or tap to select', 'de': 'Tippen oder antippen zum Auswählen'},
-    'Takeoff_Altitude': {'en': 'Takeoff Altitude (m) *', 'de': 'Starthöhe (m) *'},
+    'Takeoff_Altitude': {'en': 'Alt (m) *', 'de': 'Höhe (m) *'},
     'Auto_Filled': {'en': 'Auto-filled from location', 'de': 'Automatisch aus Standort gefüllt'},
     'Landing_Location': {'en': 'Landing Location *', 'de': 'Landeplatz *'},
-    'Landing_Altitude': {'en': 'Landing Altitude (m) *', 'de': 'Landehöhe (m) *'},
+    'Landing_Altitude': {'en': 'Alt (m) *', 'de': 'Höhe (m) *'},
     'Hours': {'en': 'Hours (0-10) *', 'de': 'Stunden (0-10) *'},
     'Minutes': {'en': 'Minutes (0-59) *', 'de': 'Minuten (0-59) *'},
     'Flight_Type': {'en': 'Flight Type', 'de': 'Flugtyp'},
@@ -1129,7 +1129,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             Row(
               children: [
                 Expanded(
-                  flex: 3,
+                  flex: 2,
                   child: Autocomplete<Map<String, dynamic>>(
                     key: ValueKey<String>('takeoff_${_selectedFormSchoolId ?? 'none'}'),
                     initialValue: TextEditingValue(text: _takeoffController.text),
@@ -1216,8 +1216,9 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                       labelText: _t('Takeoff_Altitude', lang),
                       prefixIcon: const Icon(Icons.height),
                       border: const OutlineInputBorder(),
+                      isDense: true,
                       enabled: canEditDateAndLocation,
-                      helperText: _takeoffFromDropdown ? _t('Auto_Filled', lang) : null,
+                      helperText: _takeoffFromDropdown ? _t('Auto_Filled', lang) : ' ',
                     ),
                   ),
                 ),
@@ -1229,7 +1230,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             Row(
               children: [
                 Expanded(
-                  flex: 3,
+                  flex: 2,
                   child: Autocomplete<Map<String, dynamic>>(
                     key: ValueKey<String>('landing_${_selectedFormSchoolId ?? 'none'}'),
                     initialValue: TextEditingValue(text: _landingController.text),
@@ -1316,8 +1317,9 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                       labelText: _t('Landing_Altitude', lang),
                       prefixIcon: const Icon(Icons.height),
                       border: const OutlineInputBorder(),
+                      isDense: true,
                       enabled: canEditDateAndLocation,
-                      helperText: _landingFromDropdown ? _t('Auto_Filled', lang) : null,
+                      helperText: _landingFromDropdown ? _t('Auto_Filled', lang) : ' ',
                     ),
                   ),
                 ),
