@@ -999,8 +999,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     debugPrint('[ProfileScreen] Showing GT&C section with ${gtcSections.length} sections');
 
-    // Show collapsed view if accepted and not expanded
-    if (isAccepted && !_gtcExpanded) {
+    // Show collapsed view if accepted and not expanded (only if acceptance timestamp has loaded)
+    if (isAccepted && !_gtcExpanded && acceptanceRecord?['gtc_accepted_at'] != null) {
       final acceptanceTime = _formatGTCAcceptanceTime(gtcService.currentAcceptance);
       return Card(
         color: Theme.of(context).cardColor,
