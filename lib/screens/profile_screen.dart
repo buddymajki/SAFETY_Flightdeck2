@@ -842,7 +842,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final selectedName = schools.firstWhere(
       (s) => s['id'] == _selectedSchoolId,
       orElse: () => <String, String>{},
-    )['name'] as String?;
+    )['name'];
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
