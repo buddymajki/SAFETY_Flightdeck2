@@ -115,6 +115,7 @@ class GTCService extends ChangeNotifier {
     if (_currentGTC == null) return false;
 
     try {
+      final now = DateTime.now();
       final acceptance = {
         'gtc_accepted': true,
         'gtc_accepted_at': FieldValue.serverTimestamp(),
@@ -128,7 +129,12 @@ class GTCService extends ChangeNotifier {
           .doc(schoolId)
           .set(acceptance, SetOptions(merge: true));
 
-      _currentAcceptance = acceptance;
+      // Set local acceptance with current DateTime immediately (server timestamp will sync later)
+      _currentAcceptance = {
+        'gtc_accepted': true,
+        'gtc_accepted_at': now,
+        'gtc_version': _currentGTC?['gtc_version'] ?? '1.0',
+      };
       notifyListeners();
       return true;
     } catch (e) {
