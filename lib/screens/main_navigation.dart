@@ -29,6 +29,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const FlightBookScreen(),
     const TheoryScreen(),
     const TestsScreen(),
+    const ProfileScreen(),
   ];
 
   final List<String> _titles = <String>[
@@ -37,6 +38,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     'Flight Book',
     'Theory',
     'Tests',
+    'Profile',
   ];
 
   @override
@@ -101,9 +103,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               title: const Text('Profile', style: TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
+                _onItemTapped(5); // Navigate to Profile screen
               },
             ),
             const Divider(color: Colors.grey),
