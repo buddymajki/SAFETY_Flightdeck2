@@ -1152,15 +1152,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 8),
                         CheckboxListTile(
-                          value: _gtcCheckboxStates[sectionId] ?? false,
-                          onChanged: (value) {
+                          value: isAccepted ? true : (_gtcCheckboxStates[sectionId] ?? false),
+                          onChanged: isAccepted ? null : (value) {
                             setState(() {
                               _gtcCheckboxStates[sectionId] = value ?? false;
                             });
                           },
                           title: Text(
                             'I accept',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: isAccepted ? Theme.of(context).colorScheme.onSurfaceVariant : null,
+                            ),
                           ),
                           contentPadding: EdgeInsets.zero,
                           visualDensity: VisualDensity.compact,
@@ -1232,19 +1234,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String _formatGTCAcceptanceTime(Map<String, dynamic>? acceptance) {
-    if (acceptance == null) return '';
+    if (acceptance == null) return 'unknown date';
 
     final timestamp = acceptance['gtc_accepted_at'];
-    if (timestamp == null) return '';
+    if (timestamp == null) return 'unknown date';
 
     try {
       if (timestamp is Timestamp) {
         final date = timestamp.toDate();
         return DateFormat('yyyy-MM-dd HH:mm').format(date);
+      } else if (timestamp is DateTime) {
+        return DateFormat('yyyy-MM-dd HH:mm').format(timestamp);
       }
     } catch (e) {
       debugPrint('Error formatting GTC acceptance time: $e');
     }
-    return '';
+    return 'unknown date';
   }
 }
