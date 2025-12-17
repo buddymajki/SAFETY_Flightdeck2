@@ -13,6 +13,7 @@ import 'services/profile_service.dart';
 import 'services/flight_service.dart';
 import 'services/stats_service.dart';
 import 'services/gtc_service.dart';
+import 'services/test_service.dart';
 import 'auth/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -24,7 +25,8 @@ Future<void> main() async {
 
   // Ensure offline persistence is enabled where supported.
   try {
-    FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: true);
+    FirebaseFirestore.instance.settings =
+        const Settings(persistenceEnabled: true);
   } catch (_) {}
 
   runApp(const AppRestartWrapper(child: MyApp()));
@@ -72,6 +74,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => GlobalDataService()),
         ChangeNotifierProvider(create: (_) => AppConfigService()),
         ChangeNotifierProvider(create: (_) => GTCService()),
+        ChangeNotifierProvider(create: (_) => TestService()),
         Provider(create: (_) => AuthService()),
         // ProfileService lifecycle: reload when auth state changes
         ChangeNotifierProxyProvider<AuthService, ProfileService>(
@@ -102,7 +105,8 @@ class MyApp extends StatelessWidget {
           },
         ),
         // FlightService lifecycle: reload when auth state or profile changes
-        ChangeNotifierProxyProvider2<AuthService, ProfileService, FlightService>(
+        ChangeNotifierProxyProvider2<AuthService, ProfileService,
+            FlightService>(
           create: (_) => FlightService(),
           update: (_, authService, profileService, flightService) {
             final service = flightService ?? FlightService();
@@ -119,17 +123,19 @@ class MyApp extends StatelessWidget {
           },
         ),
         // StatsService lifecycle: depends on all data services
-        ChangeNotifierProxyProvider4<AuthService, FlightService, UserDataService, GlobalDataService, StatsService>(
+        ChangeNotifierProxyProvider4<AuthService, FlightService,
+            UserDataService, GlobalDataService, StatsService>(
           create: (_) => StatsService(),
-          update: (_, authService, flightService, userDataService, globalDataService, statsService) {
+          update: (_, authService, flightService, userDataService,
+              globalDataService, statsService) {
             final service = statsService ?? StatsService();
             final uid = authService.currentUser?.uid;
-            
+
             // Inject service references for offline-first calculation
             service.flightService = flightService;
             service.userDataService = userDataService;
             service.globalDataService = globalDataService;
-            
+
             if (uid != null) {
               service.initializeData(uid);
             } else {
@@ -155,7 +161,7 @@ class MyApp extends StatelessWidget {
 /// Widget that connects flight and checklist services to stats updates
 class StatsUpdateWatcher extends StatefulWidget {
   final Widget child;
-  
+
   const StatsUpdateWatcher({super.key, required this.child});
 
   @override
@@ -166,16 +172,16 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     // Wire up stats update callbacks
     final statsService = context.read<StatsService>();
     final flightService = context.read<FlightService>();
     final userDataService = context.read<UserDataService>();
-    
+
     flightService.onFlightDataChanged = () {
       statsService.updateStats();
     };
-    
+
     userDataService.onChecklistDataChanged = () {
       statsService.updateStats();
     };

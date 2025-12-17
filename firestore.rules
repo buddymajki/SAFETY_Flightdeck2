@@ -38,6 +38,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /globalTests/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // User Data Access (Owner-Only with Admin Override)
     match /users/{uid} {
       // Read, create, update allowed for owner only. Delete restricted to Admin.
@@ -54,6 +59,10 @@ service cloud.firestore {
       }
 
       match /gtc_acceptances/{document=**} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+
+      match /tests/{document=**} {
         allow read, create, update, delete: if isOwner(uid);
       }
     }

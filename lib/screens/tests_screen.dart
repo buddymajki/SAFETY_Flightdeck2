@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/test_service.dart';
 import '../models/test_model.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart';
+import '../services/test_service.dart';
+import '../services/app_config_service.dart';
+import '../auth/auth_service.dart';
 
-/// Main screen that displays available tests and allows users to take them.
-/// 
-/// This screen loads test metadata from Firestore (globalTests/) and displays
-/// them in a modern, Material 3 design. When a test is tapped, it loads the
-/// full test content from the JSON URL and presents it to the user.
+/// Main tests listing screen
 class TestsScreen extends StatefulWidget {
   const TestsScreen({super.key});
 
@@ -21,114 +17,100 @@ class _TestsScreenState extends State<TestsScreen> {
   @override
   void initState() {
     super.initState();
-    // Load tests when screen initializes
+    // Load tests when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final testService = Provider.of<TestService>(context, listen: false);
-      testService.loadAvailableTests();
+      Provider.of<TestService>(context, listen: false).loadAvailableTests();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    
-    if (user == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Tests'),
-        ),
-        body: const Center(
-          child: Text('Please sign in to view tests'),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Tests'),
+        centerTitle: true,
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    final testService = Provider.of<TestService>(context);
+
+    if (testService.isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading available tests...'),
+          ],
         ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Available Tests'),
-        centerTitle: true,
-      ),
-      body: Consumer<TestService>(
-        builder: (context, testService, child) {
-          if (testService.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          if (testService.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading tests',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    testService.error!,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => testService.loadAvailableTests(),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (testService.availableTests.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.assignment_outlined,
-                    size: 80,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'No tests available',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Check back later for new tests',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => testService.loadAvailableTests(),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: testService.availableTests.length,
-              itemBuilder: (context, index) {
-                final test = testService.availableTests[index];
-                return _TestCard(
-                  test: test,
-                  userId: user.uid,
-                  onTap: () => _openTest(context, test, user.uid),
-                );
-              },
+    if (testService.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Theme.of(context).colorScheme.error,
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading tests',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                testService.error!,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () => Provider.of<TestService>(context, listen: false)
+                  .loadAvailableTests(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (testService.availableTests.isEmpty) {
+      return const Center(
+        child: Text('No tests available yet'),
+      );
+    }
+
+    final auth = Provider.of<AuthService>(context, listen: false);
+    final user = auth.currentUser;
+
+    if (user == null) {
+      return const Center(
+        child: Text('Not authenticated'),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => testService.loadAvailableTests(),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: testService.availableTests.length,
+        itemBuilder: (context, index) {
+          final test = testService.availableTests[index];
+          return _TestCard(
+            test: test,
+            userId: user.uid,
+            onTap: () => _openTest(context, test, user.uid),
           );
         },
       ),
@@ -161,6 +143,7 @@ class _TestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final testService = Provider.of<TestService>(context, listen: false);
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
@@ -190,15 +173,34 @@ class _TestCard extends StatelessWidget {
                     Text(
                       test.testEn,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      'Tap to start test',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    FutureBuilder<TestSubmission?>(
+                      future: testService.getSubmission(userId, test.id),
+                      builder: (context, snapshot) {
+                        final sub = snapshot.data;
+                        String label = 'Tap to start test';
+                        Color? color =
+                            Theme.of(context).colorScheme.onSurfaceVariant;
+                        if (sub != null) {
+                          if (sub.status == 'final') {
+                            label = 'Final results available';
+                            color = Colors.greenAccent.shade200;
+                          } else {
+                            label = 'Submitted (waiting for review)';
+                            color = Theme.of(context).colorScheme.primary;
+                          }
+                        }
+                        return Text(
+                          label,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: color),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -237,6 +239,8 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
   String? _error;
   final Map<String, dynamic> _answers = {};
   bool _isSubmitting = false;
+  bool _readOnly = false;
+  Map<String, dynamic>? _perQuestionResults;
 
   @override
   void initState() {
@@ -253,10 +257,29 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
     try {
       final testService = Provider.of<TestService>(context, listen: false);
       final content = await testService.loadTestContent(widget.test.testUrl);
-      
+
+      // Check prior submission
+      final existing =
+          await testService.getSubmission(widget.userId, widget.test.id);
+      bool ro = false;
+      Map<String, dynamic>? per;
+      if (existing != null) {
+        _answers.clear();
+        _answers.addAll(existing.answers);
+        ro = true;
+        final rd = existing.reviewData;
+        if (rd != null && rd['perQuestion'] is Map) {
+          per = Map<String, dynamic>.from(rd['perQuestion'] as Map);
+        } else {
+          per = _evaluateLocally(content, _answers);
+        }
+      }
+
       setState(() {
         _testContent = content;
         _isLoading = false;
+        _readOnly = ro;
+        _perQuestionResults = per;
       });
     } catch (e) {
       setState(() {
@@ -274,7 +297,7 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
         centerTitle: true,
       ),
       body: _buildBody(),
-      bottomNavigationBar: _testContent != null && !_isLoading
+      bottomNavigationBar: _testContent != null && !_isLoading && !_readOnly
           ? _buildSubmitButton()
           : null,
     );
@@ -334,9 +357,17 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
       );
     }
 
-    // Get questions in the current language (default to English)
-    final questions = _testContent!.questions['en'] ?? [];
-    
+    // Get questions in the current language (default to English, with fallback)
+    final lang = context.read<AppConfigService>().currentLanguageCode;
+    List<Question> questions = _testContent!.questions[lang] ?? [];
+    if (questions.isEmpty) {
+      questions = _testContent!.questions['en'] ?? [];
+    }
+    if (questions.isEmpty && _testContent!.questions.isNotEmpty) {
+      // final fallback to the first available language
+      questions = _testContent!.questions.values.first;
+    }
+
     if (questions.isEmpty) {
       return const Center(
         child: Text('No questions available in this test'),
@@ -357,14 +388,20 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
               _answers[question.id] = answer;
             });
           },
+          readOnly: _readOnly,
+          isCorrect: _perQuestionResults?[question.id] as bool?,
         );
       },
     );
   }
 
   Widget _buildSubmitButton() {
-    // Check if all questions are answered
-    final questions = _testContent!.questions['en'] ?? [];
+    // Check if all questions are answered for current language
+    final lang = context.read<AppConfigService>().currentLanguageCode;
+    List<Question> questions = _testContent!.questions[lang] ?? [];
+    if (questions.isEmpty) {
+      questions = _testContent!.questions['en'] ?? [];
+    }
     final allAnswered = questions.every((q) => _answers.containsKey(q.id));
 
     return Container(
@@ -414,7 +451,7 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                   : const Text('Submit Test'),
@@ -442,8 +479,8 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
+        const SnackBar(
+          content: Row(
             children: [
               Icon(Icons.check_circle, color: Colors.white),
               SizedBox(width: 12),
@@ -473,21 +510,85 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
       }
     }
   }
+
+  Map<String, dynamic> _evaluateLocally(
+      TestContent content, Map<String, dynamic> answers) {
+    List<Question> questions = content.questions.values.first;
+    int bestMatches = -1;
+    for (final list in content.questions.values) {
+      final match = list.where((q) => answers.containsKey(q.id)).length;
+      if (match > bestMatches) {
+        bestMatches = match;
+        questions = list;
+      }
+    }
+    final Map<String, dynamic> per = {};
+    for (final q in questions) {
+      if (q.type == QuestionType.text) {
+        per[q.id] = null;
+      } else {
+        per[q.id] = q.isAnswerCorrect(answers[q.id]);
+      }
+    }
+    return per;
+  }
 }
 
 /// Widget for displaying a single question with its input field
-class _QuestionWidget extends StatelessWidget {
+class _QuestionWidget extends StatefulWidget {
   final Question question;
   final int questionNumber;
   final dynamic answer;
   final ValueChanged<dynamic> onAnswerChanged;
+  final bool readOnly;
+  final bool? isCorrect;
 
   const _QuestionWidget({
     required this.question,
     required this.questionNumber,
     required this.answer,
     required this.onAnswerChanged,
+    this.readOnly = false,
+    this.isCorrect,
   });
+
+  @override
+  State<_QuestionWidget> createState() => _QuestionWidgetState();
+}
+
+class _QuestionWidgetState extends State<_QuestionWidget> {
+  TextEditingController? _textController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.question.type == QuestionType.text) {
+      _textController =
+          TextEditingController(text: widget.answer as String? ?? '');
+      _textController!.addListener(() {
+        widget.onAnswerChanged(_textController!.text);
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _QuestionWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.question.type == QuestionType.text) {
+      final newText = widget.answer as String? ?? '';
+      if (_textController != null && _textController!.text != newText) {
+        final selection = TextSelection.collapsed(offset: newText.length);
+        _textController!.value =
+            TextEditingValue(text: newText, selection: selection);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _textController?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -510,7 +611,7 @@ class _QuestionWidget extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      '$questionNumber',
+                      '${widget.questionNumber}',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimaryContainer,
                         fontWeight: FontWeight.bold,
@@ -521,16 +622,44 @@ class _QuestionWidget extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    question.text,
+                    widget.question.text,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             _buildAnswerInput(context),
+            if (widget.readOnly)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  children: [
+                    Icon(
+                      widget.isCorrect == true
+                          ? Icons.check_circle
+                          : widget.isCorrect == false
+                              ? Icons.cancel
+                              : Icons.hourglass_top,
+                      color: widget.isCorrect == true
+                          ? Colors.green
+                          : widget.isCorrect == false
+                              ? Colors.red
+                              : Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.isCorrect == true
+                          ? 'Correct'
+                          : widget.isCorrect == false
+                              ? 'Incorrect'
+                              : 'Awaiting review',
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -538,7 +667,7 @@ class _QuestionWidget extends StatelessWidget {
   }
 
   Widget _buildAnswerInput(BuildContext context) {
-    switch (question.type) {
+    switch (widget.question.type) {
       case QuestionType.multipleChoice:
         return _buildMultipleChoiceInput(context);
       case QuestionType.singleChoice:
@@ -550,29 +679,31 @@ class _QuestionWidget extends StatelessWidget {
       case QuestionType.matching:
         return _buildMatchingInput(context);
       default:
-        return Text('Unsupported question type: ${question.type}');
+        return Text('Unsupported question type: ${widget.question.type}');
     }
   }
 
   Widget _buildMultipleChoiceInput(BuildContext context) {
-    final selectedAnswers = (answer as List<String>?) ?? [];
-    
+    final selectedAnswers = (widget.answer as List<String>?) ?? [];
+
     return Column(
-      children: question.options.map((option) {
+      children: widget.question.options.map((option) {
         final isSelected = selectedAnswers.contains(option);
-        
+
         return CheckboxListTile(
           title: Text(option),
           value: isSelected,
-          onChanged: (selected) {
-            final newAnswers = List<String>.from(selectedAnswers);
-            if (selected == true) {
-              newAnswers.add(option);
-            } else {
-              newAnswers.remove(option);
-            }
-            onAnswerChanged(newAnswers);
-          },
+          onChanged: widget.readOnly
+              ? null
+              : (selected) {
+                  final newAnswers = List<String>.from(selectedAnswers);
+                  if (selected == true) {
+                    newAnswers.add(option);
+                  } else {
+                    newAnswers.remove(option);
+                  }
+                  widget.onAnswerChanged(newAnswers);
+                },
           contentPadding: EdgeInsets.zero,
         );
       }).toList(),
@@ -581,12 +712,12 @@ class _QuestionWidget extends StatelessWidget {
 
   Widget _buildSingleChoiceInput(BuildContext context) {
     return Column(
-      children: question.options.map((option) {
+      children: widget.question.options.map((option) {
         return RadioListTile<String>(
           title: Text(option),
           value: option,
-          groupValue: answer as String?,
-          onChanged: onAnswerChanged,
+          groupValue: widget.answer as String?,
+          onChanged: widget.readOnly ? null : widget.onAnswerChanged,
           contentPadding: EdgeInsets.zero,
         );
       }).toList(),
@@ -599,15 +730,15 @@ class _QuestionWidget extends StatelessWidget {
         RadioListTile<bool>(
           title: const Text('True'),
           value: true,
-          groupValue: answer as bool?,
-          onChanged: onAnswerChanged,
+          groupValue: widget.answer as bool?,
+          onChanged: widget.readOnly ? null : widget.onAnswerChanged,
           contentPadding: EdgeInsets.zero,
         ),
         RadioListTile<bool>(
           title: const Text('False'),
           value: false,
-          groupValue: answer as bool?,
-          onChanged: onAnswerChanged,
+          groupValue: widget.answer as bool?,
+          onChanged: widget.readOnly ? null : widget.onAnswerChanged,
           contentPadding: EdgeInsets.zero,
         ),
       ],
@@ -621,63 +752,75 @@ class _QuestionWidget extends StatelessWidget {
         border: OutlineInputBorder(),
       ),
       maxLines: 3,
-      onChanged: onAnswerChanged,
-      controller: TextEditingController(text: answer as String? ?? ''),
+      controller: _textController,
+      readOnly: widget.readOnly,
     );
   }
 
   Widget _buildMatchingInput(BuildContext context) {
     // For matching questions, we need pairs
-    // Simplified version - could be enhanced with drag & drop
-    final matches = (answer as Map<String, String>?) ?? {};
-    
+    final matches = (widget.answer as Map<String, String>?) ?? {};
+    final leftItems = widget.question.options; // left side
+    final rightItems = widget.question.matchingPairs; // right side options
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Match the following:',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
+                fontWeight: FontWeight.w500,
+              ),
         ),
         const SizedBox(height: 8),
-        ...question.options.asMap().entries.map((entry) {
-          final index = entry.key;
-          final leftItem = entry.value;
-          
+        ...leftItems.map((leftItem) {
+          // Build available options per row: remove already-used values
+          final used = matches.entries
+              .where((e) => e.key != leftItem)
+              .map((e) => e.value)
+              .toSet();
+          final current = matches[leftItem];
+          final availableOptions = rightItems
+              .where((opt) => opt == current || !used.contains(opt))
+              .toList();
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
                 Expanded(
-                  flex: 2,
+                  flex: 3,
                   child: Text(leftItem),
                 ),
                 const SizedBox(width: 8),
                 const Icon(Icons.arrow_forward, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
-                  flex: 2,
+                  flex: 4,
                   child: DropdownButtonFormField<String>(
                     decoration: const InputDecoration(
                       isDense: true,
                       border: OutlineInputBorder(),
                     ),
+                    isExpanded: true,
                     hint: const Text('Select'),
-                    value: matches[leftItem],
-                    items: question.matchingPairs.map((pair) {
+                    value: current,
+                    items: availableOptions.map((pair) {
                       return DropdownMenuItem(
                         value: pair,
                         child: Text(pair),
                       );
                     }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        final newMatches = Map<String, String>.from(matches);
-                        newMatches[leftItem] = value;
-                        onAnswerChanged(newMatches);
-                      }
-                    },
+                    onChanged: widget.readOnly
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              final newMatches =
+                                  Map<String, String>.from(matches);
+                              newMatches[leftItem] = value;
+                              widget.onAnswerChanged(newMatches);
+                            }
+                          },
                   ),
                 ),
               ],
