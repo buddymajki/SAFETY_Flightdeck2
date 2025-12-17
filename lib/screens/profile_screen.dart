@@ -128,6 +128,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Synced_Cloud': {'en': 'Synced with cloud', 'de': 'Mit Cloud synchronisiert'},
     'Password_Error': {'en': 'Error changing password', 'de': 'Fehler beim Ändern des Passworts'},
     'Empty_Password_Fields': {'en': 'Both password fields are required', 'de': 'Beide Passwortfelder sind erforderlich'},
+    'GTC_Error_Message': {'en': 'Please accept every section and sign', 'de': 'Bitte akzeptieren Sie alle Abschnitte und unterschreiben'},
   };
 
   String _t(String key, String lang) {
@@ -1062,7 +1063,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'PLEASE READ AND ACCEPT EACH POINT',
+                        _t('GTC_Error_Message', lang),
                         style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold),
                       ),
                     ),
