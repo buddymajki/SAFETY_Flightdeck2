@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -586,8 +587,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               // GT&C Section for Students with School selection
-              if (_selectedLicense == 'Student' && _selectedSchoolId != null)
-                _buildGTCSection(lang, profile.uid, _selectedSchoolId!),
+              if (_selectedLicense == 'Student' && _selectedSchoolId != null && (profile.uid?.isNotEmpty ?? false))
+                _buildGTCSection(lang, profile.uid ?? '', _selectedSchoolId!),
               _buildSection(
                 title: _t('Change_Password', lang),
                 children: [
@@ -933,11 +934,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    if (gtcData == null || (gtcData['gtc_sections'] as List?)?.isEmpty ?? true) {
+    if (gtcData == null) {
       return const SizedBox.shrink();
     }
 
     final gtcSections = (gtcData['gtc_sections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    if (gtcSections.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Card(
       color: Theme.of(context).cardColor,
@@ -1094,7 +1098,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return DateFormat('yyyy-MM-dd HH:mm').format(date);
       }
     } catch (e) {
-      if (kDebugMode) print('Error formatting GTC acceptance time: $e');
+      debugPrint('Error formatting GTC acceptance time: $e');
     }
     return '';
   }

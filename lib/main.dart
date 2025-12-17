@@ -12,6 +12,7 @@ import 'services/app_config_service.dart';
 import 'services/profile_service.dart';
 import 'services/flight_service.dart';
 import 'services/stats_service.dart';
+import 'services/gtc_service.dart';
 import 'auth/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -70,6 +71,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => GlobalDataService()),
         ChangeNotifierProvider(create: (_) => AppConfigService()),
+        ChangeNotifierProvider(create: (_) => GTCService()),
         Provider(create: (_) => AuthService()),
         // ProfileService lifecycle: reload when auth state changes
         ChangeNotifierProxyProvider<AuthService, ProfileService>(
