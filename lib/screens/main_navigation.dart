@@ -7,6 +7,7 @@ import 'profile_screen.dart';
 import 'theory_screen.dart';
 import 'checklists_screen.dart';
 import 'flightbook_screen.dart';
+import 'tests_screen.dart';
 import '../services/app_config_service.dart';
 import '../widgets/responsive_layout.dart';
 
@@ -27,7 +28,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const ChecklistsScreen(),
     const FlightBookScreen(),
     const TheoryScreen(),
-    const ProfileScreen(),
+    const TestsScreen(),
   ];
 
   final List<String> _titles = <String>[
@@ -35,7 +36,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     'Checklist',
     'Flight Book',
     'Theory',
-    'Profile',
+    'Tests',
   ];
 
   @override
@@ -96,11 +97,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           padding: const EdgeInsets.all(8),
           children: [
             ListTile(
-              leading: const Icon(Icons.settings, color: Colors.white),
-              title: const Text('Settings', style: TextStyle(color: Colors.white)),
+              leading: const Icon(Icons.person, color: Colors.white),
+              title: const Text('Profile', style: TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
-                _onItemTapped(4); // Go to Profile
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
               },
             ),
             const Divider(color: Colors.grey),
@@ -204,8 +207,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               primaryColor: primaryColor,
             ),
             _buildNavBarItem(
-              icon: Icons.settings,
-              label: 'Profile',
+              icon: Icons.quiz,
+              label: 'Tests',
               isSelected: _selectedIndex == 4,
               onTap: () => _onItemTapped(4),
               primaryColor: primaryColor,
