@@ -1209,8 +1209,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (success) {
       _showSnack('Terms and conditions accepted!', backgroundColor: Colors.green);
+      
+      // Refresh acceptance data from Firestore to get the server timestamp
+      await Future.delayed(const Duration(milliseconds: 500));
+      await gtcService.checkGTCAcceptance(uid, schoolId);
+      
       setState(() {
-        // Refresh UI to show accepted state
+        // Refresh UI to show accepted state with proper timestamp
       });
     } else {
       _showSnack('Failed to accept terms and conditions. Please try again.');
