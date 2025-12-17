@@ -104,5 +104,66 @@ The issue was caused by an incorrect logout flow:
 - lib/services/stats_service.dart
 - lib/services/flight_service.dart
 - lib/services/user_data_service.dart
+- lib/screens/splash_screen.dart (CRITICAL FIX)
 
-Total: 6 files modified
+Total: 7 files modified
+
+---
+
+# Critical Fix: Data Loading After Login
+
+## Problem Identified
+The original issue was **NOT during app startup**, but rather when:
+1. App is already running
+2. User logs out
+3. User logs back in (without closing/reopening app)
+4. Result: NO flights and NO statistics appear (but checklist still loads)
+
+## Root Cause
+The `SplashScreen` was calling these methods on `FlightService` and `StatsService`:
+- `flight.waitForInitialData()` - Just waits, doesn't initialize!
+- `stats.waitForInitialData()` - Just waits, doesn't initialize!
+
+It was **never** calling:
+- `flight.initializeData(uid, schoolId)` - The actual initialization method
+- `stats.initializeData(uid)` - The actual initialization method
+
+These methods are what actually:
+- Connect to Firestore
+- Set up real-time listeners
+- Download data to local cache
+- Trigger initial data load
+
+## The Fix: Two-Phase Initialization
+
+**Phase 1: Get Profile Data**
+```dart
+await Future.wait<void>([
+  global.initializeData(),
+  user.initializeData(uid),
+  profile.waitForInitialData(),  // Gets schoolId from user profile
+]);
+```
+
+**Phase 2: Initialize Services with Proper Context**
+```dart
+final schoolId = profile.currentMainSchoolId ?? '';
+
+await Future.wait<void>([
+  flight.initializeData(uid, schoolId),  // Now properly initializes!
+  stats.initializeData(uid),             // Now properly initializes!
+]);
+```
+
+## Why This Works
+1. **Profile service loads first** - Gets the user's schoolId
+2. **FlightService initializes** - Uses uid + schoolId to connect to Firestore and set up listeners
+3. **StatsService initializes** - Uses uid to calculate stats from flight data
+4. **Data flows correctly** - Firestore → Cache → UI
+5. **Service cache is cleared** - From previous logout, so old data doesn't persist
+
+## Result
+✅ Logout + Login now properly reloads all data
+✅ Flights appear in logbook
+✅ Statistics appear on dashboard
+✅ No stale data from previous session
