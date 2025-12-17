@@ -100,15 +100,8 @@ class GTCService extends ChangeNotifier {
         _currentAcceptance = null;
       }
 
-      // Check if acceptance version matches current GTC version
-      if (_currentAcceptance != null && _currentGTC != null) {
-        final acceptedVersion = _currentAcceptance?['gtc_version'] as String?;
-        final currentVersion = _currentGTC?['gtc_version'] as String?;
-        if (acceptedVersion != currentVersion) {
-          // Version mismatch, force re-acceptance
-          _currentAcceptance = null;
-        }
-      }
+      // Once accepted, always valid - no version re-check needed
+      // The original acceptance timestamp is legally defensible
     } catch (e) {
       if (kDebugMode) print('Error checking GTC acceptance: $e');
       _currentAcceptance = null;

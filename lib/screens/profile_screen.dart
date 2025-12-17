@@ -58,7 +58,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, bool> _gtcCheckboxStates = {}; // Track checkbox states per GT&C section
   String? _lastCheckedSchoolId;
   bool _gtcExpanded = false; // Track if GT&C is expanded (for accepted state)
-  String? _lastSeenGTCVersion; // Track the last seen GT&C version to detect changes
 
   // Top countries for quick access
   static const List<String> _topCountries = [
@@ -935,7 +934,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         gtcService.loadGTC(schoolId);
         gtcService.checkGTCAcceptance(uid, schoolId);
         _lastCheckedSchoolId = schoolId;
-        _lastSeenGTCVersion = null; // Reset version tracking for new school
       }
     });
 
@@ -943,23 +941,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentGTCVersion = gtcService_data?['gtc_version'] as String?;
     final isAccepted = gtcService.isGTCAccepted;
     final acceptanceRecord = gtcService.currentAcceptance;
-    final acceptedVersion = acceptanceRecord?['gtc_version'] as String?;
 
-    // Check if GT&C version has changed: compare accepted version with current version
-    // Only reset if versions actually differ AND user previously accepted
-    if (isAccepted && currentGTCVersion != null && acceptedVersion != null && acceptedVersion != currentGTCVersion && _lastSeenGTCVersion != currentGTCVersion) {
-      debugPrint('[ProfileScreen] GT&C version mismatch detected: accepted=$acceptedVersion, current=$currentGTCVersion. Clearing acceptance.');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        gtcService.resetGTCAcceptance(uid, schoolId);
-        _gtcExpanded = false; // Reset expanded state for new version
-      });
-      _lastSeenGTCVersion = currentGTCVersion;
-    } else if (currentGTCVersion != null && _lastSeenGTCVersion == null) {
-      // First time seeing this version, just track it
-      _lastSeenGTCVersion = currentGTCVersion;
-    }
-
-    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, hasData=${gtcService_data != null}, isAccepted=$isAccepted, acceptedVersion=$acceptedVersion, currentVersion=$currentGTCVersion');
+    // Once accepted, always valid (no version re-check needed)
+    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, hasData=${gtcService_data != null}, isAccepted=$isAccepted, currentVersion=$currentGTCVersion');
 
     if (gtcService.isLoading) {
       return Card(
