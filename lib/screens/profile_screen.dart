@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../services/profile_service.dart';
 import '../services/app_config_service.dart';
+import '../services/gtc_service.dart';
 import '../widgets/responsive_layout.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -50,6 +52,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   VoidCallback? _syncListener;
   int _lastSeenSyncTick = 0;
   bool _suppressAutoSave = false;
+  
+  // GT&C state
+  Map<String, bool> _gtcCheckboxStates = {}; // Track checkbox states per GT&C section
+  String? _lastCheckedSchoolId;
 
   // Top countries for quick access
   static const List<String> _topCountries = [
@@ -85,9 +91,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Localization map
   static const Map<String, Map<String, String>> _texts = {
     'Personal_Details': {'en': 'Personal Details', 'de': 'Persönliche Angaben'},
-    'Contact_Details': {'en': 'Contact Details', 'de': 'Kontaktangaben'},
+    'Address': {'en': 'Address', 'de': 'Adresse'},
     'Emergency_Contact': {'en': 'Emergency Contact (Required)', 'de': 'Notfallkontakt (Erforderlich)'},
-    'Other_Info': {'en': 'Other Info', 'de': 'Sonstige Informationen'},
+    'License_Equipment': {'en': 'License and Equipment', 'de': 'Lizenz und Ausrüstung'},
     'Change_Password': {'en': 'Change Password', 'de': 'Passwort ändern'},
     'Family_Name': {'en': 'Family Name', 'de': 'Familienname'},
     'Forename': {'en': 'Forename', 'de': 'Vorname'},
@@ -503,15 +509,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     controller: _nicknameController,
                   ),
                   _buildDateField(lang),
-                ],
-              ),
-              _buildSection(
-                title: _t('Contact_Details', lang),
-                children: [
                   _buildTextField(
                     label: _t('Email_Address', lang),
-                    initialValue: profile.email, 
+                    initialValue: profile.email,
                     readOnly: true,
+                    // visually greyed out
+                    inputFormatters: [],
                   ),
                   _buildTextField(
                     label: _t('Phone_Number', lang),
@@ -524,6 +527,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     setState(() => _selectedNationality = value);
                     _autoSaveProfile();
                   }),
+                  _buildHeightPicker(lang),
+                  _buildWeightPicker(lang),
+                ],
+              ),
+              _buildSection(
+                title: _t('Address', lang),
+                children: [
                   _buildTextField(
                     label: _t('Street_Nr', lang),
                     controller: _address1Controller,
@@ -561,22 +571,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               _buildSection(
-                title: _t('Other_Info', lang),
+                title: _t('License_Equipment', lang),
                 children: [
-                  _buildHeightPicker(lang),
-                  _buildWeightPicker(lang),
-                  _buildTextField(
-                    label: _t('Glider', lang),
-                    controller: _gliderController,
-                  ),
+                  _buildLicenseDropdown(profile.license, lang),
+                  if (_selectedLicense == 'Student') _buildSchoolDropdown(lang),
                   _buildTextField(
                     label: _t('SHV_Number', lang),
                     controller: _shvNumberController,
                   ),
-                  _buildLicenseDropdown(profile.license, lang),
-                  if (_selectedLicense == 'Student') _buildSchoolDropdown(lang),
+                  _buildTextField(
+                    label: _t('Glider', lang),
+                    controller: _gliderController,
+                  ),
                 ],
               ),
+              // GT&C Section for Students with School selection
+              if (_selectedLicense == 'Student' && _selectedSchoolId != null)
+                _buildGTCSection(lang, profile.uid, _selectedSchoolId!),
               _buildSection(
                 title: _t('Change_Password', lang),
                 children: [
@@ -647,10 +658,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       validator: validator,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
+      style: readOnly
+          ? theme.textTheme.bodyMedium?.copyWith(color: theme.disabledColor)
+          : theme.textTheme.bodyMedium,
       decoration: InputDecoration(
         labelText: label,
         filled: true,
-        fillColor: theme.cardColor,
+        fillColor: readOnly ? theme.disabledColor.withOpacity(0.08) : theme.cardColor,
       ),
     );
   }
@@ -811,28 +825,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final normalizedSelected = schools.any((s) => s['id'] == _selectedSchoolId)
         ? _selectedSchoolId
         : null;
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: _t('School', lang),
-        filled: true,
-        fillColor: theme.cardColor,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String?>(
-          value: normalizedSelected,
-          isExpanded: true,
-          items: [
-            DropdownMenuItem<String?>(value: null, child: Text(_t('Select_School', lang))),
-            ...schools.map((s) => DropdownMenuItem<String?>(
-                  value: s['id'],
-                  child: Text(s['name'] ?? 'Unknown'),
-                )),
-          ],
-          onChanged: (value) {
-            setState(() => _selectedSchoolId = value);
-            _autoSaveProfile();
-          },
-        ),
+    final schoolNames = schools.map((s) => s['name'] as String? ?? '').toList();
+    final idByName = {for (var s in schools) (s['name'] as String? ?? ''): s['id']};
+    final selectedName = schools.firstWhere(
+      (s) => s['id'] == _selectedSchoolId,
+      orElse: () => <String, String>{},
+    )['name'] as String?;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Autocomplete<String>(
+        optionsBuilder: (TextEditingValue textEditingValue) {
+          if (textEditingValue.text == '') {
+            return schoolNames;
+          }
+          return schoolNames.where((String option) =>
+              option.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+        },
+        displayStringForOption: (option) => option,
+        initialValue: TextEditingValue(text: selectedName ?? ''),
+        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+          return TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            readOnly: false,
+            decoration: InputDecoration(
+              labelText: _t('School', lang),
+              filled: true,
+              fillColor: theme.cardColor,
+              hintText: _t('Select_School', lang),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty || !schoolNames.contains(value)) {
+                return _t('Select_School', lang);
+              }
+              return null;
+            },
+            onChanged: (value) {
+              // Only allow valid schools
+              if (schoolNames.contains(value)) {
+                setState(() => _selectedSchoolId = idByName[value]);
+                _autoSaveProfile();
+              }
+            },
+          );
+        },
+        onSelected: (String selection) {
+          setState(() => _selectedSchoolId = idByName[selection]);
+          _autoSaveProfile();
+        },
+        optionsViewBuilder: (context, onSelected, options) {
+          return Align(
+            alignment: Alignment.topLeft,
+            child: Material(
+              elevation: 4.0,
+              child: SizedBox(
+                height: 200.0,
+                child: ListView.builder(
+                  padding: EdgeInsets.zero,
+                  itemCount: options.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final option = options.elementAt(index);
+                    return ListTile(
+                      title: Text(option),
+                      onTap: () => onSelected(option),
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -842,5 +905,197 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return _t('Required_Field', context.read<AppConfigService>().currentLanguageCode);
     }
     return null;
+  }
+
+  Widget _buildGTCSection(String lang, String uid, String schoolId) {
+    final gtcService = context.watch<GTCService>();
+
+    // Load GTC when section builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_lastCheckedSchoolId != schoolId) {
+        gtcService.loadGTC(schoolId);
+        gtcService.checkGTCAcceptance(uid, schoolId);
+        _lastCheckedSchoolId = schoolId;
+      }
+    });
+
+    final gtcData = gtcService.currentGTC;
+    final isAccepted = gtcService.isGTCAccepted;
+
+    if (gtcService.isLoading) {
+      return Card(
+        color: Theme.of(context).cardColor,
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
+        ),
+      );
+    }
+
+    if (gtcData == null || (gtcData['gtc_sections'] as List?)?.isEmpty ?? true) {
+      return const SizedBox.shrink();
+    }
+
+    final gtcSections = (gtcData['gtc_sections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+    return Card(
+      color: Theme.of(context).cardColor,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'General Terms & Conditions',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                if (!isAccepted)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'You must accept all terms and conditions to proceed.',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ),
+                ...gtcSections.map((section) {
+                  final sectionId = section['id'] as String? ?? '';
+                  final title = section['title'] as String? ?? '';
+                  final content = section['content'] as String? ?? '';
+                  final isRequired = section['required'] as bool? ?? false;
+
+                  if (!_gtcCheckboxStates.containsKey(sectionId)) {
+                    _gtcCheckboxStates[sectionId] = false;
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            content,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        CheckboxListTile(
+                          value: _gtcCheckboxStates[sectionId] ?? false,
+                          onChanged: (value) {
+                            setState(() {
+                              _gtcCheckboxStates[sectionId] = value ?? false;
+                            });
+                          },
+                          title: Text(
+                            'I accept ${isRequired ? '(Required)' : '(Optional)'}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+          if (!isAccepted)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _allRequiredGTCAccepted(gtcSections)
+                      ? () => _acceptGTC(gtcService, uid, schoolId, lang)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                  ),
+                  child: const Text('Accept & Sign'),
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Accepted on ${_formatGTCAcceptanceTime(gtcService.currentAcceptance)}',
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  bool _allRequiredGTCAccepted(List<Map<String, dynamic>> gtcSections) {
+    for (final section in gtcSections) {
+      final sectionId = section['id'] as String? ?? '';
+      final isRequired = section['required'] as bool? ?? false;
+
+      if (isRequired && !(_gtcCheckboxStates[sectionId] ?? false)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<void> _acceptGTC(GTCService gtcService, String uid, String schoolId, String lang) async {
+    final success = await gtcService.acceptGTC(uid, schoolId);
+
+    if (success) {
+      _showSnack('Terms and conditions accepted!', backgroundColor: Colors.green);
+      setState(() {
+        // Refresh UI to show accepted state
+      });
+    } else {
+      _showSnack('Failed to accept terms and conditions. Please try again.');
+    }
+  }
+
+  String _formatGTCAcceptanceTime(Map<String, dynamic>? acceptance) {
+    if (acceptance == null) return '';
+
+    final timestamp = acceptance['gtc_accepted_at'];
+    if (timestamp == null) return '';
+
+    try {
+      if (timestamp is Timestamp) {
+        final date = timestamp.toDate();
+        return DateFormat('yyyy-MM-dd HH:mm').format(date);
+      }
+    } catch (e) {
+      if (kDebugMode) print('Error formatting GTC acceptance time: $e');
+    }
+    return '';
   }
 }

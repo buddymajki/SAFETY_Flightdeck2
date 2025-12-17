@@ -12,6 +12,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  
+  
   # -------------------------------------
   # Firebase Core - A legfrissebb elérhető stabil Major verziók (available számokra alapozva)
   # A Caret (^) jel garantálja az alverziók automatikus frissítését.
