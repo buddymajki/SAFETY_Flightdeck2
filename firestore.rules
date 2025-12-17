@@ -52,6 +52,10 @@ service cloud.firestore {
       match /checklistprogress/{document=**} {
         allow read, create, update, delete: if isOwner(uid);
       }
+
+      match /gtc_acceptances/{document=**} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
     }
   }
 }

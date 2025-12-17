@@ -587,8 +587,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               // GT&C Section for Students with School selection
-              if (_selectedLicense == 'Student' && _selectedSchoolId != null && (profile.uid?.isNotEmpty ?? false))
-                _buildGTCSection(lang, profile.uid ?? '', _selectedSchoolId!),
+              if (_selectedLicense == 'Student' && _selectedSchoolId != null && (profile.uid?.isNotEmpty ?? false)) ...[
+                Builder(builder: (context) {
+                  debugPrint('[ProfileScreen] Rendering GT&C section: license=$_selectedLicense, schoolId=$_selectedSchoolId, uid=${profile.uid}');
+                  return _buildGTCSection(lang, profile.uid ?? '', _selectedSchoolId!);
+                }),
+              ] else ...[
+                Builder(builder: (context) {
+                  debugPrint('[ProfileScreen] GT&C hidden: license=$_selectedLicense, schoolId=$_selectedSchoolId, uid=${profile.uid?.isNotEmpty}');
+                  return const SizedBox.shrink();
+                }),
+              ],
               _buildSection(
                 title: _t('Change_Password', lang),
                 children: [
@@ -914,6 +923,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Load GTC when section builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_lastCheckedSchoolId != schoolId) {
+        debugPrint('[ProfileScreen] Loading GT&C for school: $schoolId');
         gtcService.loadGTC(schoolId);
         gtcService.checkGTCAcceptance(uid, schoolId);
         _lastCheckedSchoolId = schoolId;
@@ -922,6 +932,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final gtcData = gtcService.currentGTC;
     final isAccepted = gtcService.isGTCAccepted;
+
+    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, gtcData=$gtcData, isAccepted=$isAccepted');
 
     if (gtcService.isLoading) {
       return Card(
@@ -935,13 +947,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     if (gtcData == null) {
+      debugPrint('[ProfileScreen] GT&C data is null, hiding section');
       return const SizedBox.shrink();
     }
 
     final gtcSections = (gtcData['gtc_sections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     if (gtcSections.isEmpty) {
+      debugPrint('[ProfileScreen] No GT&C sections found');
       return const SizedBox.shrink();
     }
+
+    debugPrint('[ProfileScreen] Showing GT&C section with ${gtcSections.length} sections');
 
     return Card(
       color: Theme.of(context).cardColor,

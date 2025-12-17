@@ -21,6 +21,7 @@ class GTCService extends ChangeNotifier {
   /// Fetch GT&C for a specific school
   Future<void> loadGTC(String schoolId) async {
     if (_currentSchoolId == schoolId && _currentGTC != null) {
+      debugPrint('[GTCService] GT&C already cached for school: $schoolId');
       return; // Already loaded
     }
 
@@ -28,13 +29,19 @@ class GTCService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('[GTCService] Loading GT&C for school: $schoolId');
       final doc = await _firestore.collection('schools').doc(schoolId).get();
       if (doc.exists) {
         _currentGTC = doc.data() as Map<String, dynamic>?;
         _currentSchoolId = schoolId;
+        final gtcSections = (_currentGTC?['gtc_sections'] as List?)?.length ?? 0;
+        debugPrint('[GTCService] Loaded GT&C with $gtcSections sections');
+      } else {
+        debugPrint('[GTCService] School document not found: $schoolId');
+        _currentGTC = null;
       }
     } catch (e) {
-      if (kDebugMode) print('Error loading GTC: $e');
+      debugPrint('[GTCService] Error loading GT&C: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
