@@ -315,6 +315,11 @@ class FlightService extends ChangeNotifier {
 
   // --- Utility ---
 
+  Future<void> waitForInitialData() async {
+    if (_initializationCompleter == null) return;
+    await _initializationCompleter!.future;
+  }
+
   void resetService() {
     _flightsSubscription?.cancel();
     _flights = [];

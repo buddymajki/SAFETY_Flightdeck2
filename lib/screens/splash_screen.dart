@@ -40,15 +40,19 @@ class _SplashScreenState extends State<SplashScreen> {
     final uid = currentUser.uid;
 
     try {
-      // Initialize global + user + profile data in parallel
+      // Initialize global + user + profile + flight + stats data
       final global = context.read<GlobalDataService>();
       final user = context.read<UserDataService>();
       final profile = context.read<ProfileService>();
+      final flight = context.read<FlightService>();
+      final stats = context.read<StatsService>();
 
       await Future.wait([
         global.initializeData(),
         user.initializeData(uid),
         profile.waitForInitialData(),
+        flight.waitForInitialData(),
+        stats.waitForInitialData(),
       ]);
 
       log('[Splash] Data load complete. globals=${global.globalChecklists?.length ?? 0} uid=$uid');

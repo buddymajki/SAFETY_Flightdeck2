@@ -6,6 +6,9 @@ import 'package:provider/provider.dart';
 
 import '../services/global_data_service.dart';
 import '../services/user_data_service.dart';
+import '../services/flight_service.dart';
+import '../services/stats_service.dart';
+import '../services/profile_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -26,6 +29,9 @@ class AuthService {
     try {
       context.read<UserDataService>().resetService();
       context.read<GlobalDataService>().resetService();
+      context.read<FlightService>().resetService();
+      context.read<StatsService>().resetService();
+      await context.read<ProfileService>().resetService();
     } catch (e) {
       // If providers are not available in this context, ignore.
       log('[AuthService] resetService during signOut failed: $e');
