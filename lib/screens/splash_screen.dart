@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../services/flight_service.dart';
 import '../services/global_data_service.dart';
+import '../services/stats_service.dart';
 import '../services/user_data_service.dart';
 import '../services/profile_service.dart';
 import 'login_screen.dart';
@@ -47,7 +49,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final flight = context.read<FlightService>();
       final stats = context.read<StatsService>();
 
-      await Future.wait([
+      await Future.wait<void>([
         global.initializeData(),
         user.initializeData(uid),
         profile.waitForInitialData(),

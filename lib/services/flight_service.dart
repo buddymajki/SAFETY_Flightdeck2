@@ -137,11 +137,6 @@ class FlightService extends ChangeNotifier {
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
-  Future<void> waitForInitialData() async {
-    if (_initializationCompleter == null) return;
-    await _initializationCompleter!.future;
-  }
-
   // --- Flight Operations ---
 
   /// Add a new flight (offline-first)

@@ -521,12 +521,6 @@ class StatsService extends ChangeNotifier {
     await recalculateStats();
   }
 
-  /// Reset service state
-  Future<void> waitForInitialData() async {
-    if (_initializationCompleter == null) return;
-    await _initializationCompleter!.future;
-  }
-
   void resetService() {
     _statsSubscription?.cancel();
     _stats = DashboardStats(progress: ProgressStats());
