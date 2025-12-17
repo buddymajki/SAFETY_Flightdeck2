@@ -57,6 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // GT&C state
   Map<String, bool> _gtcCheckboxStates = {}; // Track checkbox states per GT&C section
   String? _lastCheckedSchoolId;
+  bool _gtcExpanded = false; // Track if GT&C is expanded (for accepted state)
 
   // Top countries for quick access
   static const List<String> _topCountries = [
@@ -874,14 +875,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onChanged: (value) {
               // Only allow valid schools
               if (schoolNames.contains(value)) {
-                setState(() => _selectedSchoolId = idByName[value]);
+                setState(() {
+                  _selectedSchoolId = idByName[value];
+                  _gtcExpanded = false; // Reset expanded state when school changes
+                });
                 _autoSaveProfile();
               }
             },
           );
         },
         onSelected: (String selection) {
-          setState(() => _selectedSchoolId = idByName[selection]);
+          setState(() {
+            _selectedSchoolId = idByName[selection];
+            _gtcExpanded = false; // Reset expanded state when school changes
+          });
           _autoSaveProfile();
         },
         optionsViewBuilder: (context, onSelected, options) {
@@ -973,6 +980,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     debugPrint('[ProfileScreen] Showing GT&C section with ${gtcSections.length} sections');
 
+    // Show collapsed view if accepted and not expanded
+    if (isAccepted && !_gtcExpanded) {
+      final acceptanceTime = _formatGTCAcceptanceTime(gtcService.currentAcceptance);
+      return Card(
+        color: Theme.of(context).cardColor,
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'General Terms & Conditions',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Accepted on $acceptanceTime',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.expand_more),
+                onPressed: () => setState(() => _gtcExpanded = true),
+                tooltip: 'View Terms',
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Show expanded view (for unaccepted or when user clicks expand)
     return Card(
       color: Theme.of(context).cardColor,
       margin: const EdgeInsets.only(bottom: 12),
@@ -983,9 +1033,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'General Terms & Conditions',
-                  style: Theme.of(context).textTheme.titleMedium,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'General Terms & Conditions',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    if (isAccepted)
+                      IconButton(
+                        icon: const Icon(Icons.expand_less),
+                        onPressed: () => setState(() => _gtcExpanded = false),
+                        tooltip: 'Collapse',
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 if (!isAccepted)
@@ -1108,7 +1169,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             )
-          else
+          else if (_gtcExpanded)
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
