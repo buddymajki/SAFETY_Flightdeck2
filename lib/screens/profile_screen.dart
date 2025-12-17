@@ -58,6 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, bool> _gtcCheckboxStates = {}; // Track checkbox states per GT&C section
   String? _lastCheckedSchoolId;
   bool _gtcExpanded = false; // Track if GT&C is expanded (for accepted state)
+  String? _lastSeenGTCVersion; // Track the last seen GT&C version to detect changes
 
   // Top countries for quick access
   static const List<String> _topCountries = [
@@ -934,13 +935,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         gtcService.loadGTC(schoolId);
         gtcService.checkGTCAcceptance(uid, schoolId);
         _lastCheckedSchoolId = schoolId;
+        _lastSeenGTCVersion = null; // Reset version tracking for new school
       }
     });
 
     final gtcService_data = gtcService.currentGTC;
+    final currentGTCVersion = gtcService_data?['gtc_version'] as String?;
     final isAccepted = gtcService.isGTCAccepted;
 
-    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, hasData=${gtcService_data != null}, isAccepted=$isAccepted');
+    // Check if GT&C version has changed (school updated or new version)
+    if (currentGTCVersion != null && _lastSeenGTCVersion != currentGTCVersion && isAccepted) {
+      debugPrint('[ProfileScreen] GT&C version changed from $_lastSeenGTCVersion to $currentGTCVersion, clearing acceptance');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        gtcService.resetGTCAcceptance(uid, schoolId);
+        _gtcExpanded = false; // Reset expanded state for new version
+      });
+      _lastSeenGTCVersion = currentGTCVersion;
+    } else if (currentGTCVersion != null) {
+      _lastSeenGTCVersion = currentGTCVersion;
+    }
+
+    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, hasData=${gtcService_data != null}, isAccepted=$isAccepted, version=$currentGTCVersion');
 
     if (gtcService.isLoading) {
       return Card(
@@ -1004,7 +1019,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Text(
                       'Accepted on $acceptanceTime',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),
@@ -1059,8 +1074,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'You must accept all terms and conditions to proceed.',
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                        'PLEASE READ AND ACCEPT EACH POINT',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
