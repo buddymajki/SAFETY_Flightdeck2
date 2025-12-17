@@ -49,17 +49,19 @@ class _SplashScreenState extends State<SplashScreen> {
       final flight = context.read<FlightService>();
       final stats = context.read<StatsService>();
 
-      // Phase 1: Initialize global + user + profile (needed to get schoolId)
+      // Phase 1: Initialize global + user data
       await Future.wait<void>([
         global.initializeData(),
         user.initializeData(uid),
-        profile.waitForInitialData(),
       ]);
+
+      // Phase 2: Initialize profile (needed to get schoolId)
+      await profile.initializeData(uid);
 
       // Get schoolId from profile for flight + stats initialization
       final schoolId = profile.currentMainSchoolId ?? '';
 
-      // Phase 2: Initialize flight + stats with proper user context
+      // Phase 3: Initialize flight + stats with proper user context
       await Future.wait<void>([
         flight.initializeData(uid, schoolId),
         stats.initializeData(uid),
