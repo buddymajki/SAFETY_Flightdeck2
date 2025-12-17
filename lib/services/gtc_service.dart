@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class GTCService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -18,7 +20,7 @@ class GTCService extends ChangeNotifier {
   bool get isGTCAccepted => _currentAcceptance?['gtc_accepted'] ?? false;
   String? get currentGTCVersion => _currentGTC?['gtc_version'] as String?;
 
-  /// Fetch GT&C for a specific school
+  /// Fetch GT&C for a specific school from Firestore URL
   Future<void> loadGTC(String schoolId) async {
     if (_currentSchoolId == schoolId && _currentGTC != null) {
       debugPrint('[GTCService] GT&C already cached for school: $schoolId');
@@ -29,19 +31,46 @@ class GTCService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      debugPrint('[GTCService] Loading GT&C for school: $schoolId');
-      final doc = await _firestore.collection('schools').doc(schoolId).get();
-      if (doc.exists) {
-        _currentGTC = doc.data() as Map<String, dynamic>?;
-        _currentSchoolId = schoolId;
-        final gtcSections = (_currentGTC?['gtc_sections'] as List?)?.length ?? 0;
-        debugPrint('[GTCService] Loaded GT&C with $gtcSections sections');
-      } else {
+      debugPrint('[GTCService] Loading GT&C URL for school: $schoolId');
+      
+      // Step 1: Get the gtc_url from Firestore
+      final schoolDoc = await _firestore.collection('schools').doc(schoolId).get();
+      if (!schoolDoc.exists) {
         debugPrint('[GTCService] School document not found: $schoolId');
         _currentGTC = null;
+        return;
       }
+
+      final gtcUrl = schoolDoc.get('gtc_url') as String?;
+      if (gtcUrl == null || gtcUrl.isEmpty) {
+        debugPrint('[GTCService] No gtc_url found for school: $schoolId');
+        _currentGTC = null;
+        return;
+      }
+
+      debugPrint('[GTCService] Fetching GT&C JSON from URL: $gtcUrl');
+      
+      // Step 2: Fetch the JSON from Firebase Storage URL
+      final response = await http.get(Uri.parse(gtcUrl));
+      if (response.statusCode != 200) {
+        debugPrint('[GTCService] Failed to fetch GT&C JSON: ${response.statusCode}');
+        _currentGTC = null;
+        return;
+      }
+
+      // Step 3: Parse the JSON
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      _currentGTC = {
+        'gtc_data': jsonData,
+        'gtc_url': gtcUrl,
+        'gtc_version': schoolDoc.get('gtc_version') ?? '1.0',
+      };
+      _currentSchoolId = schoolId;
+      
+      debugPrint('[GTCService] Successfully loaded GT&C with version: ${_currentGTC?['gtc_version']}');
     } catch (e) {
       debugPrint('[GTCService] Error loading GT&C: $e');
+      _currentGTC = null;
     } finally {
       _isLoading = false;
       notifyListeners();

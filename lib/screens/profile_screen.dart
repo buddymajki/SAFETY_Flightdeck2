@@ -930,10 +930,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     });
 
-    final gtcData = gtcService.currentGTC;
+    final gtcService_data = gtcService.currentGTC;
     final isAccepted = gtcService.isGTCAccepted;
 
-    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, gtcData=$gtcData, isAccepted=$isAccepted');
+    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, hasData=${gtcService_data != null}, isAccepted=$isAccepted');
 
     if (gtcService.isLoading) {
       return Card(
@@ -946,12 +946,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    if (gtcData == null) {
+    if (gtcService_data == null) {
       debugPrint('[ProfileScreen] GT&C data is null, hiding section');
       return const SizedBox.shrink();
     }
 
-    final gtcSections = (gtcData['gtc_sections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    // Get the language-specific sections from the fetched JSON
+    final gtcJsonData = gtcService_data['gtc_data'] as Map<String, dynamic>?;
+    if (gtcJsonData == null) {
+      debugPrint('[ProfileScreen] GT&C JSON data is null');
+      return const SizedBox.shrink();
+    }
+
+    // Get sections for the current language
+    final langSections = gtcJsonData[lang] as Map<String, dynamic>?;
+    if (langSections == null) {
+      debugPrint('[ProfileScreen] No sections for language: $lang');
+      return const SizedBox.shrink();
+    }
+
+    final gtcSections = (langSections['sections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     if (gtcSections.isEmpty) {
       debugPrint('[ProfileScreen] No GT&C sections found');
       return const SizedBox.shrink();
@@ -989,11 +1003,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
-                ...gtcSections.map((section) {
-                  final sectionId = section['id'] as String? ?? '';
+                ...gtcSections.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final section = entry.value;
+                  final sectionId = 'section_$index';
                   final title = section['title'] as String? ?? '';
-                  final content = section['content'] as String? ?? '';
-                  final isRequired = section['required'] as bool? ?? false;
+                  final text = section['text'] as String? ?? '';
+                  final list = (section['list'] as List?)?.cast<String>() ?? [];
+                  final afterList = section['afterList'] as String? ?? '';
 
                   if (!_gtcCheckboxStates.containsKey(sectionId)) {
                     _gtcCheckboxStates[sectionId] = false;
@@ -1015,9 +1032,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: Theme.of(context).scaffoldBackgroundColor,
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(
-                            content,
-                            style: Theme.of(context).textTheme.bodySmall,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Main text
+                              Text(
+                                text,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              // List items
+                              if (list.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                ...list.map((item) => Padding(
+                                  padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('• ', style: Theme.of(context).textTheme.bodySmall),
+                                      Expanded(
+                                        child: Text(
+                                          item,
+                                          style: Theme.of(context).textTheme.bodySmall,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )).toList(),
+                              ],
+                              // After list text
+                              if (afterList.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  afterList,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -1029,7 +1079,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             });
                           },
                           title: Text(
-                            'I accept ${isRequired ? '(Required)' : '(Optional)'}',
+                            'I accept',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           contentPadding: EdgeInsets.zero,
@@ -1078,11 +1128,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   bool _allRequiredGTCAccepted(List<Map<String, dynamic>> gtcSections) {
-    for (final section in gtcSections) {
-      final sectionId = section['id'] as String? ?? '';
-      final isRequired = section['required'] as bool? ?? false;
-
-      if (isRequired && !(_gtcCheckboxStates[sectionId] ?? false)) {
+    // All sections must be accepted (all are required in the new structure)
+    for (final entry in gtcSections.asMap().entries) {
+      final sectionId = 'section_${entry.key}';
+      if (!(_gtcCheckboxStates[sectionId] ?? false)) {
         return false;
       }
     }
