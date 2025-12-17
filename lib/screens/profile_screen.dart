@@ -942,20 +942,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final gtcService_data = gtcService.currentGTC;
     final currentGTCVersion = gtcService_data?['gtc_version'] as String?;
     final isAccepted = gtcService.isGTCAccepted;
+    final acceptanceRecord = gtcService.currentAcceptance;
+    final acceptedVersion = acceptanceRecord?['gtc_version'] as String?;
 
-    // Check if GT&C version has changed (school updated or new version)
-    if (currentGTCVersion != null && _lastSeenGTCVersion != currentGTCVersion && isAccepted) {
-      debugPrint('[ProfileScreen] GT&C version changed from $_lastSeenGTCVersion to $currentGTCVersion, clearing acceptance');
+    // Check if GT&C version has changed: compare accepted version with current version
+    // Only reset if versions actually differ AND user previously accepted
+    if (isAccepted && currentGTCVersion != null && acceptedVersion != null && acceptedVersion != currentGTCVersion && _lastSeenGTCVersion != currentGTCVersion) {
+      debugPrint('[ProfileScreen] GT&C version mismatch detected: accepted=$acceptedVersion, current=$currentGTCVersion. Clearing acceptance.');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         gtcService.resetGTCAcceptance(uid, schoolId);
         _gtcExpanded = false; // Reset expanded state for new version
       });
       _lastSeenGTCVersion = currentGTCVersion;
-    } else if (currentGTCVersion != null) {
+    } else if (currentGTCVersion != null && _lastSeenGTCVersion == null) {
+      // First time seeing this version, just track it
       _lastSeenGTCVersion = currentGTCVersion;
     }
 
-    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, hasData=${gtcService_data != null}, isAccepted=$isAccepted, version=$currentGTCVersion');
+    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, hasData=${gtcService_data != null}, isAccepted=$isAccepted, acceptedVersion=$acceptedVersion, currentVersion=$currentGTCVersion');
 
     if (gtcService.isLoading) {
       return Card(
