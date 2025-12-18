@@ -4,6 +4,7 @@ import '../models/test_model.dart';
 import '../services/test_service.dart';
 import '../services/app_config_service.dart';
 import '../auth/auth_service.dart';
+import 'test_review_screen.dart';
 
 /// Main tests listing screen
 class TestsScreen extends StatefulWidget {
@@ -26,10 +27,7 @@ class _TestsScreenState extends State<TestsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tests'),
-        centerTitle: true,
-      ),
+
       body: _buildBody(),
     );
   }
@@ -185,7 +183,10 @@ class _TestCard extends StatelessWidget {
                         Color? color =
                             Theme.of(context).colorScheme.onSurfaceVariant;
                         if (sub != null) {
-                          if (sub.status == 'final') {
+                          if (sub.status == 'acknowledged') {
+                            label = '✓ DONE - PASSED';
+                            color = Colors.green;
+                          } else if (sub.status == 'final') {
                             label = 'Final results available';
                             color = Colors.greenAccent.shade200;
                           } else {
@@ -266,6 +267,25 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
       if (existing != null) {
         _answers.clear();
         _answers.addAll(existing.answers);
+
+        // If status is 'final', redirect to review/sign-off screen
+        if (existing.status == 'final' && !mounted) return;
+        if (existing.status == 'final') {
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => TestReviewScreen(
+                  test: widget.test,
+                  userId: widget.userId,
+                  submission: existing,
+                  testContent: content,
+                ),
+              ),
+            );
+          }
+          return;
+        }
+
         ro = true;
         final rd = existing.reviewData;
         if (rd != null && rd['perQuestion'] is Map) {
@@ -292,10 +312,7 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.test.testEn),
-        centerTitle: true,
-      ),
+
       body: _buildBody(),
       bottomNavigationBar: _testContent != null && !_isLoading && !_readOnly
           ? _buildSubmitButton()
@@ -368,6 +385,9 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
       questions = _testContent!.questions.values.first;
     }
 
+    // Filter out disclaimer question (id="disclaimer") - it's only shown in final review
+    questions = questions.where((q) => q.id != 'disclaimer').toList();
+
     if (questions.isEmpty) {
       return const Center(
         child: Text('No questions available in this test'),
@@ -402,6 +422,8 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
     if (questions.isEmpty) {
       questions = _testContent!.questions['en'] ?? [];
     }
+    // Filter out disclaimer question (id="disclaimer") from validation
+    questions = questions.where((q) => q.id != 'disclaimer').toList();
     final allAnswered = questions.every((q) => _answers.containsKey(q.id));
 
     return Container(
@@ -463,6 +485,21 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
   }
 
   Future<void> _submitTest() async {
+    // Show disclaimer if available
+    if (_testContent?.disclaimer != null && _testContent!.disclaimer!.isNotEmpty) {
+      final accepted = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => _DisclaimerDialog(
+          disclaimer: _testContent!.disclaimer!,
+        ),
+      );
+
+      if (accepted != true) {
+        return;
+      }
+    }
+
     setState(() {
       _isSubmitting = true;
     });
@@ -630,6 +667,28 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                 ),
               ],
             ),
+            // Display image if available
+            if (widget.question.imageUrl != null && widget.question.imageUrl!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    widget.question.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text('Failed to load image'),
+                      );
+                    },
+                  ),
+                ),
+              ),
             const SizedBox(height: 16),
             _buildAnswerInput(context),
             if (widget.readOnly)
@@ -684,7 +743,12 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
   }
 
   Widget _buildMultipleChoiceInput(BuildContext context) {
-    final selectedAnswers = (widget.answer as List<String>?) ?? [];
+    // Handle both List<String> and List<dynamic> from Firestore
+    final answer = widget.answer;
+    List<String> selectedAnswers = [];
+    if (answer is List) {
+      selectedAnswers = answer.map((e) => e.toString()).toList();
+    }
 
     return Column(
       children: widget.question.options.map((option) {
@@ -711,12 +775,14 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
   }
 
   Widget _buildSingleChoiceInput(BuildContext context) {
+    // Safely handle answer type conversion
+    final selectedValue = widget.answer is String ? widget.answer : null;
     return Column(
       children: widget.question.options.map((option) {
         return RadioListTile<String>(
           title: Text(option),
           value: option,
-          groupValue: widget.answer as String?,
+          groupValue: selectedValue as String?,
           onChanged: widget.readOnly ? null : widget.onAnswerChanged,
           contentPadding: EdgeInsets.zero,
         );
@@ -725,19 +791,24 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
   }
 
   Widget _buildTrueFalseInput(BuildContext context) {
+    // Safely handle boolean answer type conversion
+    bool? selectedValue;
+    if (widget.answer is bool) {
+      selectedValue = widget.answer as bool?;
+    }
     return Column(
       children: [
         RadioListTile<bool>(
           title: const Text('True'),
           value: true,
-          groupValue: widget.answer as bool?,
+          groupValue: selectedValue,
           onChanged: widget.readOnly ? null : widget.onAnswerChanged,
           contentPadding: EdgeInsets.zero,
         ),
         RadioListTile<bool>(
           title: const Text('False'),
           value: false,
-          groupValue: widget.answer as bool?,
+          groupValue: selectedValue,
           onChanged: widget.readOnly ? null : widget.onAnswerChanged,
           contentPadding: EdgeInsets.zero,
         ),
@@ -759,7 +830,11 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
 
   Widget _buildMatchingInput(BuildContext context) {
     // For matching questions, we need pairs
-    final matches = (widget.answer as Map<String, String>?) ?? {};
+    // Handle both Map<String, String> and Map<dynamic, dynamic> from Firestore
+    Map<String, String> matches = {};
+    if (widget.answer is Map) {
+      matches = (widget.answer as Map).cast<String, String>();
+    }
     final leftItems = widget.question.options; // left side
     final rightItems = widget.question.matchingPairs; // right side options
 
@@ -831,3 +906,109 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
     );
   }
 }
+
+/// Dialog widget for displaying and accepting disclaimers
+class _DisclaimerDialog extends StatefulWidget {
+  final String disclaimer;
+
+  const _DisclaimerDialog({
+    required this.disclaimer,
+  });
+
+  @override
+  State<_DisclaimerDialog> createState() => _DisclaimerDialogState();
+}
+
+class _DisclaimerDialogState extends State<_DisclaimerDialog> {
+  bool _accepted = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Please read and accept the following',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Content
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                widget.disclaimer,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ),
+          // Footer with checkbox and buttons
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Acceptance checkbox
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    'I understand and accept the above terms',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  value: _accepted,
+                  onChanged: (value) {
+                    setState(() {
+                      _accepted = value ?? false;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                // Action buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Decline'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _accepted
+                          ? () => Navigator.of(context).pop(true)
+                          : null,
+                      child: const Text('Accept & Continue'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

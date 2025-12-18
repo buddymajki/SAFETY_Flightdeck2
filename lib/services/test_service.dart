@@ -81,7 +81,18 @@ class TestService extends ChangeNotifier {
     try {
       debugPrint('[TestService] Loading test content from: $testUrl');
 
-      final response = await http.get(Uri.parse(testUrl));
+      // Ensure Firebase Storage URLs have proper format for direct access
+      String finalUrl = testUrl;
+      
+      // If it's a Firebase Storage URL without alt=media, add it
+      if (testUrl.contains('firebasestorage.googleapis.com') && !testUrl.contains('alt=media')) {
+        finalUrl = '$testUrl${testUrl.contains('?') ? '&' : '?'}alt=media';
+      }
+
+      final response = await http.get(Uri.parse(finalUrl)).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw Exception('Request timeout'),
+      );
 
       if (response.statusCode != 200) {
         throw Exception('Failed to load test: HTTP ${response.statusCode}');
@@ -219,8 +230,10 @@ class TestService extends ChangeNotifier {
           .get();
 
       if (!doc.exists) return null;
-
-      return TestSubmission.fromFirestore(doc);
+      
+      final submission = TestSubmission.fromFirestore(doc);
+      print('[TestService] getSubmission result: questionFeedback keys = ${submission.questionFeedback?.keys.toList()}');
+      return submission;
     } catch (e) {
       debugPrint('[TestService] Error getting submission: $e');
       return null;
@@ -232,6 +245,34 @@ class TestService extends ChangeNotifier {
     _availableTests = [];
     _error = null;
     notifyListeners();
+  }
+
+  /// Acknowledge test review and sign off
+  ///
+  /// Called when student reviews graded test and confirms understanding.
+  /// Updates status to "acknowledged" and records timestamp.
+  Future<void> acknowledgeTestReview({
+    required String userId,
+    required String testId,
+  }) async {
+    try {
+      debugPrint('[TestService] Acknowledging test review: $testId');
+
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('tests')
+          .doc(testId)
+          .update({
+        'status': 'acknowledged',
+        'student_acknowledged_at': FieldValue.serverTimestamp(),
+      });
+
+      debugPrint('[TestService] Test acknowledged successfully');
+    } catch (e) {
+      debugPrint('[TestService] Error acknowledging test: $e');
+      rethrow;
+    }
   }
 
   /// Evaluate answers against content, returning a review summary

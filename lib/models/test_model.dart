@@ -52,10 +52,12 @@ class TestMetadata {
 class TestContent {
   final Map<String, List<Question>> questions;
   final Map<String, dynamic>? metadata;
+  final String? disclaimer;
 
   TestContent({
     required this.questions,
     this.metadata,
+    this.disclaimer,
   });
 
   /// Parse from JSON structure
@@ -68,28 +70,42 @@ class TestContent {
   ///       "type": "single_choice",
   ///       "text": "Question text",
   ///       "options": ["Option 1", "Option 2"]
+  ///     },
+  ///     {
+  ///       "id": "disclaimer",
+  ///       "type": "text",
+  ///       "text": "Disclaimer text..."
   ///     }
   ///   ],
   ///   "de": [...]
   /// }
   factory TestContent.fromJson(Map<String, dynamic> json) {
     final Map<String, List<Question>> questions = {};
+    String? disclaimer;
 
     // Parse questions for each language
     json.forEach((key, value) {
       if (value is List) {
-        questions[key] = value.map((q) {
+        final parsedQuestions = <Question>[];
+        for (final q in value) {
           if (q is Map<String, dynamic>) {
-            return Question.fromJson(q);
+            final question = Question.fromJson(q);
+            // Extract disclaimer if found in questions list
+            if (question.id == 'disclaimer' && disclaimer == null) {
+              disclaimer = question.text;
+            } else {
+              parsedQuestions.add(question);
+            }
           }
-          throw FormatException('Invalid question format');
-        }).toList();
+        }
+        questions[key] = parsedQuestions;
       }
     });
 
     return TestContent(
       questions: questions,
       metadata: json['metadata'] as Map<String, dynamic>?,
+      disclaimer: disclaimer,
     );
   }
 }
@@ -231,7 +247,7 @@ class Question {
       text: json['text'] as String? ?? '',
       options: options,
       matchingPairs: matchingPairs,
-      imageUrl: json['image_url'] as String?,
+      imageUrl: json['image_url'] as String? ?? json['img_url'] as String?,
       additionalData: json,
       correctOptionIndex: correctOptionIndex,
       correctOptionIndices: correctOptionIndices,
@@ -342,13 +358,18 @@ class Question {
 /// User's submission for a test
 ///
 /// Saved to users/{uid}/tests/{testId} in Firestore
+/// Workflow: submitted → final (instructor grades) → acknowledged (student reviews & signs)
 class TestSubmission {
   final String testId;
   final String userId;
   final Map<String, dynamic> answers;
   final DateTime submittedAt;
-  final String status;
+  final String status; // submitted → final → acknowledged
   final Map<String, dynamic>? reviewData;
+  final Map<String, dynamic>?
+      questionFeedback; // Instructor feedback for text questions
+  final DateTime? studentAcknowledgedAt; // When student reviewed and signed off
+  final String? instructorReviewedBy; // UID of instructor who graded
 
   TestSubmission({
     required this.testId,
@@ -357,6 +378,9 @@ class TestSubmission {
     required this.submittedAt,
     this.status = 'submitted',
     this.reviewData,
+    this.questionFeedback,
+    this.studentAcknowledgedAt,
+    this.instructorReviewedBy,
   });
 
   /// Convert to Firestore format
@@ -368,20 +392,49 @@ class TestSubmission {
       'submitted_at': Timestamp.fromDate(submittedAt),
       'status': status,
       if (reviewData != null) 'review_data': reviewData,
+      if (questionFeedback != null) 'question_feedback': questionFeedback,
+      if (studentAcknowledgedAt != null)
+        'student_acknowledged_at': Timestamp.fromDate(studentAcknowledgedAt!),
+      if (instructorReviewedBy != null)
+        'instructor_reviewed_by': instructorReviewedBy,
     };
   }
 
   /// Create from Firestore document
   factory TestSubmission.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    
+    // Safely get answers, handling both direct and nested structures
+    Map<String, dynamic> answers = {};
+    if (data['answers'] != null) {
+      final answersData = data['answers'];
+      if (answersData is Map) {
+        answers = Map<String, dynamic>.from(answersData as Map);
+      }
+    }
+
+    // Try both naming conventions for questionFeedback
+    Map<String, dynamic>? questionFeedback;
+    if (data['questionFeedback'] != null) {
+      questionFeedback = Map<String, dynamic>.from(data['questionFeedback'] as Map);
+    } else if (data['question_feedback'] != null) {
+      questionFeedback = Map<String, dynamic>.from(data['question_feedback'] as Map);
+    }
 
     return TestSubmission(
       testId: data['test_id'] as String,
       userId: data['user_id'] as String,
-      answers: data['answers'] as Map<String, dynamic>,
+      answers: answers,
       submittedAt: (data['submitted_at'] as Timestamp).toDate(),
       status: data['status'] as String? ?? 'submitted',
-      reviewData: data['review_data'] as Map<String, dynamic>?,
+      reviewData: data['review_data'] != null
+          ? Map<String, dynamic>.from(data['review_data'] as Map)
+          : null,
+      questionFeedback: questionFeedback,
+      studentAcknowledgedAt: data['student_acknowledged_at'] != null
+          ? (data['student_acknowledged_at'] as Timestamp).toDate()
+          : null,
+      instructorReviewedBy: data['instructor_reviewed_by'] as String?,
     );
   }
 }
