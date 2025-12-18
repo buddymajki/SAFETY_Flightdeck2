@@ -309,7 +309,7 @@ class Question {
         if (userAnswer is! List || correctOptionIndices == null) return false;
         // Accept either indices or option texts
         Set<int> userIdx;
-        if ((userAnswer as List).isNotEmpty && userAnswer.first is String) {
+        if ((userAnswer).isNotEmpty && userAnswer.first is String) {
           userIdx = userAnswer.map((e) => options.indexOf(e as String)).toSet();
         } else {
           userIdx = userAnswer.map((e) => e as int).toSet();
@@ -409,7 +409,7 @@ class TestSubmission {
     if (data['answers'] != null) {
       final answersData = data['answers'];
       if (answersData is Map) {
-        answers = Map<String, dynamic>.from(answersData as Map);
+        answers = Map<String, dynamic>.from(answersData);
       }
     }
 

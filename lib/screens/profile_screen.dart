@@ -1,5 +1,7 @@
 // File: lib/screens/profile_screen.dart (Teljes kód a javításokkal)
 
+// ignore_for_file: unnecessary_cast, unused_local_variable
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';

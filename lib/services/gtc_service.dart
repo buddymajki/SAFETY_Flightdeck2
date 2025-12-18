@@ -95,7 +95,7 @@ class GTCService extends ChangeNotifier {
           .get();
 
       if (doc.exists) {
-        _currentAcceptance = doc.data() as Map<String, dynamic>?;
+        _currentAcceptance = doc.data();
       } else {
         _currentAcceptance = null;
       }
