@@ -1089,7 +1089,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                           enabled: false,
                           child: Divider(
                             color: Colors.white.withOpacity(0.3),
-                            height: 8,
+                            height: 4,
                             thickness: 1,
                           ),
                         ),
@@ -1101,14 +1101,17 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                         final items = <DropdownMenuItem<String?>>[
                           DropdownMenuItem<String?>(
                             value: pair,
-                            child: Text(
-                              pair,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                                fontWeight: FontWeight.w500,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2.0),
+                              child: Text(
+                                pair,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: const Color.fromARGB(255, 255, 255, 255),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ];
@@ -1119,7 +1122,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                               enabled: false,
                               child: Divider(
                                 color: Colors.white.withOpacity(0.3),
-                                height: 8,
+                                height: 4,
                                 thickness: 1,
                               ),
                             ),
@@ -1129,6 +1132,8 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                       }).toList(),
                     ],
                     dropdownColor: const Color.fromARGB(255, 40, 60, 90),
+                    isDense: false,
+                    itemHeight: null,
                     onChanged: widget.readOnly
                         ? null
                         : (value) {
