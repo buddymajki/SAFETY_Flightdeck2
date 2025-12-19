@@ -962,7 +962,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Match the following:',
+          'Select the correct option:',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
               ),
@@ -983,7 +983,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
             padding: const EdgeInsets.only(bottom: 16),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 255, 255, 255),
+                color: Colors.transparent,
                 border: Border.all(
                   color: const Color.fromARGB(255, 255, 255, 255),
                   width: 2,
@@ -1049,7 +1049,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                       filled: true,
                       fillColor: current != null
                           ? const Color.fromARGB(255, 105, 167, 225).withOpacity(0.15)
-                          : Colors.white.withOpacity(0.3),
+                          : Colors.transparent,
                     ),
                     isExpanded: true,
                     hint: Text(
@@ -1095,24 +1095,12 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                         ),
                       ],
                       // Regular options with dividers
-                      ...availableOptions.asMap().entries.map((entry) {
+                      ...availableOptions.asMap().entries.expand((entry) {
                         final index = entry.key;
                         final pair = entry.value;
-                        return DropdownMenuItem(
-                          value: pair,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            decoration: index < availableOptions.length - 1
-                                ? BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: Colors.white.withOpacity(0.3),
-                                        width: 1,
-                                      ),
-                                    ),
-                                  )
-                                : null,
+                        final items = <DropdownMenuItem<String?>>[
+                          DropdownMenuItem<String?>(
+                            value: pair,
                             child: Text(
                               pair,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -1123,7 +1111,21 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        );
+                        ];
+                        // Add divider after item (except for the last one)
+                        if (index < availableOptions.length - 1) {
+                          items.add(
+                            DropdownMenuItem<String?>(
+                              enabled: false,
+                              child: Divider(
+                                color: Colors.white.withOpacity(0.3),
+                                height: 8,
+                                thickness: 1,
+                              ),
+                            ),
+                          );
+                        }
+                        return items;
                       }).toList(),
                     ],
                     dropdownColor: const Color.fromARGB(255, 40, 60, 90),
