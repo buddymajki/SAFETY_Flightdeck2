@@ -242,6 +242,7 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
   bool _isSubmitting = false;
   bool _readOnly = false;
   Map<String, dynamic>? _perQuestionResults;
+  int _currentQuestionIndex = 0;
 
   @override
   void initState() {
@@ -312,11 +313,191 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.test.testEn),
+        elevation: 0,
+      ),
+      body: _readOnly ? _buildReadOnlyBody() : _buildBody(),
+    );
+  }
 
-      body: _buildBody(),
-      bottomNavigationBar: _testContent != null && !_isLoading && !_readOnly
-          ? _buildSubmitButton()
-          : null,
+  Widget _buildReadOnlyBody() {
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading test...'),
+          ],
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading test',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                _error!,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadTestContent,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_testContent == null) {
+      return const Center(
+        child: Text('No test content available'),
+      );
+    }
+
+    // Get questions in the current language (default to English, with fallback)
+    final lang = context.read<AppConfigService>().currentLanguageCode;
+    List<Question> questions = _testContent!.questions[lang] ?? [];
+    if (questions.isEmpty) {
+      questions = _testContent!.questions['en'] ?? [];
+    }
+    if (questions.isEmpty && _testContent!.questions.isNotEmpty) {
+      // final fallback to the first available language
+      questions = _testContent!.questions.values.first;
+    }
+
+    // Filter out disclaimer question (id="disclaimer") - it's only shown in final review
+    questions = questions.where((q) => q.id != 'disclaimer').toList();
+
+    if (questions.isEmpty) {
+      return const Center(
+        child: Text('No questions available in this test'),
+      );
+    }
+
+    // Ensure current index is valid
+    if (_currentQuestionIndex >= questions.length) {
+      _currentQuestionIndex = questions.length - 1;
+    }
+
+    final currentQuestion = questions[_currentQuestionIndex];
+    final isFirstQuestion = _currentQuestionIndex == 0;
+    final isLastQuestion = _currentQuestionIndex == questions.length - 1;
+
+    return Column(
+      children: [
+        // Progress header
+        Container(
+          color: Theme.of(context).colorScheme.surface,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Question ${_currentQuestionIndex + 1} of ${questions.length}',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16),
+                      child: LinearProgressIndicator(
+                        value: (_currentQuestionIndex + 1) / questions.length,
+                        minHeight: 6,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // Current question
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _QuestionWidget(
+                question: currentQuestion,
+                questionNumber: _currentQuestionIndex + 1,
+                answer: _answers[currentQuestion.id],
+                onAnswerChanged: (answer) {
+                  setState(() {
+                    _answers[currentQuestion.id] = answer;
+                  });
+                },
+                readOnly: _readOnly,
+                isCorrect: _perQuestionResults?[currentQuestion.id] as bool?,
+              ),
+            ],
+          ),
+        ),
+        // Navigation buttons
+        Container(
+          color: Theme.of(context).colorScheme.surface,
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Previous button
+              if (!isFirstQuestion)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _currentQuestionIndex--;
+                      });
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Previous'),
+                  ),
+                )
+              else
+                Expanded(
+                  child: SizedBox.shrink(),
+                ),
+              if (!isFirstQuestion) const SizedBox(width: 12),
+              // Next button
+              if (!isLastQuestion)
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _currentQuestionIndex++;
+                      });
+                    },
+                    icon: const Icon(Icons.arrow_forward),
+                    label: const Text('Next'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -394,93 +575,142 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: questions.length,
-      itemBuilder: (context, index) {
-        final question = questions[index];
-        return _QuestionWidget(
-          question: question,
-          questionNumber: index + 1,
-          answer: _answers[question.id],
-          onAnswerChanged: (answer) {
-            setState(() {
-              _answers[question.id] = answer;
-            });
-          },
-          readOnly: _readOnly,
-          isCorrect: _perQuestionResults?[question.id] as bool?,
-        );
-      },
-    );
-  }
-
-  Widget _buildSubmitButton() {
-    // Check if all questions are answered for current language
-    final lang = context.read<AppConfigService>().currentLanguageCode;
-    List<Question> questions = _testContent!.questions[lang] ?? [];
-    if (questions.isEmpty) {
-      questions = _testContent!.questions['en'] ?? [];
+    // Ensure current index is valid
+    if (_currentQuestionIndex >= questions.length) {
+      _currentQuestionIndex = questions.length - 1;
     }
-    // Filter out disclaimer question (id="disclaimer") from validation
-    questions = questions.where((q) => q.id != 'disclaimer').toList();
-    final allAnswered = questions.every((q) => _answers.containsKey(q.id));
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!allAnswered)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
+    final currentQuestion = questions[_currentQuestionIndex];
+    final isFirstQuestion = _currentQuestionIndex == 0;
+    final isLastQuestion = _currentQuestionIndex == questions.length - 1;
+
+    return Column(
+      children: [
+        // Progress header
+        Container(
+          color: Theme.of(context).colorScheme.surface,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Question ${_currentQuestionIndex + 1} of ${questions.length}',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Please answer all questions before submitting',
-                        style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16),
+                      child: LinearProgressIndicator(
+                        value: (_currentQuestionIndex + 1) / questions.length,
+                        minHeight: 6,
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // Current question
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _QuestionWidget(
+                question: currentQuestion,
+                questionNumber: _currentQuestionIndex + 1,
+                answer: _answers[currentQuestion.id],
+                onAnswerChanged: (answer) {
+                  setState(() {
+                    _answers[currentQuestion.id] = answer;
+                  });
+                },
+                readOnly: _readOnly,
+                isCorrect: _perQuestionResults?[currentQuestion.id] as bool?,
+              ),
+            ],
+          ),
+        ),
+        // Navigation and submit buttons
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    // Previous button
+                    if (!isFirstQuestion)
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _currentQuestionIndex--;
+                            });
+                          },
+                          icon: const Icon(Icons.arrow_back),
+                          label: const Text('Previous'),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: SizedBox.shrink(),
+                      ),
+                    if (!isFirstQuestion) const SizedBox(width: 12),
+                    // Next or Submit button
+                    if (!isLastQuestion)
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _currentQuestionIndex++;
+                            });
+                          },
+                          icon: const Icon(Icons.arrow_forward),
+                          label: const Text('Next'),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _isSubmitting ? null : _submitTest,
+                          icon: _isSubmitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Icon(Icons.check),
+                          label: const Text('Submit Test'),
+                        ),
+                      ),
                   ],
                 ),
-              ),
-            FilledButton(
-              onPressed: allAnswered && !_isSubmitting ? _submitTest : null,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-              ),
-              child: _isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text('Submit Test'),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
