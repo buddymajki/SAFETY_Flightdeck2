@@ -229,25 +229,43 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
                                 : isCorrect == false
                                     ? Colors.red.shade400
                                     : Colors.grey.shade400,
-                            width: 1.5,
+                            width: 2,
                           ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Your answer:',
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                color: isCorrect == true
-                                    ? Colors.green.shade700
-                                    : isCorrect == false
-                                        ? Colors.red.shade700
-                                        : Colors.grey.shade700,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              children: [
+                                Icon(
+                                  isCorrect == true
+                                      ? Icons.check_circle
+                                      : isCorrect == false
+                                          ? Icons.cancel
+                                          : Icons.hourglass_top,
+                                  color: isCorrect == true
+                                      ? Colors.green.shade600
+                                      : isCorrect == false
+                                          ? Colors.red.shade600
+                                          : Colors.grey.shade600,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Your answer:',
+                                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: isCorrect == true
+                                        ? Colors.green.shade700
+                                        : isCorrect == false
+                                            ? Colors.red.shade700
+                                            : Colors.grey.shade700,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 12),
                             _buildAnswerDisplay(question, answer),
                           ],
                         ),
@@ -291,24 +309,34 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
                         Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            border: Border.all(color: Colors.blue.shade300, width: 1.5),
+                            color: Colors.green.shade50,
+                            border: Border.all(color: Colors.green.shade400, width: 2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Correct answer:',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: Colors.blue.shade700,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green.shade600,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Correct answer:',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: Colors.green.shade700,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 12),
                               _buildCorrectAnswerDisplay(question),
                             ],
                           ),
@@ -321,23 +349,33 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: Colors.blue.shade50,
-                            border: Border.all(color: Colors.blue.shade400, width: 1.5),
+                            border: Border.all(color: Colors.blue.shade400, width: 2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Instructor feedback:',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: Colors.blue.shade700,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.comment,
+                                    color: Colors.blue.shade600,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Instructor feedback:',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: Colors.blue.shade700,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 12),
                               Text(
                                 feedbackData['feedback'] as String? ??
                                     'No feedback provided',
@@ -733,18 +771,30 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
           children: selected.map((opt) {
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.grey.shade400, width: 1.5),
               ),
-              child: Text(
-                opt,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade900,
-                  fontWeight: FontWeight.w500,
-                ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.done,
+                    color: Colors.grey.shade600,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      opt,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey.shade900,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             );
           }).toList(),
@@ -812,7 +862,7 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
           children: matches.entries.map((e) {
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
@@ -829,11 +879,23 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    '→ ${e.value}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey.shade800,
-                    ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          e.value,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -868,12 +930,18 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: lines.map((line) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.green.shade100,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.green.shade300, width: 1),
+            ),
             child: Text(
               line,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.blue.shade900,
+                color: Colors.green.shade900,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -882,12 +950,58 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
       );
     }
     
+    // For multi-select questions, show each answer separately
+    if ((question.type == QuestionType.multipleChoice) && displayText.contains(', ')) {
+      final answers = displayText.split(', ');
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: answers.map((answer) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.shade100,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.green.shade300, width: 1),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.done,
+                  color: Colors.green.shade600,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    answer,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.green.shade900,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      );
+    }
+    
     // For other types, just display as text
-    return Text(
-      displayText,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: Colors.blue.shade900,
-        fontWeight: FontWeight.w500,
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.green.shade100,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.green.shade300, width: 1),
+      ),
+      child: Text(
+        displayText,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.green.shade900,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

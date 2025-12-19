@@ -742,6 +742,8 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
     }
   }
 
+
+//MULTIPLE CHOICE VÁLASZTÓ GOMBOK
   Widget _buildMultipleChoiceInput(BuildContext context) {
     // Handle both List<String> and List<dynamic> from Firestore
     final answer = widget.answer;
@@ -754,42 +756,103 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
       children: widget.question.options.map((option) {
         final isSelected = selectedAnswers.contains(option);
 
-        return CheckboxListTile(
-          title: Text(option),
-          value: isSelected,
-          onChanged: widget.readOnly
-              ? null
-              : (selected) {
-                  final newAnswers = List<String>.from(selectedAnswers);
-                  if (selected == true) {
-                    newAnswers.add(option);
-                  } else {
-                    newAnswers.remove(option);
-                  }
-                  widget.onAnswerChanged(newAnswers);
-                },
-          contentPadding: EdgeInsets.zero,
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.transparent : Colors.transparent,
+            border: Border.all(
+              color: isSelected ? const Color.fromARGB(255, 105, 167, 225) : Colors.grey.shade300,
+              width: isSelected ? 2 : 1.5,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color.fromARGB(255, 12, 67, 99).withOpacity(0.2),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: CheckboxListTile(
+            title: Text(
+              option,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(221, 255, 255, 255),
+                  ),
+            ),
+            value: isSelected,
+            activeColor: const Color.fromARGB(255, 105, 167, 225),
+            checkColor: Colors.white,
+            onChanged: widget.readOnly
+                ? null
+                : (selected) {
+                    final newAnswers = List<String>.from(selectedAnswers);
+                    if (selected == true) {
+                      newAnswers.add(option);
+                    } else {
+                      newAnswers.remove(option);
+                    }
+                    widget.onAnswerChanged(newAnswers);
+                  },
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          ),
         );
       }).toList(),
     );
   }
 
+
+//SINGLE CHOICE VÁLASZTÓ GOMBOK
   Widget _buildSingleChoiceInput(BuildContext context) {
-    // Safely handle answer type conversion
+    // Safely handle answer type conversion ITT vannak a színek a felelet választáshoz single choice kérdésnél REFERENCE
     final selectedValue = widget.answer is String ? widget.answer : null;
     return Column(
       children: widget.question.options.map((option) {
-        return RadioListTile<String>(
-          title: Text(option),
-          value: option,
-          groupValue: selectedValue as String?,
-          onChanged: widget.readOnly ? null : widget.onAnswerChanged,
-          contentPadding: EdgeInsets.zero,
+        final isSelected = selectedValue == option;
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.transparent: Colors.transparent,
+            border: Border.all(
+              color: isSelected ? const Color.fromARGB(255, 105, 167, 225) : const Color.fromARGB(255, 228, 226, 226),
+              width: isSelected ? 2 : 1.5,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color.fromARGB(255, 12, 67, 99).withOpacity(0.2),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: RadioListTile<String>(
+            title: Text(
+              option,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(221, 255, 255, 255),
+                  ),
+            ),
+            value: option,
+            groupValue: selectedValue as String?,
+            activeColor: const Color.fromARGB(255, 255, 255, 255),
+            onChanged: widget.readOnly ? null : widget.onAnswerChanged,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          ),
         );
       }).toList(),
     );
   }
 
+
+//TRUE FALSE VÁLASZTÓ GOMBOK
   Widget _buildTrueFalseInput(BuildContext context) {
     // Safely handle boolean answer type conversion
     bool? selectedValue;
@@ -798,24 +861,79 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
     }
     return Column(
       children: [
-        RadioListTile<bool>(
-          title: const Text('True'),
-          value: true,
-          groupValue: selectedValue,
-          onChanged: widget.readOnly ? null : widget.onAnswerChanged,
-          contentPadding: EdgeInsets.zero,
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: selectedValue == true ? Colors.transparent : Colors.transparent,
+            border: Border.all(
+              color: selectedValue == true ? const Color.fromARGB(255, 105, 167, 225) : const Color.fromARGB(255, 228, 226, 226),
+              width: selectedValue == true ? 2 : 1.5,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: selectedValue == true
+                ? [
+                    BoxShadow(
+                      color: const Color.fromARGB(255, 12, 67, 99).withOpacity(0.2),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: RadioListTile<bool>(
+            title: Text(
+              'True',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: selectedValue == true ? FontWeight.w600 : FontWeight.w400,
+                    color: selectedValue == true ? const Color.fromARGB(255, 255, 255, 255) :  const Color.fromARGB(255, 255, 255, 255),
+                  ),
+            ),
+            value: true,
+            groupValue: selectedValue,
+            activeColor: const Color.fromARGB(255, 255, 255, 255),
+            onChanged: widget.readOnly ? null : widget.onAnswerChanged,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          ),
         ),
-        RadioListTile<bool>(
-          title: const Text('False'),
-          value: false,
-          groupValue: selectedValue,
-          onChanged: widget.readOnly ? null : widget.onAnswerChanged,
-          contentPadding: EdgeInsets.zero,
+        Container(
+          decoration: BoxDecoration(
+            color: selectedValue == false ? Colors.transparent : Colors.transparent,
+            border: Border.all(
+              color: selectedValue == false ? const Color.fromARGB(255, 105, 167, 225) : const Color.fromARGB(255, 228, 226, 226),
+              width: selectedValue == false ? 2 : 1.5,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: selectedValue == false
+                ? [
+                    BoxShadow(
+                      color: const Color.fromARGB(255, 12, 67, 99).withOpacity(0.2),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: RadioListTile<bool>(
+            title: Text(
+              'False',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: selectedValue == false ? FontWeight.w600 : FontWeight.w400,
+                    color: selectedValue == false ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(221, 255, 255, 255),
+                  ),
+            ),
+            value: false,
+            groupValue: selectedValue,
+            activeColor: const Color.fromARGB(255, 255, 255, 255),
+            onChanged: widget.readOnly ? null : widget.onAnswerChanged,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          ),
         ),
       ],
     );
   }
 
+
+//text-es kérdések ITT MÉG A LILA színt eltűntetni majd
   Widget _buildTextInput(BuildContext context) {
     return TextField(
       decoration: const InputDecoration(
@@ -828,6 +946,8 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
     );
   }
 
+
+//MATCHING VÁLASZTÓ GOMBOK
   Widget _buildMatchingInput(BuildContext context) {
     // For matching questions, we need pairs
     // Handle both Map<String, String> and Map<dynamic, dynamic> from Firestore
@@ -860,45 +980,169 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
               .toList();
 
           return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Text(leftItem),
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 255, 255, 255),
+                border: Border.all(
+                  color: const Color.fromARGB(255, 255, 255, 255),
+                  width: 2,
                 ),
-                const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward, size: 16),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 4,
-                  child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      border: OutlineInputBorder(),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left label with arrow
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          leftItem,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: const Color.fromARGB(255, 255, 255, 255),
+                              ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.arrow_forward,
+                        size: 20,
+                        color: Color.fromARGB(255, 255, 255, 255),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Dropdown - full width below
+                  DropdownButtonFormField<String?>(
+                    decoration: InputDecoration(
+                      isDense: false,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: current != null
+                              ? const Color.fromARGB(255, 105, 167, 225)
+                              : Colors.white.withOpacity(0.5),
+                          width: 2,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: current != null
+                              ? const Color.fromARGB(255, 105, 167, 225)
+                              : Colors.white.withOpacity(0.5),
+                          width: 2,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: Color.fromARGB(255, 105, 167, 225),
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                      filled: true,
+                      fillColor: current != null
+                          ? const Color.fromARGB(255, 105, 167, 225).withOpacity(0.15)
+                          : Colors.white.withOpacity(0.3),
                     ),
                     isExpanded: true,
-                    hint: const Text('Select'),
+                    hint: Text(
+                      'Select',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
                     value: current,
-                    items: availableOptions.map((pair) {
-                      return DropdownMenuItem(
-                        value: pair,
-                        child: Text(pair),
-                      );
-                    }).toList(),
+                    items: [
+                      // Clear option at the top
+                      if (current != null)
+                        DropdownMenuItem<String?>(
+                          value: null,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.red.shade300,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Clear selection',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.red.shade300,
+                                  fontWeight: FontWeight.w500,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      // Divider line after clear option
+                      if (current != null) ...[
+                        DropdownMenuItem<String?>(
+                          enabled: false,
+                          child: Divider(
+                            color: Colors.white.withOpacity(0.3),
+                            height: 8,
+                            thickness: 1,
+                          ),
+                        ),
+                      ],
+                      // Regular options with dividers
+                      ...availableOptions.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final pair = entry.value;
+                        return DropdownMenuItem(
+                          value: pair,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            decoration: index < availableOptions.length - 1
+                                ? BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: Colors.white.withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                            child: Text(
+                              pair,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: const Color.fromARGB(255, 255, 255, 255),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                    dropdownColor: const Color.fromARGB(255, 40, 60, 90),
                     onChanged: widget.readOnly
                         ? null
                         : (value) {
-                            if (value != null) {
-                              final newMatches =
-                                  Map<String, String>.from(matches);
+                            final newMatches =
+                                Map<String, String>.from(matches);
+                            if (value == null) {
+                              // Clear the selection
+                              newMatches.remove(leftItem);
+                            } else {
                               newMatches[leftItem] = value;
-                              widget.onAnswerChanged(newMatches);
                             }
+                            widget.onAnswerChanged(newMatches);
                           },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }).toList(),
