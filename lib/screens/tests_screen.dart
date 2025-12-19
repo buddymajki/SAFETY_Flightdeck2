@@ -1064,36 +1064,40 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                       if (current != null)
                         DropdownMenuItem<String?>(
                           value: null,
-                          height: 32,
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.close,
-                                size: 16,
-                                color: Colors.red.shade300,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Clear selection',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          child: SizedBox(
+                            height: 30,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.close,
+                                  size: 16,
                                   color: Colors.red.shade300,
-                                  fontWeight: FontWeight.w500,
-                                  fontStyle: FontStyle.italic,
-                                  fontSize: 12,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Clear selection',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.red.shade300,
+                                    fontWeight: FontWeight.w500,
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       // Divider line after clear option
                       if (current != null) ...[
                         DropdownMenuItem<String?>(
                           enabled: false,
-                          height: 2,
-                          child: Divider(
-                            color: Colors.white.withOpacity(0.3),
+                          child: SizedBox(
                             height: 1,
-                            thickness: 1,
+                            child: Divider(
+                              color: Colors.white.withOpacity(0.3),
+                              height: 1,
+                              thickness: 1,
+                            ),
                           ),
                         ),
                       ],
@@ -1104,16 +1108,21 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                         final items = <DropdownMenuItem<String?>>[
                           DropdownMenuItem<String?>(
                             value: pair,
-                            height: 28,
-                            child: Text(
-                              pair,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
+                            child: SizedBox(
+                              height: 26,
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  pair,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: const Color.fromARGB(255, 255, 255, 255),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ];
@@ -1122,11 +1131,13 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                           items.add(
                             DropdownMenuItem<String?>(
                               enabled: false,
-                              height: 2,
-                              child: Divider(
-                                color: Colors.white.withOpacity(0.3),
+                              child: SizedBox(
                                 height: 1,
-                                thickness: 1,
+                                child: Divider(
+                                  color: Colors.white.withOpacity(0.3),
+                                  height: 1,
+                                  thickness: 1,
+                                ),
                               ),
                             ),
                           );
