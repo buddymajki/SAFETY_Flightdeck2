@@ -617,10 +617,37 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
             ],
           ),
         ),
-        // Current question
+        // Image section (fixed at top if available) - max 30% of screen height
+        if (currentQuestion.imageUrl != null && currentQuestion.imageUrl!.isNotEmpty)
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.3,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  currentQuestion.imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('Failed to load image'),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        // Current question (scrollable, without image)
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(8),
             children: [
               _QuestionWidget(
                 question: currentQuestion,
@@ -639,7 +666,7 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
         ),
         // Navigation and submit buttons
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             boxShadow: [
@@ -651,6 +678,7 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
             ],
           ),
           child: SafeArea(
+            bottom: false,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -898,27 +926,8 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
               ],
             ),
             // Display image if available
-            if (widget.question.imageUrl != null && widget.question.imageUrl!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    widget.question.imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text('Failed to load image'),
-                      );
-                    },
-                  ),
-                ),
-              ),
+            // NOTE: Image is now rendered in _buildBody() as a fixed element above the scrollable content
+            const SizedBox.shrink(),
             const SizedBox(height: 16),
             _buildAnswerInput(context),
             if (widget.readOnly)
@@ -1288,91 +1297,47 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                         color: Colors.white.withOpacity(0.7),
                       ),
                     ),
-                    value: current,
+                    initialValue: current,
                     items: [
                       // Clear option at the top
                       if (current != null)
                         DropdownMenuItem<String?>(
                           value: null,
-                          child: SizedBox(
-                            height: 30,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.close,
-                                  size: 16,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.red.shade300,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Clear selection',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Colors.red.shade300,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Clear selection',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.red.shade300,
-                                    fontWeight: FontWeight.w500,
-                                    fontStyle: FontStyle.italic,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      // Divider line after clear option
-                      if (current != null) ...[
-                        DropdownMenuItem<String?>(
-                          enabled: false,
-                          child: SizedBox(
-                            height: 1,
-                            child: Divider(
-                              color: Colors.white.withOpacity(0.3),
-                              height: 1,
-                              thickness: 1,
-                            ),
-                          ),
-                        ),
-                      ],
-                      // Regular options with dividers
-                      ...availableOptions.asMap().entries.expand((entry) {
-                        final index = entry.key;
-                        final pair = entry.value;
-                        final items = <DropdownMenuItem<String?>>[
-                          DropdownMenuItem<String?>(
-                            value: pair,
-                            child: SizedBox(
-                              height: 26,
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  pair,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: const Color.fromARGB(255, 255, 255, 255),
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  fontWeight: FontWeight.w500,
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 12,
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ];
-                        // Add divider after item (except for the last one)
-                        if (index < availableOptions.length - 1) {
-                          items.add(
-                            DropdownMenuItem<String?>(
-                              enabled: false,
-                              child: SizedBox(
-                                height: 1,
-                                child: Divider(
-                                  color: Colors.white.withOpacity(0.3),
-                                  height: 1,
-                                  thickness: 1,
-                                ),
-                              ),
+                        ),
+                      // Regular options
+                      ...availableOptions.map((pair) {
+                        return DropdownMenuItem<String?>(
+                          value: pair,
+                          child: Text(
+                            pair,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color.fromARGB(255, 255, 255, 255),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
                             ),
-                          );
-                        }
-                        return items;
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
                       }).toList(),
                     ],
                     dropdownColor: const Color.fromARGB(255, 40, 60, 90),
