@@ -3,14 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:reorderables/reorderables.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/dashboard_card_config.dart';
 import '../services/stats_service.dart';
 import '../services/profile_service.dart';
 import '../services/app_config_service.dart';
 import '../services/global_data_service.dart';
-import '../services/dashboard_config_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -23,6 +21,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isChecklistChartExpanded = false;
   bool _isManeuverChartExpanded = false;
   bool _isTakeoffPlacesChartExpanded = false;
+
+  // Card order management
+  late List<String> _cardOrder;
+
+  static const String _cardOrderKey = 'dashboard_card_order';
+  static const List<String> _defaultCardOrder = ['checklist', 'maneuver', 'takeoff'];
 
   // Localization texts
   static const Map<String, Map<String, String>> _texts = {
@@ -48,13 +52,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _cardOrder = List.from(_defaultCardOrder);
+    _loadCardOrder();
+  }
+
+  Future<void> _loadCardOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList(_cardOrderKey);
+    if (saved != null && saved.length == _defaultCardOrder.length) {
+      setState(() {
+        _cardOrder = saved;
+      });
+    }
+  }
+
+  Future<void> _saveCardOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_cardOrderKey, _cardOrder);
+  }
+
+  void _onCardReorder(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+      final item = _cardOrder.removeAt(oldIndex);
+      _cardOrder.insert(newIndex, item);
+    });
+    _saveCardOrder();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final statsService = context.watch<StatsService>();
     final profileService = context.watch<ProfileService>();
     final appConfig = context.watch<AppConfigService>();
     final globalData = context.watch<GlobalDataService>();
-    final dashboardConfig = context.watch<DashboardConfigService>();
     final lang = appConfig.currentLanguageCode;
 
     final stats = statsService.stats;
@@ -79,18 +115,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 8),
 
-                // Smart grid for all dashboard cards
+                // Main stats grid (2x2)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: _buildSmartCardGrid(
-                    context,
-                    stats,
-                    lang,
-                    theme,
-                    globalData,
-                    dashboardConfig,
+                  child: _buildStatsGrid(context, stats, lang, theme),
+                ),
+                const SizedBox(height: 24),
+
+                // Detailed stats row (Airtime, Cumm. Alt., Progress)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: _buildDetailedStats(context, stats, lang, theme),
+                ),
+                const SizedBox(height: 32),
+
+                // Drag hint (only show when cards are collapsed)
+                if (!_isChecklistChartExpanded && !_isManeuverChartExpanded && !_isTakeoffPlacesChartExpanded)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      'Long-press cards to rearrange',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+
+                // Reorderable cards
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: ReorderableListView(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onReorder: _onCardReorder,
+                    proxyDecorator: (child, index, animation) {
+                      return AnimatedBuilder(
+                        animation: animation,
+                        builder: (BuildContext context, Widget? child) {
+                          final double animValue = Curves.easeInOut.transform(animation.value);
+                          
+                          // Trigger haptics once at the start of drag
+                          if (animValue > 0 && animValue < 0.05) {
+                            HapticFeedback.mediumImpact();
+                          }
+                          
+                          final double scale = 1.0 + (0.05 * animValue); // Scale up to 105%
+                          
+                          return Transform.scale(
+                            scale: scale,
+                            child: Opacity(
+                              opacity: 0.95,
+                              child: Material(
+                                elevation: 8 + (8 * animValue), // Increase shadow
+                                borderRadius: BorderRadius.circular(15),
+                                color: Colors.transparent,
+                                child: child,
+                              ),
+                            ),
+                          );
+                        },
+                        child: child,
+                      );
+                    },
+                    children: List.generate(
+                      _cardOrder.length,
+                      (index) => _buildReorderableCard(
+                        context,
+                        stats,
+                        lang,
+                        theme,
+                        globalData,
+                        _cardOrder[index],
+                      ),
+                    ),
                   ),
                 ),
 
@@ -100,219 +203,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// Build a smart grid with 2x2 stats, 1x3 details, and expandable cards
-  Widget _buildSmartCardGrid(
+  Widget _buildReorderableCard(
     BuildContext context,
     DashboardStats stats,
     String lang,
     ThemeData theme,
     GlobalDataService globalData,
-    DashboardConfigService dashboardConfig,
+    String cardId,
   ) {
-    final allCards = dashboardConfig.cards;
-    if (allCards.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    final Key key = ValueKey(cardId);
 
-    // Separate cards into three zones
-    final group1 = ['flights', 'takeoffs', 'landings', 'flying_days'];
-    final group2 = ['airtime', 'cumm_alt', 'progress'];
-    final group3 = ['checklist', 'maneuver', 'takeoff'];
-
-    final zone1Cards = allCards.where((c) => group1.contains(c.id)).toList();
-    final zone2Cards = allCards.where((c) => group2.contains(c.id)).toList();
-    final zone3Cards = allCards.where((c) => group3.contains(c.id)).toList();
-
-    final hasExpandedCard = _isChecklistChartExpanded || _isManeuverChartExpanded || _isTakeoffPlacesChartExpanded;
-
-    return PrimaryScrollController(
-      controller: ScrollController(),
-      child: Column(
-        children: [
-          // 2x2 Grid (stat cards)
-          _buildZoneGrid(
-          cards: zone1Cards,
-          stats: stats,
-          lang: lang,
-          theme: theme,
-          globalData: globalData,
-          columnsPerRow: 2,
-          onReorder: (oldIdx, newIdx) {
-            if (!hasExpandedCard && oldIdx != newIdx) {
-              setState(() {
-                final item = zone1Cards.removeAt(oldIdx);
-                zone1Cards.insert(newIdx, item);
-                // Sync back to allCards maintaining order
-                _syncCardOrder(allCards, zone1Cards + zone2Cards + zone3Cards);
-                dashboardConfig.saveCardConfiguration();
-              });
-            }
-          },
-        ),
-        const SizedBox(height: 16),
-
-        // 1x3 Grid (detail cards)
-        _buildZoneGrid(
-          cards: zone2Cards,
-          stats: stats,
-          lang: lang,
-          theme: theme,
-          globalData: globalData,
-          columnsPerRow: 3,
-          onReorder: (oldIdx, newIdx) {
-            if (!hasExpandedCard && oldIdx != newIdx) {
-              setState(() {
-                final item = zone2Cards.removeAt(oldIdx);
-                zone2Cards.insert(newIdx, item);
-                _syncCardOrder(allCards, zone1Cards + zone2Cards + zone3Cards);
-                dashboardConfig.saveCardConfiguration();
-              });
-            }
-          },
-        ),
-        const SizedBox(height: 16),
-
-        // Expandable cards (full width, reorder only among themselves)
-        _buildExpandableZone(
-          cards: zone3Cards,
-          stats: stats,
-          lang: lang,
-          theme: theme,
-          globalData: globalData,
-          hasExpandedCard: hasExpandedCard,
-          onReorder: (oldIdx, newIdx) {
-            if (!hasExpandedCard && oldIdx != newIdx) {
-              setState(() {
-                final item = zone3Cards.removeAt(oldIdx);
-                zone3Cards.insert(newIdx, item);
-                _syncCardOrder(allCards, zone1Cards + zone2Cards + zone3Cards);
-                dashboardConfig.saveCardConfiguration();
-              });
-            }
-          },
-        ),
-      ],
-      ),
-    );
-  }
-
-  /// Helper to sync reordered zones back to allCards
-  void _syncCardOrder(
-    List<DashboardCardConfig> allCards,
-    List<DashboardCardConfig> reorderedCards,
-  ) {
-    allCards.clear();
-    allCards.addAll(reorderedCards);
-  }
-
-  /// Build a grid zone (2x2 or 1x3) with proper grid snapping
-  Widget _buildZoneGrid({
-    required List<DashboardCardConfig> cards,
-    required DashboardStats stats,
-    required String lang,
-    required ThemeData theme,
-    required GlobalDataService globalData,
-    required int columnsPerRow,
-    required Function(int, int) onReorder,
-  }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final spacing = 12.0;
-        final totalSpacing = spacing * (columnsPerRow - 1);
-        final cardWidth = (constraints.maxWidth - totalSpacing) / columnsPerRow;
-        final cardHeight = columnsPerRow == 2 ? 140.0 : 120.0;
-
-        return ReorderableWrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          padding: EdgeInsets.zero,
-          needsLongPressDraggable: true,
-          onReorder: onReorder,
-          children: [
-            for (var i = 0; i < cards.length; i++)
-              SizedBox(
-                key: ValueKey(cards[i].id),
-                width: cardWidth,
-                height: cardHeight,
-                child: _buildCardByType(
-                  context: context,
-                  cardId: cards[i].id,
-                  stats: stats,
-                  lang: lang,
-                  theme: theme,
-                  globalData: globalData,
-                  isSmall: columnsPerRow == 3, // true for 1x3 grid
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Build expandable cards zone (full width, reorder only among themselves)
-  Widget _buildExpandableZone({
-    required List<DashboardCardConfig> cards,
-    required DashboardStats stats,
-    required String lang,
-    required ThemeData theme,
-    required GlobalDataService globalData,
-    required bool hasExpandedCard,
-    required Function(int, int) onReorder,
-  }) {
-    return ReorderableListView(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      onReorder: onReorder,
+    return Column(
+      key: key,
       children: [
-        for (var i = 0; i < cards.length; i++)
-          Container(
-            key: ValueKey(cards[i].id),
-            margin: const EdgeInsets.only(bottom: 12),
-            child: ReorderableDragStartListener(
-              index: i,
-              enabled: !hasExpandedCard,
-              child: _buildCardByType(
-                context: context,
-                cardId: cards[i].id,
-                stats: stats,
-                lang: lang,
-                theme: theme,
-                globalData: globalData,
-                isSmall: false,
-              ),
-            ),
-          ),
+        _buildCardByType(
+          context,
+          cardId,
+          stats,
+          lang,
+          theme,
+          globalData,
+        ),
+        const SizedBox(height: 12),
       ],
     );
   }
 
-  /// Build card widget by type
-  Widget _buildCardByType({
-    required BuildContext context,
-    required String cardId,
-    required DashboardStats stats,
-    required String lang,
-    required ThemeData theme,
-    required GlobalDataService globalData,
-    bool isSmall = false,
-  }) {
+  Widget _buildCardByType(
+    BuildContext context,
+    String cardId,
+    DashboardStats stats,
+    String lang,
+    ThemeData theme,
+    GlobalDataService globalData,
+  ) {
     return switch (cardId) {
-      'flights' => isSmall
-          ? _buildDetailedCard(context, _t('Flights', lang), '${stats.flightsCount}', Icons.flight, Colors.blue.shade700, theme)
-          : _buildLargeStatsCard(context, _t('Flights', lang), '${stats.flightsCount}', Icons.flight, Colors.blue.shade700, theme),
-      'takeoffs' => isSmall
-          ? _buildDetailedCard(context, _t('Takeoffs', lang), '${stats.takeoffsCount}', Icons.flight_takeoff, Colors.orange.shade700, theme)
-          : _buildLargeStatsCard(context, _t('Takeoffs', lang), '${stats.takeoffsCount}', Icons.flight_takeoff, Colors.orange.shade700, theme),
-      'landings' => isSmall
-          ? _buildDetailedCard(context, _t('Landings', lang), '${stats.landingsCount}', Icons.flight_land, Colors.green.shade700, theme)
-          : _buildLargeStatsCard(context, _t('Landings', lang), '${stats.landingsCount}', Icons.flight_land, Colors.green.shade700, theme),
-      'flying_days' => isSmall
-          ? _buildDetailedCard(context, _t('Flying_Days', lang), '${stats.flyingDays}', Icons.calendar_today, Colors.purple.shade700, theme)
-          : _buildLargeStatsCard(context, _t('Flying_Days', lang), '${stats.flyingDays}', Icons.calendar_today, Colors.purple.shade700, theme),
-      'airtime' => _buildDetailedCard(context, _t('Airtime', lang), _formatAirtime(stats.airtimeMinutes), Icons.access_time, Colors.orange.shade700, theme),
-      'cumm_alt' => _buildDetailedCard(context, _t('Cumm_Alt', lang), '${stats.cummAltDiff} m', Icons.height, Colors.purple.shade700, theme),
-      'progress' => _buildDetailedCard(context, _t('Progress', lang), '${stats.progress.percentage} %', Icons.check_circle, Colors.blueGrey.shade700, theme),
       'checklist' => _buildChecklistProgressCard(context, stats, lang, theme, globalData),
       'maneuver' => _buildManeuverUsageCard(context, stats, lang, theme),
       'takeoff' => _buildTopTakeoffPlacesCard(context, stats, lang, theme),
@@ -320,14 +245,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
     };
   }
 
-  String _formatAirtime(int minutes) {
-    final hours = minutes ~/ 60;
-    final mins = minutes % 60;
-    return '${hours}h ${mins}min';
+  /// Build the main 2x2 stats grid
+  Widget _buildStatsGrid(BuildContext context, DashboardStats stats, String lang, ThemeData theme) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 16.0,
+      crossAxisSpacing: 16.0,
+      childAspectRatio: 1.5,
+      children: [
+        _buildStatCard(
+          context,
+          _t('Flights', lang),
+          stats.flightsCount.toString(),
+          Icons.airplanemode_on,
+          Colors.green.shade700,
+          theme,
+        ),
+        _buildStatCard(
+          context,
+          _t('Takeoffs', lang),
+          stats.takeoffsCount.toString(),
+          Icons.flight_takeoff,
+          Colors.blue.shade700,
+          theme,
+        ),
+        _buildStatCard(
+          context,
+          _t('Landings', lang),
+          stats.landingsCount.toString(),
+          Icons.flight_land,
+          Colors.green.shade600,
+          theme,
+        ),
+        _buildStatCard(
+          context,
+          _t('Flying_Days', lang),
+          stats.flyingDays.toString(),
+          Icons.calendar_today,
+          Colors.blue.shade400,
+          theme,
+        ),
+      ],
+    );
   }
 
-  /// Build large stat card (2x2 grid) - icon LEFT, stat RIGHT
-  Widget _buildLargeStatsCard(
+  /// Build individual stat card
+  Widget _buildStatCard(
     BuildContext context,
     String title,
     String value,
@@ -339,42 +304,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
       elevation: 4,
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Container(
-        height: 120,
+      child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Icon on left
-            Icon(icon, color: Colors.white, size: 48),
-            const SizedBox(width: 16),
-            // Stat and text on right
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
+              flex: 2,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Icon(icon, color: Colors.white),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              flex: 3,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
                       value,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    title,
-                    textAlign: TextAlign.left,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                    Text(
+                      title,
+                      style: const TextStyle(color: Colors.white70, fontSize: 18),
+                      maxLines: 1,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -383,7 +349,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// Build detailed card (for flexible layout)
+  /// Build detailed stats row
+  Widget _buildDetailedStats(BuildContext context, DashboardStats stats, String lang, ThemeData theme) {
+    final hours = stats.airtimeMinutes ~/ 60;
+    final mins = stats.airtimeMinutes % 60;
+    final airtimeStr = '${hours}h ${mins}min';
+    final altStr = '${stats.cummAltDiff} m';
+    final progressStr = '${stats.progress.percentage} %';
+
+    return Row(
+      children: [
+        Expanded(
+          child: _buildDetailedCard(
+            context,
+            _t('Airtime', lang),
+            airtimeStr,
+            Icons.access_time,
+            Colors.orange.shade700,
+            theme,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildDetailedCard(
+            context,
+            _t('Cumm_Alt', lang),
+            altStr,
+            Icons.height,
+            Colors.purple.shade700,
+            theme,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildDetailedCard(
+            context,
+            _t('Progress', lang),
+            progressStr,
+            Icons.check_circle,
+            Colors.blueGrey.shade700,
+            theme,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Build detailed card
   Widget _buildDetailedCard(
     BuildContext context,
     String title,
@@ -402,26 +414,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70, fontSize: 15),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            Flexible(
+              flex: 1,
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, fontSize: 15),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             const SizedBox(height: 4),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+            Flexible(
+              flex: 2,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
                 ),
-                maxLines: 1,
               ),
             ),
           ],
@@ -444,16 +461,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isChecklistChartExpanded = !_isChecklistChartExpanded;
-                });
-              },
-              child: Row(
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              _isChecklistChartExpanded = !_isChecklistChartExpanded;
+            });
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
@@ -472,21 +489,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-            ),
-            if (!_isChecklistChartExpanded) ...[
-              const SizedBox(height: 4),
-              Text(
-                _t('Click_Expand', lang),
-                style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
-              ),
+              if (!_isChecklistChartExpanded) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _t('Click_Expand', lang),
+                  style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
+                ),
+              ],
+              if (_isChecklistChartExpanded) ...[
+                const SizedBox(height: 20),
+                _buildProgressChart(context, stats, globalData, theme),
+                const SizedBox(height: 20),
+                _buildProgressLegend(context, stats, globalData, lang, theme),
+              ],
             ],
-            if (_isChecklistChartExpanded) ...[
-              const SizedBox(height: 20),
-              _buildProgressChart(context, stats, globalData, theme),
-              const SizedBox(height: 20),
-              _buildProgressLegend(context, stats, globalData, lang, theme),
-            ],
-          ],
+          ),
         ),
       ),
     );
@@ -652,16 +669,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isManeuverChartExpanded = !_isManeuverChartExpanded;
-                });
-              },
-              child: Row(
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              _isManeuverChartExpanded = !_isManeuverChartExpanded;
+            });
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
@@ -680,19 +697,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-            ),
-            if (!_isManeuverChartExpanded) ...[
-              const SizedBox(height: 4),
-              Text(
-                _t('Click_Expand', lang),
-                style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
-              ),
+              if (!_isManeuverChartExpanded) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _t('Click_Expand', lang),
+                  style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
+                ),
+              ],
+              if (_isManeuverChartExpanded) ...[
+                const SizedBox(height: 20),
+                _buildManeuverChart(context, stats, lang, theme),
+              ],
             ],
-            if (_isManeuverChartExpanded) ...[
-              const SizedBox(height: 20),
-              _buildManeuverChart(context, stats, lang, theme),
-            ],
-          ],
+          ),
         ),
       ),
     );
@@ -778,16 +795,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isTakeoffPlacesChartExpanded = !_isTakeoffPlacesChartExpanded;
-                });
-              },
-              child: Row(
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              _isTakeoffPlacesChartExpanded = !_isTakeoffPlacesChartExpanded;
+            });
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
@@ -806,19 +823,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-            ),
-            if (!_isTakeoffPlacesChartExpanded) ...[
-              const SizedBox(height: 4),
-              Text(
-                _t('Click_Expand', lang),
-                style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
-              ),
+              if (!_isTakeoffPlacesChartExpanded) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _t('Click_Expand', lang),
+                  style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
+                ),
+              ],
+              if (_isTakeoffPlacesChartExpanded) ...[
+                const SizedBox(height: 20),
+                _buildTakeoffPlacesChart(context, stats, lang, theme),
+              ],
             ],
-            if (_isTakeoffPlacesChartExpanded) ...[
-              const SizedBox(height: 20),
-              _buildTakeoffPlacesChart(context, stats, lang, theme),
-            ],
-          ],
+          ),
         ),
       ),
     );
