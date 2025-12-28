@@ -205,7 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     allCards.addAll(reorderedCards);
   }
 
-  /// Build a grid zone (2x2 or 1x3) with proper grid snapping using ReorderableWrap
+  /// Build a grid zone (2x2 or 1x3) with proper grid snapping
   Widget _buildZoneGrid({
     required List<DashboardCardConfig> cards,
     required DashboardStats stats,
@@ -215,41 +215,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required int columnsPerRow,
     required Function(int, int) onReorder,
   }) {
-    // Calculate fixed card dimensions to enforce grid snapping
-    // For 2x2 grid: wider cards, For 1x3 grid: narrower cards
-    final isLargeGrid = columnsPerRow == 2;
-    final cardHeight = isLargeGrid ? 140.0 : 120.0;
-    
-    return ReorderableWrap(
-      spacing: 12,
-      runSpacing: 12,
-      padding: EdgeInsets.zero,
-      needsLongPressDraggable: true,
-      onReorder: onReorder,
-      children: [
-        for (var i = 0; i < cards.length; i++)
-          GestureDetector(
-            key: ValueKey(cards[i].id),
-            onLongPressStart: (_) {
-              HapticFeedback.mediumImpact();
-            },
-            child: Container(
-              height: cardHeight,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final spacing = 12.0;
+        final totalSpacing = spacing * (columnsPerRow - 1);
+        final cardWidth = (constraints.maxWidth - totalSpacing) / columnsPerRow;
+        final cardHeight = columnsPerRow == 2 ? 140.0 : 120.0;
+
+        return ReorderableWrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          padding: EdgeInsets.zero,
+          needsLongPressDraggable: true,
+          onReorder: onReorder,
+          children: [
+            for (var i = 0; i < cards.length; i++)
+              SizedBox(
+                key: ValueKey(cards[i].id),
+                width: cardWidth,
+                height: cardHeight,
+                child: _buildCardByType(
+                  context: context,
+                  cardId: cards[i].id,
+                  stats: stats,
+                  lang: lang,
+                  theme: theme,
+                  globalData: globalData,
+                  isSmall: columnsPerRow == 3, // true for 1x3 grid
+                ),
               ),
-              child: _buildCardByType(
-                context: context,
-                cardId: cards[i].id,
-                stats: stats,
-                lang: lang,
-                theme: theme,
-                globalData: globalData,
-                isSmall: columnsPerRow == 3, // true for 1x3 grid
-              ),
-            ),
-          ),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -267,52 +264,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       onReorder: onReorder,
-      proxyDecorator: (child, index, animation) {
-        return AnimatedBuilder(
-          animation: animation,
-          builder: (BuildContext context, Widget? child) {
-            final double animValue = Curves.easeInOut.transform(animation.value);
-            if (animValue > 0 && animValue < 0.1) {
-              HapticFeedback.mediumImpact();
-            }
-            final double scale = 1.0 + (0.05 * animValue);
-            return Transform.scale(
-              scale: scale,
-              child: Opacity(
-                opacity: 0.95,
-                child: Material(
-                  elevation: 8 + (8 * animValue),
-                  borderRadius: BorderRadius.circular(15),
-                  color: Colors.transparent,
-                  child: child,
-                ),
-              ),
-            );
-          },
-          child: child,
-        );
-      },
       children: [
         for (var i = 0; i < cards.length; i++)
-          SizedBox(
+          Container(
             key: ValueKey(cards[i].id),
+            margin: const EdgeInsets.only(bottom: 12),
             child: ReorderableDragStartListener(
               index: i,
               enabled: !hasExpandedCard,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildCardByType(
-                    context: context,
-                    cardId: cards[i].id,
-                    stats: stats,
-                    lang: lang,
-                    theme: theme,
-                    globalData: globalData,
-                    isSmall: false,
-                  ),
-                  const SizedBox(height: 12),
-                ],
+              child: _buildCardByType(
+                context: context,
+                cardId: cards[i].id,
+                stats: stats,
+                lang: lang,
+                theme: theme,
+                globalData: globalData,
+                isSmall: false,
               ),
             ),
           ),
