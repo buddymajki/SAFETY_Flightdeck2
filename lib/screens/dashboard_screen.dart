@@ -254,7 +254,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final mins = minutes % 60;
     return '${hours}h ${mins}min';
   }
-  }
 
   /// Build stats card (for flexible layout)
   Widget _buildStatsCard(
