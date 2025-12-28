@@ -498,6 +498,40 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     return _formTexts[key]?[lang] ?? key;
   }
 
+  /// Normalize special characters for better search matching
+  /// Converts: ü→ue, ä→ae, ö→oe, ß→ss, etc.
+  String _normalizeForSearch(String text) {
+    return text
+        .replaceAll('ü', 'ue')
+        .replaceAll('ö', 'oe')
+        .replaceAll('ä', 'ae')
+        .replaceAll('ß', 'ss')
+        .replaceAll('Ü', 'UE')
+        .replaceAll('Ö', 'OE')
+        .replaceAll('Ä', 'AE')
+        .toLowerCase();
+  }
+
+  /// Check if location matches search query
+  /// Searches across all words and handles special characters
+  bool _locationMatchesQuery(String locationName, String query) {
+    if (query.isEmpty) return true;
+    
+    final normalizedLocation = _normalizeForSearch(locationName);
+    final normalizedQuery = _normalizeForSearch(query);
+    
+    // Check if query matches any word in the location name
+    final words = normalizedLocation.split(RegExp(r'[^a-z0-9äöüß]+'));
+    
+    for (final word in words) {
+      if (word.contains(normalizedQuery)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
   late TextEditingController _dateController;
   late TextEditingController _takeoffController;
   late TextEditingController _landingController;
@@ -1157,11 +1191,11 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                         return _filteredTakeoffLocations;
                       }
                       
-                      // Filter locations by name (case-insensitive contains)
-                      final query = textEditingValue.text.toLowerCase();
+                      // Filter locations by name - matches any word and handles special chars
+                      final query = textEditingValue.text;
                       return _filteredTakeoffLocations.where((location) {
-                        final name = (location['name'] ?? '').toString().toLowerCase();
-                        return name.contains(query);
+                        final name = (location['name'] ?? '').toString();
+                        return _locationMatchesQuery(name, query);
                       });
                     },
                     displayStringForOption: (Map<String, dynamic> option) => option['name'] ?? '',
@@ -1259,11 +1293,11 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                         return _filteredLandingLocations;
                       }
                       
-                      // Filter locations by name (case-insensitive contains)
-                      final query = textEditingValue.text.toLowerCase();
+                      // Filter locations by name - matches any word and handles special chars
+                      final query = textEditingValue.text;
                       return _filteredLandingLocations.where((location) {
-                        final name = (location['name'] ?? '').toString().toLowerCase();
-                        return name.contains(query);
+                        final name = (location['name'] ?? '').toString();
+                        return _locationMatchesQuery(name, query);
                       });
                     },
                     displayStringForOption: (Map<String, dynamic> option) => option['name'] ?? '',
