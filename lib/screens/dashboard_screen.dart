@@ -205,7 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     allCards.addAll(reorderedCards);
   }
 
-  /// Build a grid zone (2x2 or 1x3)
+  /// Build a grid zone (2x2 or 1x3) with proper grid snapping using ReorderableWrap
   Widget _buildZoneGrid({
     required List<DashboardCardConfig> cards,
     required DashboardStats stats,
@@ -215,34 +215,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required int columnsPerRow,
     required Function(int, int) onReorder,
   }) {
-    return LayoutBuilder(
-      builder: (ctx, constraints) {
-        final cardWidth = (constraints.maxWidth - (columnsPerRow - 1) * 12) / columnsPerRow;
-
-        return ReorderableWrap(
-          spacing: 12,
-          runSpacing: 12,
-          padding: EdgeInsets.zero,
-          needsLongPressDraggable: true,
-          onReorder: onReorder,
-          children: [
-            for (var i = 0; i < cards.length; i++)
-              SizedBox(
-                key: ValueKey(cards[i].id),
-                width: cardWidth,
-                child: _buildCardByType(
-                  context: ctx,
-                  cardId: cards[i].id,
-                  stats: stats,
-                  lang: lang,
-                  theme: theme,
-                  globalData: globalData,
-                  isSmall: columnsPerRow == 3, // true for 1x3 grid
-                ),
+    // Calculate fixed card dimensions to enforce grid snapping
+    // For 2x2 grid: wider cards, For 1x3 grid: narrower cards
+    final isLargeGrid = columnsPerRow == 2;
+    final cardHeight = isLargeGrid ? 140.0 : 120.0;
+    
+    return ReorderableWrap(
+      spacing: 12,
+      runSpacing: 12,
+      padding: EdgeInsets.zero,
+      needsLongPressDraggable: true,
+      onReorder: onReorder,
+      children: [
+        for (var i = 0; i < cards.length; i++)
+          GestureDetector(
+            key: ValueKey(cards[i].id),
+            onLongPressStart: (_) {
+              HapticFeedback.mediumImpact();
+            },
+            child: Container(
+              height: cardHeight,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
               ),
-          ],
-        );
-      },
+              child: _buildCardByType(
+                context: context,
+                cardId: cards[i].id,
+                stats: stats,
+                lang: lang,
+                theme: theme,
+                globalData: globalData,
+                isSmall: columnsPerRow == 3, // true for 1x3 grid
+              ),
+            ),
+          ),
+      ],
     );
   }
 
