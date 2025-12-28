@@ -81,65 +81,70 @@ class ChecklistsScreen extends StatelessWidget {
     return Card(
       color: theme.cardColor,
       margin: const EdgeInsets.only(bottom: 16),
-      child: ExpansionTile(
-        key: PageStorageKey(categoryId), // Ezzel a Flutter automatikusan megjegyzi az állapotot!
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                categoryTitle,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
+        child: ExpansionTile(
+          key: PageStorageKey(categoryId),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  categoryTitle,
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
-            Text(progressText, style: theme.textTheme.bodyMedium),
+              Text(progressText, style: theme.textTheme.bodyMedium),
+            ],
+          ),
+          children: [
+            for (final item in items)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: CheckboxListTile(
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text(languageCode == 'de' ? item.title_de : item.title_en, style: theme.textTheme.titleSmall)),
+                      IconButton(
+                        icon: const Icon(Icons.info_outline),
+                        color: theme.colorScheme.primary,
+                        onPressed: () {
+                          final desc = languageCode == 'de' ? item.description_de : item.description_en;
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              backgroundColor: theme.cardColor,
+                              title: Text(languageCode == 'de' ? item.title_de : item.title_en),
+                              content: Text(
+                                (desc == null || desc.isEmpty) ? 'No description' : desc,
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Close'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  value: user.isChecklistItemCompleted(item.id),
+                  activeColor: theme.primaryColor,
+                  onChanged: (value) {
+                    if (value != null) {
+                      context.read<UserDataService>().toggleProgress(item.id, value);
+                    }
+                  },
+                ),
+              ),
           ],
         ),
-        children: [
-          for (final item in items)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: CheckboxListTile(
-                title: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(child: Text(languageCode == 'de' ? item.title_de : item.title_en, style: theme.textTheme.titleSmall)),
-                    IconButton(
-                      icon: const Icon(Icons.info_outline),
-                      color: theme.colorScheme.primary,
-                      onPressed: () {
-                        final desc = languageCode == 'de' ? item.description_de : item.description_en;
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            backgroundColor: theme.cardColor,
-                            title: Text(languageCode == 'de' ? item.title_de : item.title_en),
-                            content: Text(
-                              (desc == null || desc.isEmpty) ? 'No description' : desc,
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Close'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                value: user.isChecklistItemCompleted(item.id),
-                activeColor: theme.primaryColor,
-                onChanged: (value) {
-                  if (value != null) {
-                    context.read<UserDataService>().toggleProgress(item.id, value);
-                  }
-                },
-              ),
-            ),
-        ],
       ),
     );
   }
