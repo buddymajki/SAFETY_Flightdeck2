@@ -1,7 +1,9 @@
 // File: lib/screens/dashboard_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/stats_service.dart';
 import '../services/profile_service.dart';
@@ -20,6 +22,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isChecklistChartExpanded = false;
   bool _isManeuverChartExpanded = false;
   bool _isTakeoffPlacesChartExpanded = false;
+
+  // Card order management
+  late List<String> _cardOrder;
+
+  static const String _cardOrderKey = 'dashboard_card_order';
+  static const List<String> _defaultCardOrder = ['checklist', 'maneuver', 'takeoff'];
 
   // Localization texts
   static const Map<String, Map<String, String>> _texts = {
@@ -45,6 +53,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _cardOrder = List.from(_defaultCardOrder);
+    _loadCardOrder();
+  }
+
+  Future<void> _loadCardOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList(_cardOrderKey);
+    if (saved != null && saved.length == _defaultCardOrder.length) {
+      setState(() {
+        _cardOrder = saved;
+      });
+    }
+  }
+
+  Future<void> _saveCardOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_cardOrderKey, _cardOrder);
+  }
+
+  void _onCardReorder(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+      final item = _cardOrder.removeAt(oldIndex);
+      _cardOrder.insert(newIndex, item);
+    });
+    _saveCardOrder();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final statsService = context.watch<StatsService>();
@@ -60,42 +101,163 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       body: statsService.isLoading
           ? Center(child: CircularProgressIndicator(color: theme.colorScheme.primary))
-          : ResponsiveListView(
+          : ListView(
               children: [
                 // Welcome message
-                Center(
-                  child: Text(
-                    '${_t('Welcome', lang)}, $nickname',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                    child: Text(
+                      '${_t('Welcome', lang)}, $nickname',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 8),
 
                 // Main stats grid (2x2)
-                _buildStatsGrid(context, stats, lang, theme),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: _buildStatsGrid(context, stats, lang, theme),
+                ),
                 const SizedBox(height: 24),
 
                 // Detailed stats row (Airtime, Cumm. Alt., Progress)
-                _buildDetailedStats(context, stats, lang, theme),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: _buildDetailedStats(context, stats, lang, theme),
+                ),
                 const SizedBox(height: 32),
 
-                // Checklist Progress by Category
-                _buildChecklistProgressCard(context, stats, lang, theme, globalData),
-                const SizedBox(height: 24),
+                // Drag hint (only show when cards are collapsed)
+                if (!_isChecklistChartExpanded && !_isManeuverChartExpanded && !_isTakeoffPlacesChartExpanded)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      'Long-press cards to rearrange',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 16),
 
-                // Maneuver Usage Chart
-                _buildManeuverUsageCard(context, stats, lang, theme),
-                const SizedBox(height: 24),
+                // Reorderable cards
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: ReorderableListView(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onReorder: _onCardReorder,
+                    proxyDecorator: (child, index, animation) {
+                      return AnimatedBuilder(
+                        animation: animation,
+                        builder: (BuildContext context, Widget? child) {
+                          final double animValue = Curves.easeInOut.transform(animation.value);
+                          
+                          // Trigger haptics once at the start
+                          if (animValue > 0 && animValue < 0.1) {
+                            HapticFeedback.mediumImpact();
+                          }
+                          
+                          final double scale = 1.0 + (0.05 * animValue); // Scale up to 105%
+                          
+                          return Transform.scale(
+                            scale: scale,
+                            child: Opacity(
+                              opacity: 0.95,
+                              child: Material(
+                                elevation: 8 + (8 * animValue), // Increase shadow
+                                borderRadius: BorderRadius.circular(15),
+                                color: Colors.transparent,
+                                child: child,
+                              ),
+                            ),
+                          );
+                        },
+                        child: child,
+                      );
+                    },
+                    children: List.generate(
+                      _cardOrder.length,
+                      (index) => _buildReorderableCard(
+                        context,
+                        stats,
+                        lang,
+                        theme,
+                        globalData,
+                        _cardOrder[index],
+                        index,
+                      ),
+                    ),
+                  ),
+                ),
 
-                // Top Takeoff Places Chart
-                _buildTopTakeoffPlacesCard(context, stats, lang, theme),
                 const SizedBox(height: 32),
               ],
             ),
     );
+  }
+
+  Widget _buildReorderableCard(
+    BuildContext context,
+    DashboardStats stats,
+    String lang,
+    ThemeData theme,
+    GlobalDataService globalData,
+    String cardId,
+    int index,
+  ) {
+    Key key = ValueKey(cardId);
+
+    return Column(
+      key: key,
+      children: [
+        _buildCardByType(
+          context,
+          cardId,
+          stats,
+          lang,
+          theme,
+          globalData,
+          index,
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildCardByType(
+    BuildContext context,
+    String cardId,
+    DashboardStats stats,
+    String lang,
+    ThemeData theme,
+    GlobalDataService globalData,
+    int index,
+  ) {
+    final isDragEnabled = !_isChecklistChartExpanded && !_isManeuverChartExpanded && !_isTakeoffPlacesChartExpanded;
+    
+    final cardWidget = switch (cardId) {
+      'checklist' => _buildChecklistProgressCard(context, stats, lang, theme, globalData),
+      'maneuver' => _buildManeuverUsageCard(context, stats, lang, theme),
+      'takeoff' => _buildTopTakeoffPlacesCard(context, stats, lang, theme),
+      _ => const SizedBox.shrink(),
+    };
+
+    // Wrap with drag handle if drag is enabled
+    return isDragEnabled
+        ? ReorderableDragStartListener(
+            index: index,
+            child: cardWidget,
+          )
+        : cardWidget;
   }
 
   /// Build the main 2x2 stats grid
@@ -760,4 +922,3 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
-
