@@ -108,16 +108,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     GlobalDataService globalData,
     DashboardConfigService dashboardConfig,
   ) {
-    final visibleCards = dashboardConfig.getVisibleCards();
+    // Use all cards (not filtered by visibility yet)
+    final allCards = dashboardConfig.cards;
     
-    // If no visible cards, show at least the defaults
-    if (visibleCards.isEmpty) {
-      final allCards = dashboardConfig.cards;
-      if (allCards.isEmpty) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      }
+    if (allCards.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
     }
     
     // Check if any expandable card is expanded
@@ -127,22 +122,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       onReorder: (oldIndex, newIndex) {
-        if (!hasExpandedCard) {
+        if (!hasExpandedCard && oldIndex != newIndex) {
           setState(() {
             if (newIndex > oldIndex) {
               newIndex -= 1;
             }
             
-            // Get the card being moved
-            final movedCard = visibleCards[oldIndex];
-            
             // Reorder in the actual config service
-            dashboardConfig.cards.removeWhere((c) => c.id == movedCard.id);
-            dashboardConfig.cards.insert(newIndex, movedCard);
+            final item = allCards.removeAt(oldIndex);
+            allCards.insert(newIndex, item);
             
             // Save configuration
             dashboardConfig.saveCardConfiguration();
-            dashboardConfig.notifyListeners();
           });
         }
       },
@@ -175,8 +166,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: child,
         );
       },
-      children: List.generate(visibleCards.length, (index) {
-        final cardConfig = visibleCards[index];
+      children: List.generate(allCards.length, (index) {
+        final cardConfig = allCards[index];
         return _buildCardContainer(
           key: ValueKey(cardConfig.id),
           context: context,
@@ -187,6 +178,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           globalData: globalData,
           dashboardConfig: dashboardConfig,
           index: index,
+          hasExpandedCard: hasExpandedCard,
         );
       }),
     );
@@ -203,33 +195,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required GlobalDataService globalData,
     required DashboardConfigService dashboardConfig,
     required int index,
+    required bool hasExpandedCard,
   }) {
-    final hasExpandedCard = _isChecklistChartExpanded || _isManeuverChartExpanded || _isTakeoffPlacesChartExpanded;
-
-    final cardWidget = _buildCardByType(
-      context: context,
-      cardId: cardConfig.id,
-      stats: stats,
-      lang: lang,
-      theme: theme,
-      globalData: globalData,
-    );
-
-    // Wrap with drag listener only if drag is enabled
-    final wrappedCard = !hasExpandedCard
-        ? ReorderableDragStartListener(
-            index: index,
-            child: cardWidget,
-          )
-        : cardWidget;
-
-    // All cards render the same way - wrapped in a column for spacing
-    return Column(
+    return SizedBox(
       key: key,
-      children: [
-        wrappedCard,
-        const SizedBox(height: 24),
-      ],
+      child: ReorderableDragStartListener(
+        index: index,
+        enabled: !hasExpandedCard,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildCardByType(
+              context: context,
+              cardId: cardConfig.id,
+              stats: stats,
+              lang: lang,
+              theme: theme,
+              globalData: globalData,
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
     );
   }
 
