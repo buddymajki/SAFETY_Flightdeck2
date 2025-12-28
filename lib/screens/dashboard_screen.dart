@@ -111,7 +111,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Use all cards (not filtered by visibility yet)
     final allCards = dashboardConfig.cards;
     
+    debugPrint('=== Dashboard Grid Debug ===');
+    debugPrint('allCards.length = ${allCards.length}');
+    debugPrint('allCards.isEmpty = ${allCards.isEmpty}');
+    debugPrint('Card IDs: ${allCards.map((c) => c.id).join(", ")}');
+    
     if (allCards.isEmpty) {
+      debugPrint('Cards are empty - showing spinner');
       return const Center(child: CircularProgressIndicator());
     }
     
@@ -168,6 +174,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
       children: List.generate(allCards.length, (index) {
         final cardConfig = allCards[index];
+        debugPrint('Building card: ${cardConfig.id}');
         return _buildCardContainer(
           key: ValueKey(cardConfig.id),
           context: context,
@@ -197,6 +204,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required int index,
     required bool hasExpandedCard,
   }) {
+    debugPrint('_buildCardContainer: building ${cardConfig.id} with SizedBox');
+    
+    final cardWidget = _buildCardByType(
+      context: context,
+      cardId: cardConfig.id,
+      stats: stats,
+      lang: lang,
+      theme: theme,
+      globalData: globalData,
+    );
+    
+    debugPrint('_buildCardContainer: cardWidget for ${cardConfig.id} = ${cardWidget.runtimeType}');
+    
     return SizedBox(
       key: key,
       child: ReorderableDragStartListener(
@@ -205,14 +225,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildCardByType(
-              context: context,
-              cardId: cardConfig.id,
-              stats: stats,
-              lang: lang,
-              theme: theme,
-              globalData: globalData,
-            ),
+            cardWidget,
             const SizedBox(height: 12),
           ],
         ),
