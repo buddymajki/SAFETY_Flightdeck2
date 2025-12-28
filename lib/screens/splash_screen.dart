@@ -9,6 +9,7 @@ import '../services/global_data_service.dart';
 import '../services/stats_service.dart';
 import '../services/user_data_service.dart';
 import '../services/profile_service.dart';
+import '../services/dashboard_config_service.dart';
 import 'login_screen.dart';
 import 'main_navigation.dart';
 
@@ -42,17 +43,19 @@ class _SplashScreenState extends State<SplashScreen> {
     final uid = currentUser.uid;
 
     try {
-      // Initialize global + user + profile + flight + stats data
+      // Initialize global + user + profile + flight + stats + dashboard config data
       final global = context.read<GlobalDataService>();
       final user = context.read<UserDataService>();
       final profile = context.read<ProfileService>();
       final flight = context.read<FlightService>();
       final stats = context.read<StatsService>();
+      final dashboardConfig = context.read<DashboardConfigService>();
 
-      // Phase 1: Initialize global + user data
+      // Phase 1: Initialize global + user data + dashboard config
       await Future.wait<void>([
         global.initializeData(),
         user.initializeData(uid),
+        dashboardConfig.init(),
       ]);
 
       // Phase 2: Initialize profile (needed to get schoolId)
