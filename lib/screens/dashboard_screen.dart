@@ -125,10 +125,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final hasExpandedCard = _isChecklistChartExpanded || _isManeuverChartExpanded || _isTakeoffPlacesChartExpanded;
 
-    return Column(
-      children: [
-        // 2x2 Grid (stat cards)
-        _buildZoneGrid(
+    return PrimaryScrollController(
+      controller: ScrollController(),
+      child: Column(
+        children: [
+          // 2x2 Grid (stat cards)
+          _buildZoneGrid(
           cards: zone1Cards,
           stats: stats,
           lang: lang,
@@ -190,6 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
         ),
       ],
+      ),
     );
   }
 
