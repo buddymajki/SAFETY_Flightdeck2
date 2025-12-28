@@ -499,7 +499,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   }
 
   /// Normalize special characters for better search matching
-  /// Converts: ü→ue, ä→ae, ö→oe, ß→ss, etc.
+  /// Converts: ü→ue, ä→ae, ö→oe, ß→ss, etc. (two-letter variant)
   String _normalizeForSearch(String text) {
     return text
         .replaceAll('ü', 'ue')
@@ -512,19 +512,44 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         .toLowerCase();
   }
 
+  /// Normalize special characters to single letters
+  /// Converts: ü→u, ä→a, ö→o, ß→s, etc.
+  String _normalizeForSearchSimple(String text) {
+    return text
+        .replaceAll('ü', 'u')
+        .replaceAll('ö', 'o')
+        .replaceAll('ä', 'a')
+        .replaceAll('ß', 's')
+        .replaceAll('Ü', 'u')
+        .replaceAll('Ö', 'o')
+        .replaceAll('Ä', 'a')
+        .toLowerCase();
+  }
+
   /// Check if location matches search query
-  /// Searches across all words and handles special characters
+  /// Searches across all words and handles special characters (both ü→ue and ü→u variants)
   bool _locationMatchesQuery(String locationName, String query) {
     if (query.isEmpty) return true;
     
-    final normalizedLocation = _normalizeForSearch(locationName);
-    final normalizedQuery = _normalizeForSearch(query);
+    // Normalize in both ways: ü→ue and ü→u
+    final normalizedLocationFull = _normalizeForSearch(locationName);
+    final normalizedLocationSimple = _normalizeForSearchSimple(locationName);
     
-    // Check if query matches any word in the location name
-    final words = normalizedLocation.split(RegExp(r'[^a-z0-9äöüß]+'));
+    final normalizedQueryFull = _normalizeForSearch(query);
+    final normalizedQuerySimple = _normalizeForSearchSimple(query);
     
-    for (final word in words) {
-      if (word.contains(normalizedQuery)) {
+    // Check against full normalization (ü→ue)
+    final wordsFull = normalizedLocationFull.split(RegExp(r'[^a-z0-9]+'));
+    for (final word in wordsFull) {
+      if (word.contains(normalizedQueryFull)) {
+        return true;
+      }
+    }
+    
+    // Check against simple normalization (ü→u)
+    final wordsSimple = normalizedLocationSimple.split(RegExp(r'[^a-z0-9]+'));
+    for (final word in wordsSimple) {
+      if (word.contains(normalizedQuerySimple)) {
         return true;
       }
     }
