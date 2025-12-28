@@ -122,14 +122,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             if (newIndex > oldIndex) {
               newIndex -= 1;
             }
-            final item = visibleCards.removeAt(oldIndex);
-            visibleCards.insert(newIndex, item);
             
-            // Update order in config
-            for (int i = 0; i < visibleCards.length; i++) {
-              dashboardConfig.getCard(visibleCards[i].id)?.order = i;
-            }
+            // Get the card being moved
+            final movedCard = visibleCards[oldIndex];
+            
+            // Reorder in the actual config service
+            dashboardConfig.cards.removeWhere((c) => c.id == movedCard.id);
+            dashboardConfig.cards.insert(newIndex, movedCard);
+            
+            // Save configuration
             dashboardConfig.saveCardConfiguration();
+            dashboardConfig.notifyListeners();
           });
         }
       },
@@ -210,19 +213,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           )
         : cardWidget;
 
-    // For full-width cards (flex 1), no special wrapping needed
-    if (cardConfig.flexSize == 1) {
-      return Column(
-        key: key,
-        children: [
-          wrappedCard,
-          const SizedBox(height: 24),
-        ],
-      );
-    }
-
-    // For multi-column cards, we'll handle them in groups
-    return Container(key: key);
+    // All cards render the same way - wrapped in a column for spacing
+    return Column(
+      key: key,
+      children: [
+        wrappedCard,
+        const SizedBox(height: 24),
+      ],
+    );
   }
 
   /// Build card widget by type
