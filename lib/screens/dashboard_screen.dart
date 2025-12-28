@@ -110,6 +110,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ) {
     final visibleCards = dashboardConfig.getVisibleCards();
     
+    // If no visible cards, show at least the defaults
+    if (visibleCards.isEmpty) {
+      final allCards = dashboardConfig.cards;
+      if (allCards.isEmpty) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      }
+    }
+    
     // Check if any expandable card is expanded
     final hasExpandedCard = _isChecklistChartExpanded || _isManeuverChartExpanded || _isTakeoffPlacesChartExpanded;
 

@@ -6,7 +6,7 @@ import '../models/dashboard_card_config.dart';
 
 /// Service to manage dashboard card configuration (order, visibility)
 class DashboardConfigService extends ChangeNotifier {
-  late List<DashboardCardConfig> _cards;
+  List<DashboardCardConfig> _cards = [];
   late SharedPreferences _prefs;
 
   static const String _cardsOrderKey = 'dashboard_cards_order';
@@ -17,6 +17,9 @@ class DashboardConfigService extends ChangeNotifier {
   /// Initialize the service
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    // Initialize with defaults first
+    _cards = DashboardCards.getAllCards();
+    // Then load from storage if available
     await _loadCards();
   }
 
