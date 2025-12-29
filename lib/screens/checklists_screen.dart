@@ -6,7 +6,7 @@ import '../models/checklist_item.dart';
 import '../services/global_data_service.dart';
 import '../services/user_data_service.dart';
 import '../services/app_config_service.dart';
-import '../widgets/responsive_layout.dart';
+//import '../widgets/responsive_layout.dart';
 
 class ChecklistsScreen extends StatefulWidget {
   const ChecklistsScreen({super.key});
@@ -325,20 +325,6 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
     return _canScrollRight;
   }
 
-  /// Helper to get the full category title for the currently selected tab
-  String _getCategoryTitleForTab(
-    BuildContext context,
-    List<String> categoryIds,
-    int tabIndex,
-    String languageCode,
-  ) {
-    if (tabIndex >= 0 && tabIndex < categoryIds.length) {
-      final categoryId = categoryIds[tabIndex];
-      final global = context.read<GlobalDataService>();
-      return global.getCategoryTitle(categoryId, languageCode);
-    }
-    return '';
-  }
 
   /// Build a single tab with category name and progress indicator
   Widget _buildTab(
