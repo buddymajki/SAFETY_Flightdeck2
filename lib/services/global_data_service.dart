@@ -20,6 +20,17 @@ class GlobalDataService extends ChangeNotifier {
     'exam': {'en': 'Exam Preparation', 'de': 'Prüfungsvorbereitung'},
   };
 
+  // Short names for tab display
+  static const Map<String, Map<String, String>> categoryShortNames = {
+    'gh-bas': {'en': 'GH Basic', 'de': 'ÜH Grund'},
+    'gh-adv': {'en': 'GH Adv', 'de': 'ÜH Fort'},
+    'th-flight': {'en': 'TH Flight', 'de': 'TH Flug'},
+    'th-core': {'en': 'TH Core', 'de': 'TH Kern'},
+    'hf-bas': {'en': 'HF Basic', 'de': 'HF Grund'},
+    'hf-adv': {'en': 'HF Adv', 'de': 'HF Fort'},
+    'exam': {'en': 'Exam', 'de': 'Prüf'},
+  };
+
   List<Map<String, dynamic>>? globalChecklists;
   List<Map<String, dynamic>>? globalFlighttypes;
   List<Map<String, dynamic>>? globalLocations;
@@ -102,5 +113,13 @@ class GlobalDataService extends ChangeNotifier {
     final titles = categoryTitles[categoryId];
     if (titles == null) return categoryId;
     return titles[languageCode] ?? titles['en'] ?? categoryId;
+  }
+
+  /// Get the short name for a category (for tab display).
+  /// Falls back to English if the requested language is not available.
+  String getCategoryShortName(String categoryId, String languageCode) {
+    final shortNames = categoryShortNames[categoryId];
+    if (shortNames == null) return categoryId;
+    return shortNames[languageCode] ?? shortNames['en'] ?? categoryId;
   }
 }
