@@ -61,6 +61,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Image.asset(
+                    'assets/images/logo_512.png',
+                    width: 100,
+                    height: 100,
+                  ),
+                  const SizedBox(height: 32),
                   TextFormField(
                     controller: _emailCtrl,
                     decoration: const InputDecoration(labelText: 'Email'),

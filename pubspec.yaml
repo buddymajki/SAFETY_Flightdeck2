@@ -41,6 +41,18 @@ dev_dependencies:
 
   # Linting
   flutter_lints: ^6.0.0 # Frissítve a legújabb stabil 3.x-re, ami a Dart 3-hoz készült
+  
+  # Icon generator
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/logo_512.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo_512.png"
+  adaptive_icon_background: "#31374A"
+  adaptive_icon_foreground: "assets/images/logo_512.png"
