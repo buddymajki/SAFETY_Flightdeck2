@@ -1098,6 +1098,18 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       return 999;
     }
 
+    // If no data available, return empty dropdown
+    if (flightTypes.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_t('Flight_Type', lang)),
+          const SizedBox(height: 8),
+          Text('[No flight types loaded]', style: Theme.of(context).textTheme.bodySmall),
+        ],
+      );
+    }
+
     // Create dropdown menu items, sorted by place
     final sortedFlightTypes = flightTypes.toList()
       ..sort((a, b) => _getPlaceValue(a['place']).compareTo(_getPlaceValue(b['place'])));
