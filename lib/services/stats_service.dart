@@ -352,21 +352,27 @@ class StatsService extends ChangeNotifier {
   Map<String, int> getManeuverUsageForYear(int? year) {
     final flights = flightService?.flights as List<Flight>? ?? [];
     final flightStats = _calculateFlightStatsForYear(flights, year);
-    return flightStats['maneuverUsage'] as Map<String, int>;
+    final result = flightStats['maneuverUsage'] as Map<String, int>;
+    debugPrint('[StatsService] getManeuverUsageForYear($year): ${result.length} maneuvers');
+    return result;
   }
 
   /// Get start type usage stats filtered by year (null = all years)
   Map<String, int> getStartTypeUsageForYear(int? year) {
     final flights = flightService?.flights as List<Flight>? ?? [];
     final flightStats = _calculateFlightStatsForYear(flights, year);
-    return flightStats['startTypeUsage'] as Map<String, int>;
+    final result = flightStats['startTypeUsage'] as Map<String, int>;
+    debugPrint('[StatsService] getStartTypeUsageForYear($year): ${result.length} types');
+    return result;
   }
 
   /// Get top takeoff places stats filtered by year (null = all years)
   List<TakeoffPlaceStats> getTopTakeoffPlacesForYear(int? year) {
     final flights = flightService?.flights as List<Flight>? ?? [];
     final flightStats = _calculateFlightStatsForYear(flights, year);
-    return flightStats['topTakeoffPlaces'] as List<TakeoffPlaceStats>;
+    final result = flightStats['topTakeoffPlaces'] as List<TakeoffPlaceStats>;
+    debugPrint('[StatsService] getTopTakeoffPlacesForYear($year): ${result.length} places');
+    return result;
   }
 
   /// Get all unique years available in flight data
