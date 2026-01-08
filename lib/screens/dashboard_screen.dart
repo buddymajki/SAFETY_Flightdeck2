@@ -910,6 +910,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         // Simple pie chart representation with two sections
         SizedBox(
+          width: double.infinity,
           height: 200,
           child: CustomPaint(
             painter: SimplePieChartPainter(
@@ -1121,8 +1122,13 @@ class SimplePieChartPainter extends CustomPainter {
     if (data.isEmpty || total == 0) return;
 
     final paint = Paint()..style = PaintingStyle.fill;
+    final strokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = const Color(0xFF1a1a2e); // Dark background color
+    
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 - 10;
+    final radius = math.min(size.width, size.height) / 2 - 15;
 
     var startAngle = -math.pi / 2; // Start at top
 
@@ -1136,6 +1142,15 @@ class SimplePieChartPainter extends CustomPainter {
         sweepAngle,
         true,
         paint,
+      );
+      
+      // Draw stroke to separate slices
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        true,
+        strokePaint,
       );
 
       startAngle += sweepAngle;
