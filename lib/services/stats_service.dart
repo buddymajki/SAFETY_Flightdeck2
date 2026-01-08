@@ -493,10 +493,12 @@ class StatsService extends ChangeNotifier {
         final date = DateTime.parse(flight.date);
         years.add(date.year);
       } catch (e) {
-        debugPrint('[StatsService] Date parse error in getAvailableYears: $e');
+        debugPrint('[StatsService] Date parse error in getAvailableYears: flight.date="${flight.date}" - $e');
       }
     }
-    return years.toList()..sort((a, b) => b.compareTo(a)); // Sort descending
+    final result = years.toList()..sort((a, b) => b.compareTo(a)); // Sort descending
+    debugPrint('[StatsService] Available years: $result from ${flights.length} flights');
+    return result;
   }
 
   /// Calculate flight-related statistics filtered by year (null = all years)
@@ -510,12 +512,16 @@ class StatsService extends ChangeNotifier {
         : flights.where((flight) {
             try {
               final date = DateTime.parse(flight.date);
-              return date.year == selectedYear;
+              final matches = date.year == selectedYear;
+              if (!matches) debugPrint('[StatsService] Flight date: ${flight.date}, year: ${date.year}, selected: $selectedYear');
+              return matches;
             } catch (e) {
+              debugPrint('[StatsService] Date parse error for flight.date="${flight.date}": $e');
               return false;
             }
           }).toList();
 
+    debugPrint('[StatsService] Year filter: $selectedYear, Flights: ${flights.length} -> ${filteredFlights.length}');
     return _calculateFlightStats(filteredFlights);
   }
 

@@ -268,6 +268,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ThemeData theme,
   ) {
     final availableYears = statsService.getAvailableYearsFromFlights();
+    debugPrint('[Dashboard] Year selector - Available years: $availableYears, Selected: $_selectedYear');
     
     return Row(
       children: [
@@ -286,14 +287,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 value: null,
                 child: Text(_t('All_Years', lang)),
               ),
-              ...availableYears.map(
-                (year) => DropdownMenuItem<int?>(
-                  value: year,
-                  child: Text(year.toString()),
+              if (availableYears.isEmpty)
+                DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text('(${_t('No_Data', lang)})'),
+                )
+              else
+                ...availableYears.map(
+                  (year) => DropdownMenuItem<int?>(
+                    value: year,
+                    child: Text(year.toString()),
+                  ),
                 ),
-              ),
             ],
             onChanged: (value) {
+              debugPrint('[Dashboard] Year changed: $_selectedYear -> $value');
               setState(() {
                 _selectedYear = value;
               });
