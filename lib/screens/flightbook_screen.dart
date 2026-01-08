@@ -504,11 +504,13 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     'Select_Flight_Type': {'en': 'Select flight type', 'de': 'Flugtyp auswählen'},
     'Maneuvers': {'en': 'Maneuvers', 'de': 'Kunststücke'},
     'Select_Maneuvers': {'en': 'Select maneuvers performed', 'de': 'Durchgeführte Kunststücke auswählen'},
+    'Add_Maneuvers': {'en': 'Add Maneuver(s)', 'de': 'Kunststück(e) hinzufügen'},
     'Start_Type': {'en': 'Start Type', 'de': 'Startart'},
     'Select_Start_Type': {'en': 'Select start type', 'de': 'Startart auswählen'},
     'Comment': {'en': 'Comment', 'de': 'Kommentar'},
     'Save': {'en': 'Save', 'de': 'Speichern'},
     'Cancel': {'en': 'Cancel', 'de': 'Abbrechen'},
+    'Close': {'en': 'Close', 'de': 'Schließen'},
     'Validation_Error': {'en': 'Please fill in all required fields', 'de': 'Bitte füllen Sie alle erforderlichen Felder aus'},
     'School_This_Flight': {'en': 'School (this flight)', 'de': 'Schule (für diesen Flug)'},
   };
@@ -1209,16 +1211,6 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     final lang = appConfig.currentLanguageCode;
     final allManeuvers = globalService.globalManeuvers ?? [];
 
-    // If no flight type selected, don't show maneuvers
-    if (_selectedFlightTypeId == null) {
-      return const SizedBox.shrink();
-    }
-
-    // If no maneuvers available, don't show the field
-    if (allManeuvers.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     // Helper to safely convert place value to int
     int _getPlaceValue(dynamic value) {
       if (value is int) return value;
@@ -1235,29 +1227,89 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       children: [
         Text(_t('Maneuvers', lang)),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: sortedManeuvers.map((maneuver) {
-            final maneuverKey = maneuver['id'] as String; // Use ID as the key
-            final labels = maneuver['labels'] as Map<String, dynamic>? ?? {};
-            final maneuverLabel = (labels[lang] as String?) ?? (labels['en'] as String?) ?? 'Unknown';
-            final isSelected = _selectedManeuvers.contains(maneuverKey);
-            return FilterChip(
-              label: Text(maneuverLabel),
-              selected: isSelected,
-              onSelected: (bool selected) {
-                setState(() {
-                  if (selected) {
-                    _selectedManeuvers.add(maneuverKey);
-                  } else {
+        // Show selected maneuvers as chips
+        if (_selectedManeuvers.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _selectedManeuvers.map((maneuverKey) {
+              final maneuver = allManeuvers.firstWhere(
+                (m) => m['id'] == maneuverKey,
+                orElse: () => {},
+              );
+              if (maneuver.isEmpty) return const SizedBox.shrink();
+              
+              final labels = maneuver['labels'] as Map<String, dynamic>? ?? {};
+              final maneuverLabel = (labels[lang] as String?) ?? (labels['en'] as String?) ?? 'Unknown';
+              
+              return InputChip(
+                label: Text(maneuverLabel),
+                onDeleted: () {
+                  setState(() {
                     _selectedManeuvers.remove(maneuverKey);
-                  }
-                });
-              },
-            );
-          }).toList(),
+                  });
+                },
+              );
+            }).toList(),
+          ),
+        if (_selectedManeuvers.isNotEmpty) const SizedBox(height: 12),
+        // Add Maneuver(s) button
+        ElevatedButton.icon(
+          icon: const Icon(Icons.add),
+          label: Text(_t('Add_Maneuvers', lang)),
+          onPressed: () => _showManeuverSelectionDialog(sortedManeuvers, lang),
         ),
       ],
+    );
+  }
+
+  void _showManeuverSelectionDialog(List<Map<String, dynamic>> sortedManeuvers, String lang) {
+    final globalService = context.read<GlobalDataService>();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              title: Text(_t('Select_Maneuvers', lang)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: sortedManeuvers.map((maneuver) {
+                    final maneuverKey = maneuver['id'] as String;
+                    final labels = maneuver['labels'] as Map<String, dynamic>? ?? {};
+                    final maneuverLabel = (labels[lang] as String?) ?? (labels['en'] as String?) ?? 'Unknown';
+                    final isSelected = _selectedManeuvers.contains(maneuverKey);
+                    
+                    return CheckboxListTile(
+                      title: Text(maneuverLabel),
+                      value: isSelected,
+                      onChanged: (bool? selected) {
+                        setDialogState(() {
+                          if (selected == true) {
+                            _selectedManeuvers.add(maneuverKey);
+                          } else {
+                            _selectedManeuvers.remove(maneuverKey);
+                          }
+                        });
+                        setState(() {}); // Update parent widget
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(_t('Close', lang)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1577,9 +1629,9 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
             _buildFlightTypeDropdown(),
             const SizedBox(height: 12),
 
-            // Maneuvers Selection
-            if (_selectedFlightTypeId != null) _buildManeuversSelection(),
-            if (_selectedFlightTypeId != null) const SizedBox(height: 12),
+            // Maneuvers Selection (always visible)
+            _buildManeuversSelection(),
+            const SizedBox(height: 12),
 
             // Comment
             TextField(
