@@ -348,6 +348,33 @@ class StatsService extends ChangeNotifier {
     }
   }
 
+  /// Get maneuver usage stats filtered by year (null = all years)
+  Map<String, int> getManeuverUsageForYear(int? year) {
+    final flights = flightService?.flights as List<Flight>? ?? [];
+    final flightStats = _calculateFlightStatsForYear(flights, year);
+    return flightStats['maneuverUsage'] as Map<String, int>;
+  }
+
+  /// Get start type usage stats filtered by year (null = all years)
+  Map<String, int> getStartTypeUsageForYear(int? year) {
+    final flights = flightService?.flights as List<Flight>? ?? [];
+    final flightStats = _calculateFlightStatsForYear(flights, year);
+    return flightStats['startTypeUsage'] as Map<String, int>;
+  }
+
+  /// Get top takeoff places stats filtered by year (null = all years)
+  List<TakeoffPlaceStats> getTopTakeoffPlacesForYear(int? year) {
+    final flights = flightService?.flights as List<Flight>? ?? [];
+    final flightStats = _calculateFlightStatsForYear(flights, year);
+    return flightStats['topTakeoffPlaces'] as List<TakeoffPlaceStats>;
+  }
+
+  /// Get all unique years available in flight data
+  List<int> getAvailableYearsFromFlights() {
+    final flights = flightService?.flights as List<Flight>? ?? [];
+    return getAvailableYears(flights);
+  }
+
   /// Background sync to Firestore (non-blocking)
   void _syncToFirestoreBackground(String uid, DashboardStats stats) {
     _firestore
@@ -456,6 +483,40 @@ class StatsService extends ChangeNotifier {
       'flightTypeUsage': flightTypeUsage,
       'topTakeoffPlaces': topTakeoffPlaces,
     };
+  }
+
+  /// Get all unique years from flights
+  List<int> getAvailableYears(List<Flight> flights) {
+    final years = <int>{};
+    for (final flight in flights) {
+      try {
+        final date = DateTime.parse(flight.date);
+        years.add(date.year);
+      } catch (e) {
+        debugPrint('[StatsService] Date parse error in getAvailableYears: $e');
+      }
+    }
+    return years.toList()..sort((a, b) => b.compareTo(a)); // Sort descending
+  }
+
+  /// Calculate flight-related statistics filtered by year (null = all years)
+  Map<String, dynamic> _calculateFlightStatsForYear(
+    List<Flight> flights,
+    int? selectedYear,
+  ) {
+    // Filter flights by year if specified
+    final filteredFlights = selectedYear == null
+        ? flights
+        : flights.where((flight) {
+            try {
+              final date = DateTime.parse(flight.date);
+              return date.year == selectedYear;
+            } catch (e) {
+              return false;
+            }
+          }).toList();
+
+    return _calculateFlightStats(filteredFlights);
   }
 
   /// Calculate progress statistics from ChecklistItem objects (in-memory)

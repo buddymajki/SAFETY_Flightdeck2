@@ -24,6 +24,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isTakeoffPlacesChartExpanded = false;
   bool _isStartTypeChartExpanded = false;
 
+  // Year filter state for stats (null = all years)
+  int? _selectedYear;
+
   // Card order management
   late List<String> _cardOrder;
 
@@ -48,6 +51,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'No_Data': {'en': 'No data available', 'de': 'Keine Daten verfügbar'},
     'Times_Performed': {'en': 'times performed', 'de': 'mal durchgeführt'},
     'Flights_From': {'en': 'flights from here', 'de': 'Flüge von hier'},
+    'Select_Year': {'en': 'Select Year', 'de': 'Jahr auswählen'},
+    'All_Years': {'en': 'All Years', 'de': 'Alle Jahre'},
   };
 
   String _t(String key, String lang) {
@@ -120,7 +125,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // Main stats grid (2x2)
+                // Year filter selector
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: _buildYearSelector(context, statsService, lang, theme),
+                ),
+                const SizedBox(height: 16),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: _buildStatsGrid(context, stats, lang, theme),
@@ -240,13 +250,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ThemeData theme,
     GlobalDataService globalData,
   ) {
+    final statsService = context.read<StatsService>();
     return switch (cardId) {
       'checklist' => _buildChecklistProgressCard(context, stats, lang, theme, globalData),
-      'maneuver' => _buildManeuverUsageCard(context, stats, lang, theme, globalData),
-      'starttype' => _buildStartTypeUsageCard(context, stats, lang, theme, globalData),
-      'takeoff' => _buildTopTakeoffPlacesCard(context, stats, lang, theme),
+      'maneuver' => _buildManeuverUsageCard(context, stats, lang, theme, globalData, statsService, _selectedYear),
+      'starttype' => _buildStartTypeUsageCard(context, stats, lang, theme, globalData, statsService, _selectedYear),
+      'takeoff' => _buildTopTakeoffPlacesCard(context, stats, lang, theme, statsService, _selectedYear),
       _ => const SizedBox.shrink(),
     };
+  }
+
+  /// Build year filter selector
+  Widget _buildYearSelector(
+    BuildContext context,
+    StatsService statsService,
+    String lang,
+    ThemeData theme,
+  ) {
+    final availableYears = statsService.getAvailableYearsFromFlights();
+    
+    return Row(
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<int?>(
+            value: _selectedYear,
+            decoration: InputDecoration(
+              labelText: _t('Select_Year', lang),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            items: [
+              DropdownMenuItem<int?>(
+                value: null,
+                child: Text(_t('All_Years', lang)),
+              ),
+              ...availableYears.map(
+                (year) => DropdownMenuItem<int?>(
+                  value: year,
+                  child: Text(year.toString()),
+                ),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedYear = value;
+              });
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   /// Build the main 2x2 stats grid
@@ -667,6 +722,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     String lang,
     ThemeData theme,
     GlobalDataService globalData,
+    StatsService statsService,
+    int? selectedYear,
   ) {
     return Card(
       elevation: 8,
@@ -711,7 +768,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
               if (_isManeuverChartExpanded) ...[
                 const SizedBox(height: 20),
-                _buildManeuverChart(context, stats, lang, theme, globalData),
+                _buildManeuverChart(context, lang, theme, globalData, statsService, selectedYear),
               ],
             ],
           ),
@@ -723,12 +780,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Build maneuver usage bar chart with labels
   Widget _buildManeuverChart(
     BuildContext context,
-    DashboardStats stats,
     String lang,
     ThemeData theme,
     GlobalDataService globalData,
+    StatsService statsService,
+    int? selectedYear,
   ) {
-    if (stats.maneuverUsage.isEmpty) {
+    final maneuverUsage = statsService.getManeuverUsageForYear(selectedYear);
+
+    if (maneuverUsage.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -749,7 +809,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     };
     
     // Sort by usage count
-    final sortedManeuvers = stats.maneuverUsage.entries.toList()
+    final sortedManeuvers = maneuverUsage.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     final maxCount = sortedManeuvers.first.value;
@@ -816,6 +876,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     String lang,
     ThemeData theme,
     GlobalDataService globalData,
+    StatsService statsService,
+    int? selectedYear,
   ) {
     return Card(
       elevation: 8,
@@ -860,7 +922,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
               if (_isStartTypeChartExpanded) ...[
                 const SizedBox(height: 20),
-                _buildStartTypeChart(context, stats, lang, theme, globalData),
+                _buildStartTypeChart(context, lang, theme, globalData, statsService, selectedYear),
               ],
             ],
           ),
@@ -872,12 +934,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Build start type usage pie chart
   Widget _buildStartTypeChart(
     BuildContext context,
-    DashboardStats stats,
     String lang,
     ThemeData theme,
     GlobalDataService globalData,
+    StatsService statsService,
+    int? selectedYear,
   ) {
-    if (stats.startTypeUsage.isEmpty) {
+    final startTypeUsage = statsService.getStartTypeUsageForYear(selectedYear);
+
+    if (startTypeUsage.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -898,7 +963,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     };
 
     // Sort by count
-    final sortedStartTypes = stats.startTypeUsage.entries.toList()
+    final sortedStartTypes = startTypeUsage.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     final totalCount = sortedStartTypes.fold<int>(0, (sum, entry) => sum + entry.value);
@@ -986,6 +1051,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     DashboardStats stats,
     String lang,
     ThemeData theme,
+    StatsService statsService,
+    int? selectedYear,
   ) {
     return Card(
       elevation: 8,
@@ -1030,7 +1097,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
               if (_isTakeoffPlacesChartExpanded) ...[
                 const SizedBox(height: 20),
-                _buildTakeoffPlacesChart(context, stats, lang, theme),
+                _buildTakeoffPlacesChart(context, lang, theme, statsService, selectedYear),
               ],
             ],
           ),
@@ -1042,11 +1109,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Build takeoff places bar chart
   Widget _buildTakeoffPlacesChart(
     BuildContext context,
-    DashboardStats stats,
     String lang,
     ThemeData theme,
+    StatsService statsService,
+    int? selectedYear,
   ) {
-    if (stats.topTakeoffPlaces.isEmpty) {
+    final topTakeoffPlaces = statsService.getTopTakeoffPlacesForYear(selectedYear);
+
+    if (topTakeoffPlaces.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -1059,7 +1129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     // Show top 5 by default
-    final topPlaces = stats.topTakeoffPlaces.take(5).toList();
+    final topPlaces = topTakeoffPlaces.take(5).toList();
     final maxCount = topPlaces.first.count;
 
     return Column(
@@ -1105,6 +1175,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
+
 /// Simple pie chart painter for visualizing start type distribution
 class SimplePieChartPainter extends CustomPainter {
   final List<double> data;
