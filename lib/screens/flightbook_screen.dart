@@ -1144,7 +1144,6 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
           onChanged: (String? newValue) {
             setState(() {
               _selectedFlightTypeId = newValue;
-              _selectedManeuvers.clear(); // Clear maneuvers when type changes
             });
           },
           items: items,
