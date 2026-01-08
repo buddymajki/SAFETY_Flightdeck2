@@ -71,7 +71,7 @@ class GlobalDataService extends ChangeNotifier {
       _initialized = true;
       notifyListeners();
 
-      log('[GlobalDataService] Loaded: checklists=${globalChecklists?.length ?? 0}, flighttypes=${globalFlighttypes?.length ?? 0}');
+      log('[GlobalDataService] Loaded: checklists=${globalChecklists?.length ?? 0}, flighttypes=${globalFlighttypes?.length ?? 0}, starttypes=${globalStarttypes?.length ?? 0}, maneuvers=${globalManeuvers?.length ?? 0}');
     } catch (e, st) {
       if (kDebugMode) {
         log('[GlobalDataService] initializeData error: $e', stackTrace: st);
