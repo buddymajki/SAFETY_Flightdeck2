@@ -133,14 +133,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 16),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: _buildStatsGrid(context, stats, lang, theme),
+                  child: _buildStatsGrid(context, statsService, lang, theme, _selectedYear),
                 ),
                 const SizedBox(height: 24),
 
                 // Detailed stats row (Airtime, Cumm. Alt., Progress)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: _buildDetailedStats(context, stats, lang, theme),
+                  child: _buildDetailedStats(context, statsService, lang, theme, _selectedYear),
                 ),
                 const SizedBox(height: 32),
 
@@ -313,7 +313,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   /// Build the main 2x2 stats grid
-  Widget _buildStatsGrid(BuildContext context, DashboardStats stats, String lang, ThemeData theme) {
+  Widget _buildStatsGrid(
+    BuildContext context,
+    StatsService statsService,
+    String lang,
+    ThemeData theme,
+    int? selectedYear,
+  ) {
+    final mainStats = statsService.getMainStatsForYear(selectedYear);
+    
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -325,7 +333,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _buildStatCard(
           context,
           _t('Flights', lang),
-          stats.flightsCount.toString(),
+          (mainStats['flightsCount'] as int).toString(),
           Icons.airplanemode_on,
           Colors.green.shade700,
           theme,
@@ -333,7 +341,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _buildStatCard(
           context,
           _t('Takeoffs', lang),
-          stats.takeoffsCount.toString(),
+          (mainStats['takeoffsCount'] as int).toString(),
           Icons.flight_takeoff,
           Colors.blue.shade700,
           theme,
@@ -341,7 +349,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _buildStatCard(
           context,
           _t('Landings', lang),
-          stats.landingsCount.toString(),
+          (mainStats['landingsCount'] as int).toString(),
           Icons.flight_land,
           Colors.green.shade600,
           theme,
@@ -349,7 +357,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _buildStatCard(
           context,
           _t('Flying_Days', lang),
-          stats.flyingDays.toString(),
+          (mainStats['flyingDays'] as int).toString(),
           Icons.calendar_today,
           Colors.blue.shade400,
           theme,
@@ -417,12 +425,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   /// Build detailed stats row
-  Widget _buildDetailedStats(BuildContext context, DashboardStats stats, String lang, ThemeData theme) {
-    final hours = stats.airtimeMinutes ~/ 60;
-    final mins = stats.airtimeMinutes % 60;
+  Widget _buildDetailedStats(
+    BuildContext context,
+    StatsService statsService,
+    String lang,
+    ThemeData theme,
+    int? selectedYear,
+  ) {
+    final mainStats = statsService.getMainStatsForYear(selectedYear);
+    final progress = statsService.getProgressForYear(selectedYear);
+    
+    final airtimeMinutes = mainStats['airtimeMinutes'] as int;
+    final hours = airtimeMinutes ~/ 60;
+    final mins = airtimeMinutes % 60;
     final airtimeStr = '${hours}h ${mins}min';
-    final altStr = '${stats.cummAltDiff} m';
-    final progressStr = '${stats.progress.percentage} %';
+    final altStr = '${mainStats['cummAltDiff']} m';
+    final progressStr = '${progress.percentage} %';
 
     return Row(
       children: [

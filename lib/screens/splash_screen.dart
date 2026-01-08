@@ -100,14 +100,21 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/images/logo_512.png',
-              width: 150,
-              height: 150,
+            ClipRect(
+              child: Align(
+                alignment: Alignment.center,
+                widthFactor: 0.92,
+                heightFactor: 0.92,
+                child: Image.asset(
+                  'assets/images/logo_512.png',
+                  width: 250,
+                  height: 250,
+                ),
+              ),
             ),
             const SizedBox(height: 32),
             const Text(
-              'FlightDeck v2.01',
+              'FlightDeck v2.02',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,

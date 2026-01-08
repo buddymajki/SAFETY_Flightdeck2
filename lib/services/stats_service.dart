@@ -381,6 +381,30 @@ class StatsService extends ChangeNotifier {
     return getAvailableYears(flights);
   }
 
+  /// Get main stats filtered by year (flights count, takeoffs, landings, flying days, airtime, altitude)
+  Map<String, dynamic> getMainStatsForYear(int? year) {
+    final flights = flightService?.flights as List<Flight>? ?? [];
+    final flightStats = _calculateFlightStatsForYear(flights, year);
+    
+    return {
+      'flightsCount': flightStats['flightsCount'] as int,
+      'takeoffsCount': flightStats['takeoffsCount'] as int,
+      'landingsCount': flightStats['landingsCount'] as int,
+      'flyingDays': flightStats['flyingDays'] as int,
+      'airtimeMinutes': flightStats['airtimeMinutes'] as int,
+      'cummAltDiff': flightStats['cummAltDiff'] as int,
+    };
+  }
+
+  /// Get progress stats filtered by year
+  ProgressStats getProgressForYear(int? year) {
+    final flights = flightService?.flights as List<Flight>? ?? [];
+    final flightStats = _calculateFlightStatsForYear(flights, year);
+    // Progress is calculated from the main flight stats (checklist progress)
+    // For now, return the cached progress as it's not flight-dependent
+    return _stats.progress;
+  }
+
   /// Background sync to Firestore (non-blocking)
   void _syncToFirestoreBackground(String uid, DashboardStats stats) {
     _firestore
