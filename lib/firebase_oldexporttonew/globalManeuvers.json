@@ -1,0 +1,65 @@
+{
+  "bigEars": {
+    "labels": {
+      "en": "Big ears",
+      "de": "Ohren anlegen"
+    },
+    "place": 1
+  },
+  "pitching": {
+    "labels": {
+      "en": "Pitching",
+      "de": "Nicken"
+    },
+    "place": 2
+  },
+  "rolling": {
+    "labels": {
+      "en": "Rolling",
+      "de": "Rollen"
+    },
+    "place": 3
+  },
+  "fastTurns": {
+    "labels": {
+      "en": "Fast turns",
+      "de": "Schnelle Kurven"
+    },
+    "place": 4
+  },
+  "spirals": {
+    "labels": {
+      "en": "Spirals",
+      "de": "Spiralen"
+    },
+    "place": 5
+  },
+  "collapseAsym": {
+    "labels": {
+      "en": "Collapse (Asymmetric)",
+      "de": "Klappen (Asymmetrisch)"
+    },
+    "place": 6
+  },
+  "collapseFrontal": {
+    "labels": {
+      "en": "Collapse (Frontal)",
+      "de": "Einklapper (Frontal)"
+    },
+    "place": 7
+  },
+  "spin": {
+    "labels": {
+      "en": "Spin",
+      "de": "Trudeln"
+    },
+    "place": 8
+  },
+  "stall": {
+    "labels": {
+      "en": "Stall",
+      "de": "Stall"
+    },
+    "place": 9
+  }
+}
