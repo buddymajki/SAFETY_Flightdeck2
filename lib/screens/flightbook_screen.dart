@@ -294,7 +294,7 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
       context: context,
       builder: (context) {
         final theme = Theme.of(context);
-        final dateFormatter = DateFormat('dd.MM.yyyy HH:mm');
+        final dateFormatter = DateFormat('dd.MM.yyyy');
         final flightDate = DateTime.parse(flight.date);
 
         return Container(
@@ -311,16 +311,25 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _detailRow('Date', dateFormatter.format(flightDate), theme),
-                _detailRow('Takeoff', flight.takeoffName, theme),
-                _detailRow('Landing', flight.landingName, theme),
-                _detailRow('Takeoff Alt', '${flight.takeoffAltitude.toStringAsFixed(0)} m', theme),
-                _detailRow('Landing Alt', '${flight.landingAltitude.toStringAsFixed(0)} m', theme),
-                _detailRow('Alt Difference', '${flight.altitudeDifference.toStringAsFixed(0)} m', theme),
-                _detailRow('Duration', '${flight.flightTimeMinutes ~/ 60}h ${flight.flightTimeMinutes % 60}m', theme),
-                if (flight.comment != null && flight.comment!.isNotEmpty)
-                  _detailRow('Comment', flight.comment!, theme),
-                _detailRow('Status', flight.status, theme),
+                Table(
+                  columnWidths: const {
+                    0: IntrinsicColumnWidth(),
+                    1: FlexColumnWidth(),
+                  },
+                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                  children: [
+                    _tableRow('Date', dateFormatter.format(flightDate), theme),
+                    _tableRow('Takeoff', flight.takeoffName, theme),
+                    _tableRow('Landing', flight.landingName, theme),
+                    _tableRow('Takeoff Alt', '${flight.takeoffAltitude.toStringAsFixed(0)} m', theme),
+                    _tableRow('Landing Alt', '${flight.landingAltitude.toStringAsFixed(0)} m', theme),
+                    _tableRow('Alt Difference', '${flight.altitudeDifference.toStringAsFixed(0)} m', theme),
+                    _tableRow('Duration', '${flight.flightTimeMinutes ~/ 60}h ${flight.flightTimeMinutes % 60}m', theme),
+                    if (flight.comment != null && flight.comment!.isNotEmpty)
+                      _tableRow('Comment', flight.comment!, theme, wrap: true),
+                    _tableRow('Status', flight.status, theme),
+                  ].whereType<TableRow>().toList(),
+                ),
               ],
             ),
           ),
@@ -329,24 +338,32 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
     );
   }
 
-  Widget _detailRow(String label, String value, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
+  TableRow _tableRow(String label, String value, ThemeData theme, {bool wrap = false}) {
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
             label,
             style: theme.textTheme.labelMedium,
           ),
-          Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8).copyWith(left: 24), // Increased left padding for gap
+          child: wrap
+              ? Text(
+                  value,
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                  softWrap: true,
+                )
+              : Text(
+                  value,
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
+                ),
+        ),
+      ],
     );
   }
 
@@ -487,6 +504,8 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     'Select_Flight_Type': {'en': 'Select flight type', 'de': 'Flugtyp auswählen'},
     'Maneuvers': {'en': 'Maneuvers', 'de': 'Kunststücke'},
     'Select_Maneuvers': {'en': 'Select maneuvers performed', 'de': 'Durchgeführte Kunststücke auswählen'},
+    'Start_Type': {'en': 'Start Type', 'de': 'Startart'},
+    'Select_Start_Type': {'en': 'Select start type', 'de': 'Startart auswählen'},
     'Comment': {'en': 'Comment', 'de': 'Kommentar'},
     'Save': {'en': 'Save', 'de': 'Speichern'},
     'Cancel': {'en': 'Cancel', 'de': 'Abbrechen'},
@@ -568,6 +587,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   int _hours = 0;
   int _minutes = 0;
   bool _isLoading = false;
+  String? _selectedStartTypeId;
   String? _selectedFlightTypeId;
   Set<String> _selectedManeuvers = {};
   List<Map<String, dynamic>> _availableLocations = [];
@@ -779,6 +799,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         text: flight.landingAltitude.toStringAsFixed(0),
       );
       _commentController = TextEditingController(text: flight.comment);
+      _selectedStartTypeId = flight.startTypeId;
       _selectedFlightTypeId = flight.flightTypeId;
       _selectedManeuvers = Set.from(flight.advancedManeuvers);
 
@@ -800,6 +821,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
       _takeoffAltitudeController = TextEditingController(text: '1000');
       _landingAltitudeController = TextEditingController(text: '500');
       _commentController = TextEditingController();
+      _selectedStartTypeId = null;
       _selectedFlightTypeId = null;
       _selectedManeuvers = {};
       _takeoffFromDropdown = false;
@@ -870,6 +892,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         altitudeDifference: altDiff,
         flightTimeMinutes: (_hours * 60) + _minutes,
         comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
+        startTypeId: _selectedStartTypeId,
         flightTypeId: _selectedFlightTypeId,
         advancedManeuvers: _selectedManeuvers.toList(),
         schoolManeuvers: const [],
@@ -1068,11 +1091,14 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     final lang = appConfig.currentLanguageCode;
     final flightTypes = globalService.globalFlighttypes ?? [];
 
-    // Create dropdown menu items
-    final items = flightTypes.map((type) {
-      // Use localized type field (type_en, type_de, etc.) with fallback to type_en
-      final typeKey = 'type_$lang';
-      final typeLabel = (type[typeKey] as String?) ?? (type['type_en'] as String?) ?? 'Unknown';
+    // Create dropdown menu items, sorted by place
+    final sortedFlightTypes = flightTypes.toList()
+      ..sort((a, b) => (a['place'] as int? ?? 999).compareTo(b['place'] as int? ?? 999));
+
+    final items = sortedFlightTypes.map((type) {
+      // Use localized labels (labels.en, labels.de, etc.)
+      final labels = type['labels'] as Map<String, dynamic>? ?? {};
+      final typeLabel = (labels[lang] as String?) ?? (labels['en'] as String?) ?? 'Unknown';
       return DropdownMenuItem<String>(
         value: type['id'],
         child: Text(typeLabel),
@@ -1106,37 +1132,70 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
     );
   }
 
+  // --- Start Type Dropdown ---
+  Widget _buildStartTypeDropdown() {
+    final globalService = context.read<GlobalDataService>();
+    final appConfig = context.watch<AppConfigService>();
+    final lang = appConfig.currentLanguageCode;
+    final startTypes = globalService.globalStarttypes ?? [];
+
+    // Sort by place
+    final sortedStartTypes = startTypes.toList()
+      ..sort((a, b) => (a['place'] as int? ?? 999).compareTo(b['place'] as int? ?? 999));
+
+    final items = sortedStartTypes.map((type) {
+      final labels = type['labels'] as Map<String, dynamic>? ?? {};
+      final typeLabel = (labels[lang] as String?) ?? (labels['en'] as String?) ?? 'Unknown';
+      return DropdownMenuItem<String>(
+        value: type['id'],
+        child: Text(typeLabel),
+      );
+    }).toList();
+
+    String? currentValue = _selectedStartTypeId;
+    if (currentValue != null && !items.any((item) => item.value == currentValue)) {
+      currentValue = null;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(_t('Start_Type', lang)),
+        const SizedBox(height: 8),
+        DropdownButton<String>(
+          isExpanded: true,
+          hint: Text(_t('Select_Start_Type', lang)),
+          value: currentValue,
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedStartTypeId = newValue;
+            });
+          },
+          items: items,
+        ),
+      ],
+    );
+  }
+
   Widget _buildManeuversSelection() {
     final globalService = context.read<GlobalDataService>();
     final appConfig = context.watch<AppConfigService>();
     final lang = appConfig.currentLanguageCode;
-    final flightTypes = globalService.globalFlighttypes ?? [];
+    final allManeuvers = globalService.globalManeuvers ?? [];
 
-    // Get maneuvers from the selected flight type
+    // If no flight type selected, don't show maneuvers
     if (_selectedFlightTypeId == null) {
       return const SizedBox.shrink();
     }
 
-    final selectedFlightType = flightTypes.firstWhere(
-      (type) => type['id'] == _selectedFlightTypeId,
-      orElse: () => <String, dynamic>{},
-    );
-
-    if (selectedFlightType.isEmpty) {
+    // If no maneuvers available, don't show the field
+    if (allManeuvers.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // Get localized maneuvers array (maneuvers_en, maneuvers_de, etc.)
-    final maneuvereKey = 'maneuvers_$lang';
-    List<dynamic> maneuversList =
-        (selectedFlightType[maneuvereKey] as List<dynamic>?) ??
-        (selectedFlightType['maneuvers_en'] as List<dynamic>?) ??
-        [];
-
-    // If no maneuvers available for this flight type, don't show the field
-    if (maneuversList.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    // Sort maneuvers by place
+    final sortedManeuvers = allManeuvers.toList()
+      ..sort((a, b) => (a['place'] as int? ?? 999).compareTo(b['place'] as int? ?? 999));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1145,19 +1204,20 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          children: maneuversList.map((maneuver) {
-            // Maneuvers are stored as strings in the array
-            final maneuverName = maneuver.toString();
-            final isSelected = _selectedManeuvers.contains(maneuverName);
+          children: sortedManeuvers.map((maneuver) {
+            final maneuverKey = maneuver['id'] as String; // Use ID as the key
+            final labels = maneuver['labels'] as Map<String, dynamic>? ?? {};
+            final maneuverLabel = (labels[lang] as String?) ?? (labels['en'] as String?) ?? 'Unknown';
+            final isSelected = _selectedManeuvers.contains(maneuverKey);
             return FilterChip(
-              label: Text(maneuverName),
+              label: Text(maneuverLabel),
               selected: isSelected,
               onSelected: (bool selected) {
                 setState(() {
                   if (selected) {
-                    _selectedManeuvers.add(maneuverName);
+                    _selectedManeuvers.add(maneuverKey);
                   } else {
-                    _selectedManeuvers.remove(maneuverName);
+                    _selectedManeuvers.remove(maneuverKey);
                   }
                 });
               },
@@ -1474,6 +1534,10 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+
+            // Start Type Dropdown
+            _buildStartTypeDropdown(),
             const SizedBox(height: 12),
 
             // Flight Type Dropdown

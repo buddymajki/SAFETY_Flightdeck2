@@ -33,6 +33,8 @@ class GlobalDataService extends ChangeNotifier {
 
   List<Map<String, dynamic>>? globalChecklists;
   List<Map<String, dynamic>>? globalFlighttypes;
+  List<Map<String, dynamic>>? globalStarttypes;
+  List<Map<String, dynamic>>? globalManeuvers;
   List<Map<String, dynamic>>? globalLocations;
   List<Map<String, dynamic>>? schools;
 
@@ -46,11 +48,14 @@ class GlobalDataService extends ChangeNotifier {
     try {
       final opts = const GetOptions(source: Source.serverAndCache);
 
+
       final results = await Future.wait([
-        fs.collection('globalChecklists').get(opts),
-        fs.collection('globalFlighttypes').get(opts),
-        fs.collection('globalLocations').get(opts),
-        fs.collection('schools').get(opts),
+        fs.collection('globalChecklists').get(opts),         // 0
+        fs.collection('globalFlighttypes').get(opts),         // 1
+        fs.collection('globalStarttypes').get(opts),          // 2
+        fs.collection('globalManeuvers').get(opts),           // 3
+        fs.collection('globalLocations').get(opts),           // 4
+        fs.collection('schools').get(opts),                  // 5
       ]);
 
       _globalChecklists = {
@@ -58,8 +63,10 @@ class GlobalDataService extends ChangeNotifier {
       };
       globalChecklists = results[0].docs.map((d) => _withId(d)).toList();
       globalFlighttypes = results[1].docs.map((d) => _withId(d)).toList();
-      globalLocations = results[2].docs.map((d) => _withId(d)).toList();
-      schools = results[3].docs.map((d) => _withId(d)).toList();
+      globalStarttypes = results[2].docs.map((d) => _withId(d)).toList();
+      globalManeuvers = results[3].docs.map((d) => _withId(d)).toList();
+      globalLocations = results[4].docs.map((d) => _withId(d)).toList();
+      schools = results[5].docs.map((d) => _withId(d)).toList();
 
       _initialized = true;
       notifyListeners();
@@ -77,6 +84,8 @@ class GlobalDataService extends ChangeNotifier {
     _globalChecklists = null;
     globalChecklists = null;
     globalFlighttypes = null;
+    globalStarttypes = null;
+    globalManeuvers = null;
     globalLocations = null;
     schools = null;
     _initialized = false;

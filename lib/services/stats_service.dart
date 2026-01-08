@@ -367,6 +367,8 @@ class StatsService extends ChangeNotifier {
     int totalMinutes = 0;
     int totalAltDiff = 0;
     final Map<String, int> maneuverUsage = {};
+    final Map<String, int> startTypeUsage = {};
+    final Map<String, int> flightTypeUsage = {};
     final Map<String, int> takeoffPlaceCounts = {};
 
     for (final flight in flights) {
@@ -405,6 +407,14 @@ class StatsService extends ChangeNotifier {
       for (final maneuver in [...flight.advancedManeuvers, ...flight.schoolManeuvers]) {
         maneuverUsage[maneuver] = (maneuverUsage[maneuver] ?? 0) + 1;
       }
+      // Start type usage
+      if (flight.startTypeId != null && flight.startTypeId!.isNotEmpty) {
+        startTypeUsage[flight.startTypeId!] = (startTypeUsage[flight.startTypeId!] ?? 0) + 1;
+      }
+      // Flight type usage
+      if (flight.flightTypeId != null && flight.flightTypeId!.isNotEmpty) {
+        flightTypeUsage[flight.flightTypeId!] = (flightTypeUsage[flight.flightTypeId!] ?? 0) + 1;
+      }
 
       // Takeoff place counts (reuse takeoffKey already calculated above)
       if (takeoffKey.isNotEmpty) {
@@ -437,6 +447,8 @@ class StatsService extends ChangeNotifier {
       'airtimeMinutes': totalMinutes,
       'cummAltDiff': totalAltDiff,
       'maneuverUsage': maneuverUsage,
+      'startTypeUsage': startTypeUsage,
+      'flightTypeUsage': flightTypeUsage,
       'topTakeoffPlaces': topTakeoffPlaces,
     };
   }

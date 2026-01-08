@@ -18,6 +18,7 @@ class Flight {
   double altitudeDifference;
   int flightTimeMinutes;
   String? comment;
+  String? startTypeId;
   String? flightTypeId;
   List<String> advancedManeuvers;
   List<String> schoolManeuvers;
@@ -42,6 +43,7 @@ class Flight {
     required this.altitudeDifference,
     required this.flightTimeMinutes,
     this.comment,
+    this.startTypeId,
     this.flightTypeId,
     this.advancedManeuvers = const [],
     this.schoolManeuvers = const [],
@@ -69,6 +71,7 @@ class Flight {
       altitudeDifference: _parseDouble(data['altitudeDifference']),
       flightTimeMinutes: data['flightTimeMinutes'] ?? 0,
       comment: data['comment'],
+      startTypeId: data['startTypeId'],
       flightTypeId: data['flightTypeId'],
       advancedManeuvers: List<String>.from(data['advancedManeuvers'] ?? []),
       schoolManeuvers: List<String>.from(data['schoolManeuvers'] ?? []),
@@ -97,6 +100,7 @@ class Flight {
       altitudeDifference: _parseDouble(data['altitudeDifference']),
       flightTimeMinutes: data['flightTimeMinutes'] ?? 0,
       comment: data['comment'],
+      startTypeId: data['startTypeId'],
       flightTypeId: data['flightTypeId'],
       advancedManeuvers: List<String>.from(data['advancedManeuvers'] ?? []),
       schoolManeuvers: List<String>.from(data['schoolManeuvers'] ?? []),
@@ -123,6 +127,7 @@ class Flight {
       'altitudeDifference': altitudeDifference,
       'flightTimeMinutes': flightTimeMinutes,
       'comment': comment,
+      'startTypeId': startTypeId,
       'flightTypeId': flightTypeId,
       'advancedManeuvers': advancedManeuvers,
       'schoolManeuvers': schoolManeuvers,
@@ -150,6 +155,7 @@ class Flight {
       'altitudeDifference': altitudeDifference,
       'flightTimeMinutes': flightTimeMinutes,
       'comment': comment,
+      'startTypeId': startTypeId,
       'flightTypeId': flightTypeId,
       'advancedManeuvers': advancedManeuvers,
       'schoolManeuvers': schoolManeuvers,
