@@ -1263,8 +1263,6 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
   }
 
   void _showManeuverSelectionDialog(List<Map<String, dynamic>> sortedManeuvers, String lang) {
-    final globalService = context.read<GlobalDataService>();
-    
     showDialog(
       context: context,
       builder: (BuildContext context) {

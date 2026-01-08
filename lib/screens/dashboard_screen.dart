@@ -1,5 +1,6 @@
 // File: lib/screens/dashboard_screen.dart
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -21,12 +22,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isChecklistChartExpanded = false;
   bool _isManeuverChartExpanded = false;
   bool _isTakeoffPlacesChartExpanded = false;
+  bool _isStartTypeChartExpanded = false;
 
   // Card order management
   late List<String> _cardOrder;
 
   static const String _cardOrderKey = 'dashboard_card_order';
-  static const List<String> _defaultCardOrder = ['checklist', 'maneuver', 'takeoff'];
+  static const List<String> _defaultCardOrder = ['checklist', 'maneuver', 'starttype', 'takeoff'];
 
   // Localization texts
   static const Map<String, Map<String, String>> _texts = {
@@ -41,6 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'Checklist_Progress': {'en': 'Checklist Progress by Category', 'de': 'Checklisten-Fortschritt nach Kategorie'},
     'Click_Expand': {'en': 'Click to expand chart.', 'de': 'Zum Erweitern klicken.'},
     'Maneuver_Usage': {'en': 'Maneuver Usage Statistics', 'de': 'Manöver-Nutzungsstatistik'},
+    'Start_Type_Usage': {'en': 'Takeoff Type Distribution', 'de': 'Starttyp-Verteilung'},
     'Top_Takeoff_Places': {'en': 'Top Takeoff Places', 'de': 'Top Start-Orte'},
     'No_Data': {'en': 'No data available', 'de': 'Keine Daten verfügbar'},
     'Times_Performed': {'en': 'times performed', 'de': 'mal durchgeführt'},
@@ -239,7 +242,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ) {
     return switch (cardId) {
       'checklist' => _buildChecklistProgressCard(context, stats, lang, theme, globalData),
-      'maneuver' => _buildManeuverUsageCard(context, stats, lang, theme),
+      'maneuver' => _buildManeuverUsageCard(context, stats, lang, theme, globalData),
+      'starttype' => _buildStartTypeUsageCard(context, stats, lang, theme, globalData),
       'takeoff' => _buildTopTakeoffPlacesCard(context, stats, lang, theme),
       _ => const SizedBox.shrink(),
     };
@@ -662,6 +666,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     DashboardStats stats,
     String lang,
     ThemeData theme,
+    GlobalDataService globalData,
   ) {
     return Card(
       elevation: 8,
@@ -706,7 +711,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
               if (_isManeuverChartExpanded) ...[
                 const SizedBox(height: 20),
-                _buildManeuverChart(context, stats, lang, theme),
+                _buildManeuverChart(context, stats, lang, theme, globalData),
               ],
             ],
           ),
@@ -715,12 +720,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// Build maneuver usage bar chart
+  /// Build maneuver usage bar chart with labels
   Widget _buildManeuverChart(
     BuildContext context,
     DashboardStats stats,
     String lang,
     ThemeData theme,
+    GlobalDataService globalData,
   ) {
     if (stats.maneuverUsage.isEmpty) {
       return Center(
@@ -734,6 +740,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
+    // Get maneuver labels from global data
+    final maneuverList = globalData.globalManeuvers ?? [];
+    final maneuverMap = {
+      for (var m in maneuverList)
+        if (m.containsKey('id'))
+          m['id'] as String: m
+    };
+    
     // Sort by usage count
     final sortedManeuvers = stats.maneuverUsage.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -743,6 +757,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       children: sortedManeuvers.map((entry) {
         final percentage = entry.value / maxCount;
+        
+        // Get maneuver label from global data, fallback to ID if not found
+        String displayLabel = entry.key;
+        if (maneuverMap.containsKey(entry.key)) {
+          final maneuverData = maneuverMap[entry.key] as Map<String, dynamic>;
+          if (maneuverData.containsKey('labels')) {
+            final labels = maneuverData['labels'];
+            if (labels is Map<String, dynamic> && labels.containsKey(lang)) {
+              displayLabel = labels[lang] as String;
+            }
+          }
+        }
+        
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
@@ -753,7 +780,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      entry.key,
+                      displayLabel,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                         color: theme.colorScheme.onSurface,
@@ -779,6 +806,176 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  /// Build Start Type Usage Card (Pie Chart)
+  Widget _buildStartTypeUsageCard(
+    BuildContext context,
+    DashboardStats stats,
+    String lang,
+    ThemeData theme,
+    GlobalDataService globalData,
+  ) {
+    return Card(
+      elevation: 8,
+      color: theme.cardColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              _isStartTypeChartExpanded = !_isStartTypeChartExpanded;
+            });
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      _t('Start_Type_Usage', lang),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _isStartTypeChartExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: theme.colorScheme.onSurface,
+                    size: 28,
+                  ),
+                ],
+              ),
+              if (!_isStartTypeChartExpanded) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _t('Click_Expand', lang),
+                  style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
+                ),
+              ],
+              if (_isStartTypeChartExpanded) ...[
+                const SizedBox(height: 20),
+                _buildStartTypeChart(context, stats, lang, theme, globalData),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build start type usage pie chart
+  Widget _buildStartTypeChart(
+    BuildContext context,
+    DashboardStats stats,
+    String lang,
+    ThemeData theme,
+    GlobalDataService globalData,
+  ) {
+    if (stats.startTypeUsage.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Text(
+            _t('No_Data', lang),
+            style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+          ),
+        ),
+      );
+    }
+
+    // Get start type labels from global data
+    final startTypeList = globalData.globalStarttypes ?? [];
+    final startTypeMap = {
+      for (var st in startTypeList)
+        if (st.containsKey('id'))
+          st['id'] as String: st
+    };
+
+    // Sort by count
+    final sortedStartTypes = stats.startTypeUsage.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final totalCount = sortedStartTypes.fold<int>(0, (sum, entry) => sum + entry.value);
+
+    // Define colors for pie chart
+    final colors = [Colors.blue.shade400, Colors.orange.shade400];
+
+    return Column(
+      children: [
+        // Simple pie chart representation with two sections
+        SizedBox(
+          height: 200,
+          child: CustomPaint(
+            painter: SimplePieChartPainter(
+              data: sortedStartTypes.map((e) => e.value.toDouble()).toList(),
+              colors: colors,
+              total: totalCount.toDouble(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        // Legend with counts
+        Column(
+          children: sortedStartTypes.asMap().entries.map((indexEntry) {
+            final index = indexEntry.key;
+            final entry = indexEntry.value;
+            
+            // Get start type label
+            String displayLabel = entry.key;
+            if (startTypeMap.containsKey(entry.key)) {
+              final startTypeData = startTypeMap[entry.key] as Map<String, dynamic>;
+              if (startTypeData.containsKey('labels')) {
+                final labels = startTypeData['labels'];
+                if (labels is Map<String, dynamic> && labels.containsKey(lang)) {
+                  displayLabel = labels[lang] as String;
+                }
+              }
+            }
+            
+            final percentage = (entry.value / totalCount * 100).toStringAsFixed(1);
+            
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: colors[index % colors.length],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        displayLabel,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    '${entry.value} ($percentage%)',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -905,5 +1102,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       }).toList(),
     );
+  }
+}
+/// Simple pie chart painter for visualizing start type distribution
+class SimplePieChartPainter extends CustomPainter {
+  final List<double> data;
+  final List<Color> colors;
+  final double total;
+
+  SimplePieChartPainter({
+    required this.data,
+    required this.colors,
+    required this.total,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (data.isEmpty || total == 0) return;
+
+    final paint = Paint()..style = PaintingStyle.fill;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2 - 10;
+
+    var startAngle = -math.pi / 2; // Start at top
+
+    for (int i = 0; i < data.length; i++) {
+      final sweepAngle = (data[i] / total) * 2 * math.pi;
+      paint.color = colors[i % colors.length];
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        true,
+        paint,
+      );
+
+      startAngle += sweepAngle;
+    }
+  }
+
+  @override
+  bool shouldRepaint(SimplePieChartPainter oldDelegate) {
+    return oldDelegate.data != data || oldDelegate.colors != colors;
   }
 }

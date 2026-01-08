@@ -20,6 +20,7 @@ class DashboardStats {
   final int cummAltDiff;
   final ProgressStats progress;
   final Map<String, int> maneuverUsage;
+  final Map<String, int> startTypeUsage;
   final List<TakeoffPlaceStats> topTakeoffPlaces;
   final DateTime updatedAt;
 
@@ -32,6 +33,7 @@ class DashboardStats {
     this.cummAltDiff = 0,
     required this.progress,
     this.maneuverUsage = const {},
+    this.startTypeUsage = const {},
     this.topTakeoffPlaces = const [],
     DateTime? updatedAt,
   }) : updatedAt = updatedAt ?? DateTime.now();
@@ -46,6 +48,7 @@ class DashboardStats {
       'cummAltDiff': cummAltDiff,
       'progress': progress.toJson(),
       'maneuverUsage': maneuverUsage,
+      'startTypeUsage': startTypeUsage,
       'topTakeoffPlaces': topTakeoffPlaces.map((t) => t.toJson()).toList(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -61,6 +64,7 @@ class DashboardStats {
       cummAltDiff: json['cummAltDiff'] as int? ?? 0,
       progress: ProgressStats.fromJson(json['progress'] as Map<String, dynamic>? ?? {}),
       maneuverUsage: Map<String, int>.from(json['maneuverUsage'] as Map<String, dynamic>? ?? {}),
+      startTypeUsage: Map<String, int>.from(json['startTypeUsage'] as Map<String, dynamic>? ?? {}),
       topTakeoffPlaces: (json['topTakeoffPlaces'] as List<dynamic>?)
               ?.map((t) => TakeoffPlaceStats.fromJson(t as Map<String, dynamic>))
               .toList() ??
@@ -327,6 +331,7 @@ class StatsService extends ChangeNotifier {
         cummAltDiff: flightStats['cummAltDiff'] as int,
         progress: progressStats,
         maneuverUsage: flightStats['maneuverUsage'] as Map<String, int>,
+        startTypeUsage: flightStats['startTypeUsage'] as Map<String, int>,
         topTakeoffPlaces: flightStats['topTakeoffPlaces'] as List<TakeoffPlaceStats>,
         updatedAt: DateTime.now(),
       );
