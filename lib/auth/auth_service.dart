@@ -11,6 +11,10 @@ import '../services/stats_service.dart';
 import '../services/profile_service.dart';
 
 class AuthService {
+    /// Jelszó-visszaállító email küldése
+    Future<void> sendPasswordResetEmail({required String email}) async {
+      await _auth.sendPasswordResetEmail(email: email);
+    }
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();

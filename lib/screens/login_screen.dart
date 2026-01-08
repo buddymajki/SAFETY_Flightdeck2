@@ -90,6 +90,29 @@ class _LoginScreenState extends State<LoginScreen> {
                           : const Text('Sign In'),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () async {
+                      final email = _emailCtrl.text.trim();
+                      if (email.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter your email address!')),
+                        );
+                        return;
+                      }
+                      try {
+                        await context.read<AuthService>().sendPasswordResetEmail(email: email);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Password reset email sent!')),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
+                    },
+                    child: const Text('Elfelejtett jelszó?'),
+                  ),
                 ],
               ),
             ),

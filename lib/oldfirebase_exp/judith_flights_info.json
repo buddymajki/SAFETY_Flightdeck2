@@ -1,0 +1,1847 @@
+{
+  "glider": "",
+  "name": "Judith Odermatt",
+  "email": "judith.odermatt@sunrise.ch",
+  "nickname": "Judith",
+  "shvNumber": "69989",
+  "status": "licensed",
+  "flights": [
+    {
+      "id": "0AVNGw42POE8Qq2ojttD",
+      "takeoff": "Büelen (1089m)",
+      "altitudeDifference": "544m",
+      "comments": "Soaring with Miki and Gabor",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "date": "2025-09-28",
+      "flightTime": "20",
+      "createdAt": {
+        "_seconds": 1759067786,
+        "_nanoseconds": 249000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1759070188,
+        "_nanoseconds": 431000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "0O9fAIqHXnH4OVYeDK4L",
+      "date": "2025-11-09",
+      "takeoff": "Haldi (1100m)",
+      "landing": "Haldi Schattdorf (485m)",
+      "altitudeDifference": "615m",
+      "flightTime": "5",
+      "comments": "Pp1 und PP2 langsam und sicher",
+      "createdAt": {
+        "_seconds": 1762687462,
+        "_nanoseconds": 145000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762712870,
+        "_nanoseconds": 530000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "1TE4d22IsDPfaWQ1Mao1",
+      "date": "2025-09-13",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "createdAt": {
+        "_seconds": 1757758030,
+        "_nanoseconds": 30000000
+      },
+      "comments": "PP1 gut, PP2 zu langsam Kreise fertigmachen!!",
+      "takeoff": "Büelen (1089m)",
+      "flightTime": "10",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757775890,
+        "_nanoseconds": 107000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "1V5srF0ravTuECVaHGbQ",
+      "date": "2025-09-28",
+      "flightTime": "5",
+      "altitudeDifference": "544m",
+      "createdAt": {
+        "_seconds": 1759055247,
+        "_nanoseconds": 636000000
+      },
+      "comments": "Pp1, PP2 gut. Schnelles Kreisen noch nicht gut. Landung zu nah- Hände hoch zum weiterkommen!",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1759070188,
+        "_nanoseconds": 433000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "1iAsZAZMSBmaaBygylNq",
+      "date": "2025-09-01",
+      "takeoff": "Büelen (1089m)",
+      "comments": "\"Ohren einklappen mit Beschleuniger, 90 Grad Drehung beidseitig\"",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 888000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "1kmAkokNA7O1KnLqTTcH",
+      "comments": "PP1, erstes Mal PP2 in 22 sec. Rolling",
+      "takeoff": "Büelen (1089m)",
+      "createdAt": {
+        "_seconds": 1757753835,
+        "_nanoseconds": 806000000
+      },
+      "altitudeDifference": "544m",
+      "date": "2025-09-13",
+      "flightTime": "10",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757775890,
+        "_nanoseconds": 109000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "2Kkrb4SPtoTGXvrbMnXX",
+      "takeoff": "Emmetten - Niderbauen (1572m)",
+      "altitudeDifference": "784m",
+      "createdAt": {
+        "_seconds": 1757437070,
+        "_nanoseconds": 431000000
+      },
+      "comments": "\"PP1  gut, Side collaps 3, gut\"",
+      "landing": "Emmetten (788m)",
+      "flightTime": "10",
+      "date": "2025-09-05",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "2UCpb1iCaL83SxExIqtB",
+      "date": "2025-10-15",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Reverse start gut. Ohren mit Speed system, nice! Landung leichter Bergwind, zu weit von Spot.",
+      "createdAt": {
+        "_seconds": 1760520005,
+        "_nanoseconds": 168000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760523067,
+        "_nanoseconds": 824000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "2hJQi6CMHQXJfihQcUDf",
+      "date": "2025-11-19",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "Pp1/ 2 gute Landung",
+      "createdAt": {
+        "_seconds": 1764183405,
+        "_nanoseconds": 264000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "4WdCDCglsARas24XqxAs",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 24000000
+      },
+      "date": "2025-09-01",
+      "altitudeDifference": "795m",
+      "landing": "Engelberg (1008m)",
+      "flightTime": "15",
+      "comments": "\"Erster Alleinstart, erste Alleinlandung!\"",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "6HL6XKQuA4vMKr68KMCC",
+      "altitudeDifference": "784m",
+      "landing": "Emmetten (788m)",
+      "comments": "\"Rollen, Nicken, PP1\"",
+      "date": "2025-09-05",
+      "takeoff": "Emmetten - Niderbauen (1572m)",
+      "createdAt": {
+        "_seconds": 1757437070,
+        "_nanoseconds": 208000000
+      },
+      "flightTime": "10",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "6Xzagoju51YdanPhUd5Y",
+      "date": "2025-09-03",
+      "createdAt": {
+        "_seconds": 1757437070,
+        "_nanoseconds": 59000000
+      },
+      "flightTime": "10",
+      "comments": "\"PP1, 18.5 und etwas um 20s Nicken, gut\"",
+      "altitudeDifference": "544m",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "takeoff": "Büelen (1089m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "7a08sdOmWD5p7S3yN8SG",
+      "date": "2025-10-12",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "landing": "Engelberg (1008m)",
+      "altitudeDifference": "795m",
+      "flightTime": "10",
+      "comments": "Rollen gut!",
+      "createdAt": {
+        "_seconds": 1760270413,
+        "_nanoseconds": 328000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760358957,
+        "_nanoseconds": 705000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "7krgXhG1AwoNQyD3BZ4T",
+      "date": "2025-10-17",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Prüfung:Pp2 verhauen, Vrille, Landung gut- fail!",
+      "createdAt": {
+        "_seconds": 1760695156,
+        "_nanoseconds": 96000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760802238,
+        "_nanoseconds": 15000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "8EODXGBQtnf4hjKHN0J0",
+      "date": "2025-11-12",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "PP1, 2, KNAPP IN time, nicken. Talwindlandung bei leichtem Bergwind. Geht auch, man muss schnell auslaufen :-)",
+      "createdAt": {
+        "_seconds": 1762938286,
+        "_nanoseconds": 613000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762975601,
+        "_nanoseconds": 813000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "8OEjQLGMeaQvn6fj875q",
+      "takeoff": "Brändlen-North (1228m)",
+      "date": "2025-09-01",
+      "altitudeDifference": "714m",
+      "landing": "Wolfenschiessen (514m)",
+      "comments": "\"2 Kreise mit ausleiten (3. Mal etwas powerful, aber 19 sec.), Landung Turbulenzen, luvseitig über Zaun aber sanft gelandet\"",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 747000000
+      },
+      "flightTime": "15",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "8mhtaISK7Wmtov1C7xX2",
+      "date": "2025-12-08",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "Happy!",
+      "createdAt": {
+        "_seconds": 1765201632,
+        "_nanoseconds": 163000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "9r6sNuhxt5o7N6Pv1k2E",
+      "date": "2025-12-10",
+      "takeoff": "Emmetten - Niderbauen (1572m)",
+      "landing": "Emmetten (788m)",
+      "altitudeDifference": "784m",
+      "flightTime": "10",
+      "comments": "Happily alone! Schneestart, gut, Landeeinteilung optimieren, aber war okay.",
+      "createdAt": {
+        "_seconds": 1765373736,
+        "_nanoseconds": 906000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "AGDGiXyhRclLq2EKC15G",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 26000000
+      },
+      "date": "2025-09-01",
+      "flightTime": "5",
+      "comments": "\"Unruhiger in der Luft, Endanflug Rechtsvolte. Etwas Bruchlandung.\"",
+      "altitudeDifference": "544m",
+      "takeoff": "Büelen (1089m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "B48ZWabGB6oaHS1fShhQ",
+      "flightTime": "10",
+      "createdAt": {
+        "_seconds": 1759067740,
+        "_nanoseconds": 710000000
+      },
+      "date": "2025-09-28",
+      "takeoff": "Büelen (1089m)",
+      "comments": "Kreise, nicken",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1759070188,
+        "_nanoseconds": 434000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "BBVW9jBgIhTNK974UMxS",
+      "date": "2025-10-14",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "createdAt": {
+        "_seconds": 1760444523,
+        "_nanoseconds": 212000000
+      },
+      "comments": "Alleinflug, Pp1 und 2 gut rollen ok, etwas wacklige Landung",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760452862,
+        "_nanoseconds": 93000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "BK4dxonpi4KASkEv08WE",
+      "date": "2025-11-27",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "Kreise füt Tempo, zu hoch in Landeanflug",
+      "createdAt": {
+        "_seconds": 1764247647,
+        "_nanoseconds": 233000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "BKy2ye33VL4pI4j1hYVV",
+      "date": "2025-09-05",
+      "landing": "Emmetten (788m)",
+      "altitudeDifference": "784m",
+      "flightTime": "10",
+      "createdAt": {
+        "_seconds": 1757437070,
+        "_nanoseconds": 282000000
+      },
+      "comments": "\"PP1, 3x , 2 mal gut\"",
+      "takeoff": "Emmetten - Niderbauen (1572m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "BMB1RbtR8dVQUGEzNSrr",
+      "date": "2025-11-28",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "EXAM Ohren mit Richtungsäderung gut, Landung 2m davor",
+      "createdAt": {
+        "_seconds": 1764345707,
+        "_nanoseconds": 316000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "BajBIYwFq7RT9SwvjJ0C",
+      "comments": "\"Thermik suchen-nicht gefunden, Rollen\"",
+      "flightTime": "10",
+      "altitudeDifference": "677m",
+      "landing": "Brunnen (434m)",
+      "takeoff": "Urmiberg (1111m)",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 691000000
+      },
+      "date": "2025-09-01",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "CkfggEA4s5R9YFUUFOFA",
+      "date": "2025-09-01",
+      "takeoff": "Büelen (1089m)",
+      "comments": "\"Rollen ohne Ohren\"",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 236000000
+      },
+      "flightTime": "10",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "DbgItGbWV18pMWfkUvro",
+      "comments": "Genussflug, Landung Popo, etwas nervös wegen anderem Piloten",
+      "flightTime": "10",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "takeoff": "Büelen (1089m)",
+      "date": "2025-09-14",
+      "altitudeDifference": "544m",
+      "createdAt": {
+        "_seconds": 1757861317,
+        "_nanoseconds": 494000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757876013,
+        "_nanoseconds": 691000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "E3Bc1Ks4qWlUDtVeZTDU",
+      "comments": "PP1, PP2, 2x um 24sec, selber landen ging gut.",
+      "date": "2025-09-13",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "flightTime": "10",
+      "takeoff": "Büelen (1089m)",
+      "altitudeDifference": "544m",
+      "createdAt": {
+        "_seconds": 1757762493,
+        "_nanoseconds": 503000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757775890,
+        "_nanoseconds": 110000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "E93F48GbHM3f5gRiVt5W",
+      "date": "2025-11-05",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Pp1 nicken zu vorsichtig. Landung perfekt, fast Punktlandung",
+      "createdAt": {
+        "_seconds": 1762339725,
+        "_nanoseconds": 687000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762531005,
+        "_nanoseconds": 981000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "FSdNOwBSxwqsqiSVYkFU",
+      "date": "2025-11-19",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "PP1, zu langsam",
+      "createdAt": {
+        "_seconds": 1763549838,
+        "_nanoseconds": 22000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "FgsN1PYqYuDIfa5MNdh5",
+      "date": "2025-10-11",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Enge Kreise, zu langsam, rollen gut",
+      "createdAt": {
+        "_seconds": 1760176934,
+        "_nanoseconds": 278000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760201628,
+        "_nanoseconds": 665000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "GL3UdKIWsocKBa6FEJpf",
+      "takeoff": "Büelen (1089m)",
+      "date": "2025-09-03",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 837000000
+      },
+      "altitudeDifference": "544m",
+      "comments": "\"Nicken, rollen, pp1 22.5sec\"",
+      "flightTime": "10",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "GlVGQAB6PCFFlcVhMriE",
+      "date": "2025-11-09",
+      "takeoff": "Haldi (1100m)",
+      "landing": "Haldi Schattdorf (485m)",
+      "altitudeDifference": "615m",
+      "flightTime": "10",
+      "comments": "Pp 1 knapp in time. Gute Landung. Cool mit Stephen heute!",
+      "createdAt": {
+        "_seconds": 1762696093,
+        "_nanoseconds": 486000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762712870,
+        "_nanoseconds": 533000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "HdQwuv6IJp0io7lnj5h8",
+      "date": "2025-11-09",
+      "takeoff": "Haldi (1100m)",
+      "landing": "Haldi Schattdorf (485m)",
+      "altitudeDifference": "615m",
+      "flightTime": "10",
+      "comments": "Pp2 kommt allmählich...",
+      "createdAt": {
+        "_seconds": 1762687488,
+        "_nanoseconds": 411000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762712870,
+        "_nanoseconds": 534000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "IRg3shmgz8yC3ABWIWQw",
+      "date": "2026-01-07",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Wolfenschiessen (514m)",
+      "altitudeDifference": "575m",
+      "flightTime": "15",
+      "comments": "Erste kleine Strecke ganz allein, Spass im Schnee!!",
+      "createdAt": {
+        "_seconds": 1767805922,
+        "_nanoseconds": 409000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "IjfqTjXRAEFd5VkJoze8",
+      "comments": "\"Erster Alleinstart, erste Alleinlandung!\"",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 313000000
+      },
+      "altitudeDifference": "795m",
+      "flightTime": "20",
+      "date": "2025-09-01",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "landing": "Engelberg (1008m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "JDDoh3OjDo4hpwm2xBlg",
+      "date": "2025-11-12",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "Ohren mit 90 Grad turns, Ohren mit Beschleuniger. Geht gut. Ohne Wind landen deutlich zu weit!",
+      "createdAt": {
+        "_seconds": 1762943408,
+        "_nanoseconds": 401000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762975601,
+        "_nanoseconds": 817000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "LNVdaFM58xTmxRr50K3z",
+      "date": "2025-12-20",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "landing": "Engelberg (1008m)",
+      "altitudeDifference": "795m",
+      "flightTime": "15",
+      "comments": "Oberhalb gestartet, superschön!",
+      "createdAt": {
+        "_seconds": 1766233961,
+        "_nanoseconds": 882000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "M35VXuKYXZ8ehRkiHksL",
+      "comments": "PP1, dreimal gut",
+      "date": "2025-09-13",
+      "takeoff": "Büelen (1089m)",
+      "flightTime": "10",
+      "createdAt": {
+        "_seconds": 1757750586,
+        "_nanoseconds": 27000000
+      },
+      "altitudeDifference": "544m",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757775890,
+        "_nanoseconds": 110000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "MEYpfuaeYQVpOQ6t0mEx",
+      "date": "2025-12-14",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "landing": "Engelberg (1008m)",
+      "altitudeDifference": "795m",
+      "flightTime": "15",
+      "comments": "Mit Miki Marylin Tandem! Gute Landung!",
+      "createdAt": {
+        "_seconds": 1765719680,
+        "_nanoseconds": 558000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "MJ1xnB4clO4eRG88OOfU",
+      "date": "2025-11-09",
+      "takeoff": "Haldi (1100m)",
+      "landing": "Haldi Schattdorf (485m)",
+      "altitudeDifference": "615m",
+      "flightTime": "10",
+      "comments": "Pp2 smooth und in time",
+      "createdAt": {
+        "_seconds": 1762696041,
+        "_nanoseconds": 780000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762712870,
+        "_nanoseconds": 534000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "MQBKvmGokIeodHmLL850",
+      "flightTime": "15",
+      "takeoff": "Brändlen-North (1228m)",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 624000000
+      },
+      "landing": "Wolfenschiessen (514m)",
+      "date": "2025-09-01",
+      "altitudeDifference": "714m",
+      "comments": "\"Seitenklapper links  mit Kreis rechts\"",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "MiiG7SIAfNy1P7D5L3Bi",
+      "date": "2025-11-12",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "Pp1 pp2 . Nicken. Punktlanding Bergwind",
+      "createdAt": {
+        "_seconds": 1762940520,
+        "_nanoseconds": 253000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762975601,
+        "_nanoseconds": 819000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "N13cQCabebbveWeK2cCt",
+      "altitudeDifference": "544m",
+      "date": "2025-09-03",
+      "createdAt": {
+        "_seconds": 1757437070,
+        "_nanoseconds": 126000000
+      },
+      "landing": "Büelen - Neufallenbach (545m)",
+      "flightTime": "10",
+      "takeoff": "Büelen (1089m)",
+      "comments": "\"PP2 um 20 sec, üben! Allein Takeoff, Landen mit S-Kurven\"",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "QQpAXY2iOBf66tVC5tb1",
+      "date": "2025-12-20",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Punktlandung, nice!",
+      "createdAt": {
+        "_seconds": 1766245815,
+        "_nanoseconds": 356000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "RMRMY51wfolxS39smnKS",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 247000000
+      },
+      "flightTime": "15",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "takeoff": "Büelen (1089m)",
+      "altitudeDifference": "544m",
+      "date": "2025-09-01",
+      "comments": "\"Rollen und Nicken mit Ausleitung, Selbst Landen (etwas wackelig, mit zu wenig ausholender S-Kurve). Bremsen etwas langsamer herunterziehen!\"",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "S9pDSueWwz0HLS1xeuY9",
+      "date": "2025-12-08",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "Just for fun!",
+      "createdAt": {
+        "_seconds": 1765199869,
+        "_nanoseconds": 819000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "TU2476vIOyU6CdX4Y41Y",
+      "date": "2025-09-03",
+      "takeoff": "Büelen (1089m)",
+      "comments": "\"Pp2, nicken\"",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 989000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "UMp0tR9lmCXzM6UDl7Sa",
+      "comments": "\"Alleinstart, Thermikfliegen mit Vario, landen mit Fluglehrer und viel Talwind!\"",
+      "date": "2025-09-01",
+      "flightTime": "35",
+      "landing": "Engelberg (1008m)",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 392000000
+      },
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "altitudeDifference": "795m",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "UoMJ9RaKiUDechsN60HJ",
+      "takeoff": "Büelen (1089m)",
+      "comments": "\"Ohren einklappen, Speedsystem testen\"",
+      "altitudeDifference": "544m",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "date": "2025-09-01",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 308000000
+      },
+      "flightTime": "10",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "VR23jDTV2NGfHIr8Z0Sw",
+      "date": "2025-10-11",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Startabbruch, ging leicht und gut. Kreisen einmal gut, nicken gut, Landung auch ok.",
+      "createdAt": {
+        "_seconds": 1760176996,
+        "_nanoseconds": 633000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760201628,
+        "_nanoseconds": 666000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "WmqejdmrLO0Rb4tIcNCD",
+      "comments": "\"Speedsystem testen nach Änderung, Rollen mit Ohren\"",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "takeoff": "Büelen (1089m)",
+      "flightTime": "10",
+      "date": "2025-09-01",
+      "altitudeDifference": "544m",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 393000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "YBFS4nrhgQflMYPfEJP3",
+      "date": "2026-01-04",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "landing": "Engelberg (1008m)",
+      "altitudeDifference": "795m",
+      "flightTime": "15",
+      "comments": "Neuschnee,eiskalt, schöner Alleinflug.",
+      "createdAt": {
+        "_seconds": 1767523718,
+        "_nanoseconds": 535000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "Yex4qSXdzXwVyHTcyJlB",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 948000000
+      },
+      "landing": "Büelen - Neufallenbach (545m)",
+      "comments": "\"Ohren einklappen ohne Beschleuniger, Richtung halten, Anflug Rechtsvolte\"",
+      "takeoff": "Büelen (1089m)",
+      "date": "2025-09-01",
+      "flightTime": "15",
+      "altitudeDifference": "544m",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "ZHAogZi6U1aMFgiVXnz8",
+      "comments": "\"Pp1 not fast enough, pitching\"",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 914000000
+      },
+      "flightTime": "10",
+      "date": "2025-09-03",
+      "altitudeDifference": "544m",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "ZMAiFCxibZycZ5PlMPmE",
+      "date": "2025-12-31",
+      "takeoff": "Engelberg - Brunnihütte (1868m)",
+      "landing": "Engelberg (1008m)",
+      "altitudeDifference": "860m",
+      "flightTime": "15",
+      "comments": "Hochgewandert ganz oben Schon..irgendwas. topwetter, leichteste Turbulenzen, kaum Steigen gefunden, mit Jürg hike&fly, Immer etwas zu hoch Landeanflug...",
+      "createdAt": {
+        "_seconds": 1767188515,
+        "_nanoseconds": 860000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "ZNexKKKMl4LT9wuIOq1y",
+      "date": "2025-09-01",
+      "flightTime": "10",
+      "comments": "\"Big ears mit Richtung halten,  und  90 Grad wenden, Nicken\"",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 547000000
+      },
+      "altitudeDifference": "677m",
+      "takeoff": "Urmiberg (1111m)",
+      "landing": "Brunnen (434m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "bAg7t3e4nRV9HUP0nOgL",
+      "createdAt": {
+        "_seconds": 1759052393,
+        "_nanoseconds": 586000000
+      },
+      "landing": "Büelen - Neufallenbach (545m)",
+      "flightTime": "10",
+      "comments": "Frontklapper, Seitenklapper lvl4, Nicken und stabilisieren, Talwindlandung, etwas zu weit.",
+      "date": "2025-09-28",
+      "altitudeDifference": "544m",
+      "takeoff": "Büelen (1089m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1759070188,
+        "_nanoseconds": 434000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "bl51oFBMivyWtLqGZeAL",
+      "date": "2025-11-05",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Kreise. BERGwindvolte, super Landung",
+      "createdAt": {
+        "_seconds": 1762335332,
+        "_nanoseconds": 631000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762531005,
+        "_nanoseconds": 982000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "bpqlXUhlLGibqHQOeOpX",
+      "comments": "\"Einklapper einseitig, 1-2-3\"",
+      "flightTime": "10",
+      "date": "2025-09-01",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "takeoff": "Büelen (1089m)",
+      "altitudeDifference": "544m",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 554000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "bz5C9U6YQt883bVHnYkh",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "date": "2025-09-01",
+      "comments": "\"Ruhiger erster Höhenflug!\"",
+      "takeoff": "Büelen (1089m)",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 89000000
+      },
+      "landing": "Büelen - Neufallenbach (545m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "cDER3jhYrCw3ga8vSXwz",
+      "date": "2025-10-15",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Seitenklapper mit Richtung halten- mässig .Bergwind landung, zu weit ins lee, deshalb 35m vor Punkt.",
+      "createdAt": {
+        "_seconds": 1760514242,
+        "_nanoseconds": 297000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760523067,
+        "_nanoseconds": 825000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "cX1B3T070kQFtfeIGeNR",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 180000000
+      },
+      "landing": "Büelen - Neufallenbach (545m)",
+      "takeoff": "Büelen (1089m)",
+      "flightTime": "15",
+      "altitudeDifference": "544m",
+      "date": "2025-09-01",
+      "comments": "\"Rollen und Nicken mit Ausleitung. Erstes Mal Landen halb allein, zu hoch, S-Kurve (Touch an Go).\"",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "clU4lPVv2TF3mu03H7kd",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 626000000
+      },
+      "landing": "Brunnen (434m)",
+      "flightTime": "10",
+      "altitudeDifference": "677m",
+      "date": "2025-09-01",
+      "comments": "\"Nicken, Landemanöver\"",
+      "takeoff": "Urmiberg (1111m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "cveOXNVw1NuxbiDy24Cu",
+      "date": "2025-11-05",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Nicken.. landung gut",
+      "createdAt": {
+        "_seconds": 1762345025,
+        "_nanoseconds": 282000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762531005,
+        "_nanoseconds": 982000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "dH3aDP8BhLzbl5zVpUnp",
+      "flightTime": "10",
+      "createdAt": {
+        "_seconds": 1757437070,
+        "_nanoseconds": 365000000
+      },
+      "altitudeDifference": "784m",
+      "takeoff": "Emmetten - Niderbauen (1572m)",
+      "comments": "\"PP1, in time, Rolling.\"",
+      "date": "2025-09-05",
+      "landing": "Emmetten (788m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "dhokjCxKbQfN2vdyQA38",
+      "date": "2025-10-11",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Enge Kreise, Seitenwechsel, PP2, ",
+      "createdAt": {
+        "_seconds": 1760187349,
+        "_nanoseconds": 963000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760201628,
+        "_nanoseconds": 667000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "eYicG55sN6PV7ILzpq6n",
+      "flightTime": "10",
+      "comments": "PP 1, 16s/ PP2 22 to 24s. Selber landen ok",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "takeoff": "Büelen (1089m)",
+      "date": "2025-09-14",
+      "altitudeDifference": "544m",
+      "createdAt": {
+        "_seconds": 1757851230,
+        "_nanoseconds": 51000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757876013,
+        "_nanoseconds": 692000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "f5Cf8Sq0K0TIlfqbP8rp",
+      "takeoff": "Büelen (1089m)",
+      "createdAt": {
+        "_seconds": 1759052332,
+        "_nanoseconds": 737000000
+      },
+      "date": "2025-09-28",
+      "comments": "Frontklapper, Anflug Bergwind wegen vorherigem Piloten",
+      "altitudeDifference": "544m",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "flightTime": "10",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1759070188,
+        "_nanoseconds": 434000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "fIgv9vkiP2zrl5muZ4L6",
+      "date": "2025-11-27",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Pp1, gute Landung",
+      "createdAt": {
+        "_seconds": 1764247671,
+        "_nanoseconds": 990000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "fREy1HByaeT7Fb2HvoNP",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "takeoff": "Büelen (1089m)",
+      "createdAt": {
+        "_seconds": 1757767769,
+        "_nanoseconds": 504000000
+      },
+      "altitudeDifference": "544m",
+      "comments": "Nicken. Rückwärtsstart  missglückt, volltwist- in der Luft mich zurückdrehen können, unruhige Landung mit Hilfe von Miki",
+      "flightTime": "10",
+      "date": "2025-09-13",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757775890,
+        "_nanoseconds": 110000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "fsE89rLx8J2xYbiX4Rbg",
+      "date": "2025-11-28",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "Pp1 Landung trotz leichtem Rückenwind gut, bestanden!!",
+      "createdAt": {
+        "_seconds": 1764345771,
+        "_nanoseconds": 29000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "g9SN3vHSVE0nJzmRIJzQ",
+      "date": "2025-12-17",
+      "takeoff": "Braunwald Gumen (1876m)",
+      "landing": "Küssnacht (461m)",
+      "altitudeDifference": "1415m",
+      "flightTime": "20",
+      "comments": "Pilatusflug mit Marcel vom Kulm, geiloooo!!",
+      "createdAt": {
+        "_seconds": 1766234030,
+        "_nanoseconds": 350000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "gHkvteCfrRDmJMUVOdrr",
+      "flightTime": "25",
+      "altitudeDifference": "544m",
+      "date": "2025-09-14",
+      "takeoff": "Büelen (1089m)",
+      "comments": "Thermik suchen am Hang mit Miki",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "createdAt": {
+        "_seconds": 1757861269,
+        "_nanoseconds": 416000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757876013,
+        "_nanoseconds": 692000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "gKbvPpq79Sjqn2UcCOTl",
+      "date": "2025-12-14",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "landing": "Engelberg (1008m)",
+      "altitudeDifference": "795m",
+      "flightTime": "15",
+      "comments": "Karin Tandem Miki! Punktlandung, Wetter perfekt!!",
+      "createdAt": {
+        "_seconds": 1765719748,
+        "_nanoseconds": 961000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "gL8feFY7cMm9OLkB0qcv",
+      "date": "2025-10-12",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "landing": "Engelberg (1008m)",
+      "altitudeDifference": "795m",
+      "flightTime": "10",
+      "comments": "Trying to soar..",
+      "createdAt": {
+        "_seconds": 1760291311,
+        "_nanoseconds": 623000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760358957,
+        "_nanoseconds": 708000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "hnH18oVsIzWMsGFXVvGE",
+      "date": "2025-12-29",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "landing": "Engelberg (1008m)",
+      "altitudeDifference": "795m",
+      "flightTime": "15",
+      "comments": "Oberhalb gestartet mit Rookies, Sonne pur- Traumflug Nr. 100🤩🤩",
+      "createdAt": {
+        "_seconds": 1767017434,
+        "_nanoseconds": 219000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "igWEz4ezTcdzGyob2Yyk",
+      "createdAt": {
+        "_seconds": 1759067483,
+        "_nanoseconds": 192000000
+      },
+      "flightTime": "5",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "takeoff": "Büelen (1089m)",
+      "date": "2025-09-28",
+      "altitudeDifference": "544m",
+      "comments": "Kreise, noch nicht gut. Landen mit C Leinen hinteren Tragguten",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1759070188,
+        "_nanoseconds": 434000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "ilX43jPLb9wlhzNqPQPr",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 168000000
+      },
+      "altitudeDifference": "544m",
+      "takeoff": "Büelen (1089m)",
+      "date": "2025-09-01",
+      "comments": "\"Zweiter Höhenflug, Kreise mehr Bremse ziehen.  Beim Landen weiterlaufen damit Schirm hinter mich fällt.\"",
+      "flightTime": "5",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "k0GR1npdasGcjwRY3qFt",
+      "date": "2025-10-11",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Enge Kreise besser aber langsam. Kurvenwechsel nicht gut. Landung etwas zu kurz. Leicht anbremsen für Lift",
+      "createdAt": {
+        "_seconds": 1760183423,
+        "_nanoseconds": 738000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760201628,
+        "_nanoseconds": 667000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "kYhbkMPeGfWB44J83UIB",
+      "date": "2025-11-28",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "EXAM  Pp1 Landung im Kreis, gut",
+      "createdAt": {
+        "_seconds": 1764345659,
+        "_nanoseconds": 387000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "lJ7lNDkvqjor5Lh65J30",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 475000000
+      },
+      "comments": "\"Big ear one side, mit Richtung halten\"",
+      "takeoff": "Urmiberg (1111m)",
+      "date": "2025-09-01",
+      "landing": "Brunnen (434m)",
+      "altitudeDifference": "677m",
+      "flightTime": "10",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "lPgF1UGs6dV7bFszJ1YT",
+      "date": "2025-11-05",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Rollen, Punktlandung",
+      "createdAt": {
+        "_seconds": 1762348268,
+        "_nanoseconds": 298000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762531005,
+        "_nanoseconds": 982000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "nB1JUNAlZwtWGDNMiGry",
+      "date": "2025-10-11",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Rollen, PP2 gut. Kreise zu langsam",
+      "createdAt": {
+        "_seconds": 1760183460,
+        "_nanoseconds": 730000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760201628,
+        "_nanoseconds": 667000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "nPKdt4gry7WPddy16QvF",
+      "altitudeDifference": "714m",
+      "landing": "Wolfenschiessen (514m)",
+      "date": "2025-09-01",
+      "flightTime": "15",
+      "comments": "\"Seitenklapper3 mit Richtunghalten\"",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 823000000
+      },
+      "takeoff": "Brändlen-North (1228m)",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "oYg2iqyOABYGp8w11OkH",
+      "date": "2025-10-12",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "landing": "Engelberg (1008m)",
+      "altitudeDifference": "795m",
+      "flightTime": "10",
+      "comments": "Pp 1 und 2 2 ferigmachen!!!¡!",
+      "createdAt": {
+        "_seconds": 1760270389,
+        "_nanoseconds": 566000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760358957,
+        "_nanoseconds": 708000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "pBEWRtUyYegKhqMvjXXt",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 101000000
+      },
+      "comments": "\"Rollen mit Ohren, Nicken mit Ausleitung, Talwind, Anflug mit Linksvolte\"",
+      "takeoff": "Büelen (1089m)",
+      "date": "2025-09-01",
+      "flightTime": "15",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "pzWRp97UgVD6PgO1ok1s",
+      "createdAt": {
+        "_seconds": 1757437069,
+        "_nanoseconds": 759000000
+      },
+      "comments": "\"Rollen, ausleiten, PP1, Landen, leider mit leichtem Stall.Merke: lieber zu weit gleiten, erst  max1m durchbremsen!\"",
+      "takeoff": "Urmiberg (1111m)",
+      "flightTime": "10",
+      "date": "2025-09-01",
+      "landing": "Brunnen (434m)",
+      "altitudeDifference": "677m",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "qAitbPI1CyKgSfpyyQUz",
+      "landing": "Wolfenschiessen (514m)",
+      "altitudeDifference": "714m",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 685000000
+      },
+      "flightTime": "15",
+      "date": "2025-09-01",
+      "takeoff": "Brändlen-North (1228m)",
+      "comments": "\"2 Kreise mit Ausleiten und  Richtung halten\"",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "r90FbgfQP9QcAXwc9Np3",
+      "date": "2025-11-12",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Seitenklapper mit Richtung halten. Nicken- stoppimpuls besser machen! Rollen, gut. Supersofte Punktlandung!",
+      "createdAt": {
+        "_seconds": 1762946362,
+        "_nanoseconds": 681000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762975601,
+        "_nanoseconds": 819000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "sZOPvyQvXNWT2QX8o6MV",
+      "date": "2025-11-12",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "Rollen, Nicken, PP2. Landeanflug hoch, S aber etwas zu weit.",
+      "createdAt": {
+        "_seconds": 1762948537,
+        "_nanoseconds": 457000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762975601,
+        "_nanoseconds": 819000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "scFbRvzeWnXvOoeCYzdl",
+      "date": "2025-12-08",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Fun, Punktlandung",
+      "createdAt": {
+        "_seconds": 1765199902,
+        "_nanoseconds": 41000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "vIfPfZzbhVNbttchsgmN",
+      "date": "2025-10-09",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "With the tandems, landing with wind, 3m from Spot, nice!",
+      "createdAt": {
+        "_seconds": 1760018300,
+        "_nanoseconds": 401000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760201628,
+        "_nanoseconds": 667000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "vLsOKolm6ivLUxk8ZSDO",
+      "date": "2025-10-15",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Einklapper stabilisieren, Richtung halten- zu viel nach rechts! Bergwindlandung 3m von SPOT!",
+      "createdAt": {
+        "_seconds": 1760516953,
+        "_nanoseconds": 229000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760523067,
+        "_nanoseconds": 826000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "veLvNpTToJlrdK7GwJIA",
+      "date": "2025-09-01",
+      "takeoff": "Büelen (1089m)",
+      "altitudeDifference": "544m",
+      "comments": "\"Steuern mit hinteren Leinen\"",
+      "createdAt": {
+        "_seconds": 1757437068,
+        "_nanoseconds": 463000000
+      },
+      "landing": "Büelen - Neufallenbach (545m)",
+      "flightTime": "10",
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1757628072,
+        "_nanoseconds": 173000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "wHY0AsBcZG3tLJjTbLcJ",
+      "date": "2025-11-27",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Staert im Schnee! Pp1 knapp, landung 2m zu tief",
+      "createdAt": {
+        "_seconds": 1764240460,
+        "_nanoseconds": 194000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "wTJKa4l5eYOLX2xQm3Ap",
+      "date": "2025-12-20",
+      "takeoff": "Engelberg - Tümpfeli (1803m)",
+      "landing": "Engelberg (1008m)",
+      "altitudeDifference": "795m",
+      "flightTime": "15",
+      "comments": "Oberer Startplatz bei Schneeresten mit Rookies-Crew, sehr schöner Flug!!",
+      "createdAt": {
+        "_seconds": 1766226649,
+        "_nanoseconds": 884000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "wipZhb4cGNMcf2VcwWI2",
+      "date": "2025-11-19",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Pp2, ersten Kreis fertigmachen!",
+      "createdAt": {
+        "_seconds": 1763554942,
+        "_nanoseconds": 896000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "wprS3caiCqmk1zgw7IQK",
+      "date": "2025-11-19",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "PP2 ersten Kreis fertigmachen, Zeit ist ok. Supergute Bergwindlandung",
+      "createdAt": {
+        "_seconds": 1763558221,
+        "_nanoseconds": 556000000
+      },
+      "stamped": false
+    },
+    {
+      "id": "xIAgLnQeKFD8IqjoL2yM",
+      "date": "2025-11-05",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "5",
+      "comments": "Geniessen, alles bestens",
+      "createdAt": {
+        "_seconds": 1762333542,
+        "_nanoseconds": 404000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762531005,
+        "_nanoseconds": 983000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "xfcuBjpTKk1iCoY07wGG",
+      "date": "2025-10-14",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Alleinflug, Rückwärtsstart, gute Landung mit einem S",
+      "createdAt": {
+        "_seconds": 1760452710,
+        "_nanoseconds": 386000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760452862,
+        "_nanoseconds": 93000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "xshufBVLU0T3LAe6xLbU",
+      "date": "2025-10-14",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Alleinflug! Pp1 etwas holprige Ausleitung. Landen gut",
+      "createdAt": {
+        "_seconds": 1760444462,
+        "_nanoseconds": 188000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1760452862,
+        "_nanoseconds": 94000000
+      },
+      "stamped": true
+    },
+    {
+      "id": "z9Qn4M1jqs1eZwKe8N6J",
+      "date": "2025-11-05",
+      "takeoff": "Büelen (1089m)",
+      "landing": "Büelen - Neufallenbach (545m)",
+      "altitudeDifference": "544m",
+      "flightTime": "10",
+      "comments": "Pp1 zu langsam. Talwindvolte, zu weit.",
+      "createdAt": {
+        "_seconds": 1762337337,
+        "_nanoseconds": 629000000
+      },
+      "stampedBy": "WWrF0qigDBfSuUIHlNHual605iM2",
+      "stampedAt": {
+        "_seconds": 1762531005,
+        "_nanoseconds": 983000000
+      },
+      "stamped": true
+    }
+  ]
+}
