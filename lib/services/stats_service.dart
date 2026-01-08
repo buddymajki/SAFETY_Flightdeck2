@@ -393,6 +393,13 @@ class StatsService extends ChangeNotifier {
 
   /// Calculate flight-related statistics
   Map<String, dynamic> _calculateFlightStats(List<Flight> flights) {
+    if (flights.isNotEmpty) {
+      debugPrint('[StatsService] _calculateFlightStats: ${flights.length} flights');
+      debugPrint('[StatsService]   First flight date: "${flights.first.date}"');
+    } else {
+      debugPrint('[StatsService] _calculateFlightStats: No flights to calculate');
+    }
+    
     final Set<String> uniqueTakeoffs = {};
     final Set<String> uniqueLandings = {};
     final Set<String> uniqueDays = {};
