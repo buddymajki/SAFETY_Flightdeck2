@@ -399,7 +399,6 @@ class StatsService extends ChangeNotifier {
   /// Get progress stats filtered by year
   ProgressStats getProgressForYear(int? year) {
     final flights = flightService?.flights as List<Flight>? ?? [];
-    final flightStats = _calculateFlightStatsForYear(flights, year);
     // Progress is calculated from the main flight stats (checklist progress)
     // For now, return the cached progress as it's not flight-dependent
     return _stats.progress;
