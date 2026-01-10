@@ -251,6 +251,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     GlobalDataService globalData,
   ) {
     final statsService = context.read<StatsService>();
+    final profileService = context.watch<ProfileService>();
+    final userLicense = profileService.userProfile?.license;
+    final isPilot = userLicense != null && userLicense.toLowerCase() == 'pilot';
+    
+    debugPrint('[Dashboard] _buildCardByType: cardId=$cardId, userLicense=$userLicense, isPilot=$isPilot');
+    
+    // Hide checklist card for Pilot license
+    if (cardId == 'checklist' && isPilot) {
+      return const SizedBox.shrink();
+    }
+    
     return switch (cardId) {
       'checklist' => _buildChecklistProgressCard(context, stats, lang, theme, globalData),
       'maneuver' => _buildManeuverUsageCard(context, stats, lang, theme, globalData, statsService, _selectedYear),
@@ -432,6 +443,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ThemeData theme,
     int? selectedYear,
   ) {
+    final profileService = context.watch<ProfileService>();
+    final userLicense = profileService.userProfile?.license;
+    final isPilot = userLicense != null && userLicense.toLowerCase() == 'pilot';
+    
+    debugPrint('[Dashboard] _buildDetailedStats: userLicense=$userLicense, isPilot=$isPilot');
+    
     final mainStats = statsService.getMainStatsForYear(selectedYear);
     final progress = statsService.getProgressForYear(selectedYear);
     
@@ -442,10 +459,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final altStr = '${mainStats['cummAltDiff']} m';
     final progressStr = '${progress.percentage} %';
 
-    return Row(
-      children: [
-        Expanded(
-          child: _buildDetailedCard(
+    // If Pilot, show only Airtime and Cumm. Alt. in a 2-column grid
+    if (isPilot) {
+      return GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 2,
+        mainAxisSpacing: 16.0,
+        crossAxisSpacing: 16.0,
+        childAspectRatio: 1.5,
+        children: [
+          _buildDetailedCard(
             context,
             _t('Airtime', lang),
             airtimeStr,
@@ -453,10 +477,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Colors.orange.shade700,
             theme,
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildDetailedCard(
+          _buildDetailedCard(
             context,
             _t('Cumm_Alt', lang),
             altStr,
@@ -464,17 +485,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Colors.purple.shade700,
             theme,
           ),
+        ],
+      );
+    }
+
+    // If Student, show all three cards in a 3-column grid
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      mainAxisSpacing: 16.0,
+      crossAxisSpacing: 16.0,
+      childAspectRatio: 1.0,
+      children: [
+        _buildDetailedCard(
+          context,
+          _t('Airtime', lang),
+          airtimeStr,
+          Icons.access_time,
+          Colors.orange.shade700,
+          theme,
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildDetailedCard(
-            context,
-            _t('Progress', lang),
-            progressStr,
-            Icons.check_circle,
-            Colors.blueGrey.shade700,
-            theme,
-          ),
+        _buildDetailedCard(
+          context,
+          _t('Cumm_Alt', lang),
+          altStr,
+          Icons.height,
+          Colors.purple.shade700,
+          theme,
+        ),
+        _buildDetailedCard(
+          context,
+          _t('Progress', lang),
+          progressStr,
+          Icons.check_circle,
+          Colors.blueGrey.shade700,
+          theme,
         ),
       ],
     );
@@ -493,9 +539,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       elevation: 4,
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Container(
+      child: Padding(
         padding: const EdgeInsets.all(12.0),
-        height: 100,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
