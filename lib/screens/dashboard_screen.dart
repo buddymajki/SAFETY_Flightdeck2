@@ -144,22 +144,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Drag hint (only show when cards are collapsed)
-                if (!_isChecklistChartExpanded && !_isManeuverChartExpanded && !_isTakeoffPlacesChartExpanded)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(
-                      'Long-press cards to rearrange',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 16),
-
                 // Reorderable cards
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -172,14 +156,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         animation: animation,
                         builder: (BuildContext context, Widget? child) {
                           final double animValue = Curves.easeInOut.transform(animation.value);
-                          
                           // Trigger haptics once at the start of drag
                           if (animValue > 0 && animValue < 0.05) {
                             HapticFeedback.mediumImpact();
                           }
-                          
                           final double scale = 1.0 + (0.05 * animValue); // Scale up to 105%
-                          
                           return Transform.scale(
                             scale: scale,
                             child: Opacity(
@@ -209,6 +190,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ),
+
+                // Drag hint (only show when cards are collapsed)
+                if (!_isChecklistChartExpanded && !_isManeuverChartExpanded && !_isTakeoffPlacesChartExpanded)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Text(
+                      'Long-press cards to rearrange',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
 
                 const SizedBox(height: 32),
               ],
