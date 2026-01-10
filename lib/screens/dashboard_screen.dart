@@ -135,7 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: _buildStatsGrid(context, statsService, lang, theme, _selectedYear),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
                 // Detailed stats row (Airtime, Cumm. Alt., Progress)
                 Padding(
@@ -399,34 +399,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
               flex: 2,
               child: FittedBox(
                 fit: BoxFit.contain,
-                child: Icon(icon, color: Colors.white),
+                child: Icon(icon, color: Colors.white, size: 40),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               flex: 3,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        value,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
                       ),
-                      maxLines: 1,
                     ),
-                    Text(
-                      title,
-                      style: const TextStyle(color: Colors.white70, fontSize: 18),
-                      maxLines: 1,
+                  ),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        title,
+                        style: const TextStyle(color: Colors.white70, fontSize: 18),
+                        maxLines: 1,
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -459,7 +466,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final altStr = '${mainStats['cummAltDiff']} m';
     final progressStr = '${progress.percentage} %';
 
-    // If Pilot, show only Airtime and Cumm. Alt. in a 2-column grid
+    // If Pilot, show only Airtime and Cumm. Alt. as stat cards in a 2-column grid (same as main stats grid)
     if (isPilot) {
       return GridView.count(
         shrinkWrap: true,
@@ -469,19 +476,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         crossAxisSpacing: 16.0,
         childAspectRatio: 1.5,
         children: [
-          _buildDetailedCard(
+          _buildStatCard(
             context,
             _t('Airtime', lang),
             airtimeStr,
-            Icons.access_time,
+            Icons.access_time, // clock icon
             Colors.orange.shade700,
             theme,
           ),
-          _buildDetailedCard(
+          _buildStatCard(
             context,
             _t('Cumm_Alt', lang),
             altStr,
-            Icons.height,
+            Icons.import_export, // up-down arrow icon
             Colors.purple.shade700,
             theme,
           ),

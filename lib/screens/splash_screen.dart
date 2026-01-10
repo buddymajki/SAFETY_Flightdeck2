@@ -116,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const Text(
               'FlightDeck v2.02',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 30,
                 fontWeight: FontWeight.bold,
                 color: Color.fromARGB(255, 245, 245, 245),
               ),
