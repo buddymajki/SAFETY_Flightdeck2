@@ -32,14 +32,45 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const ProfileScreen(),
   ];
 
-  final List<String> _titles = <String>[
-    'Dashboard',
-    'Checklist',
-    'Flight Book',
-    'Theory',
-    'Tests',
-    'Profile',
-  ];
+
+  static const Map<String, Map<String, String>> _localizedLabels = {
+    'en': {
+      'dashboard': 'Dashboard',
+      'checklist': 'Checklist',
+      'flightbook': 'Flight Book',
+      'theory': 'Theory',
+      'tests': 'Tests',
+      'profile': 'Profile',
+      'menu': 'Menu',
+      'logout': 'Logout',
+    },
+    'de': {
+      'dashboard': 'Übersicht',
+      'checklist': 'Checkliste',
+      'flightbook': 'Flugbuch',
+      'theory': 'Theorie',
+      'tests': 'Prüfungen',
+      'profile': 'Profil',
+      'menu': 'Menü',
+      'logout': 'Abmelden',
+    },
+  };
+
+  String _getLabel(BuildContext context, String key) {
+    final lang = context.read<AppConfigService>().displayLanguageCode;
+    return _localizedLabels[lang]?[key] ?? _localizedLabels['en']![key]!;
+  }
+
+  List<String> _getTitles(BuildContext context) {
+    return [
+      _getLabel(context, 'dashboard'),
+      _getLabel(context, 'checklist'),
+      _getLabel(context, 'flightbook'),
+      _getLabel(context, 'theory'),
+      _getLabel(context, 'tests'),
+      _getLabel(context, 'profile'),
+    ];
+  }
 
   @override
   void initState() {
@@ -56,7 +87,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      _currentTitle = _titles[index];
+      _currentTitle = _getTitles(context)[index];
     });
     _pageController.animateToPage(
       index,
@@ -68,7 +99,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _onPageChanged(int index) {
     setState(() {
       _selectedIndex = index;
-      _currentTitle = _titles[index];
+      _currentTitle = _getTitles(context)[index];
     });
   }
 
@@ -100,7 +131,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.person, color: Colors.white),
-              title: const Text('Profile', style: TextStyle(color: Colors.white)),
+              title: Text(_getLabel(context, 'profile'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
                 _onItemTapped(5); // Navigate to Profile screen
@@ -109,7 +140,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             const Divider(color: Colors.grey),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Logout', style: TextStyle(color: Colors.red)),
+              title: Text(_getLabel(context, 'logout'), style: const TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
                 _handleLogout(context);
@@ -127,19 +158,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final navBarColor = theme.appBarTheme.backgroundColor ?? Colors.black;
     final primaryColor = theme.primaryColor;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _currentTitle,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        actions: [
-          // Language selector
-          Consumer<AppConfigService>(
-            builder: (context, cfg, _) {
-              final code = cfg.displayLanguageCode.toUpperCase();
-              return PopupMenuButton<String>(
+    return Consumer<AppConfigService>(
+      builder: (context, cfg, _) {
+        final code = cfg.displayLanguageCode.toUpperCase();
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              _currentTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            centerTitle: true,
+            actions: [
+              PopupMenuButton<String>(
                 tooltip: 'Language',
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -157,87 +187,87 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   const PopupMenuItem<String>(value: 'en', child: Text('EN')),
                   const PopupMenuItem<String>(value: 'de', child: Text('DE')),
                 ],
-              );
-            },
-          ),
-        ],
-      ),
-      body: ResponsiveContainer(
-        maxWidth: 1200,
-        padding: EdgeInsets.zero,
-        child: PageView(
-          controller: _pageController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          onPageChanged: _onPageChanged,
-          children: _widgetOptions,
-        ),
-      ),
-      bottomNavigationBar: Container(
-        color: navBarColor,
-        height: 70,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavBarItem(
-              icon: Icons.dashboard,
-              label: 'Dashboard',
-              isSelected: _selectedIndex == 0,
-              onTap: () => _onItemTapped(0),
-              primaryColor: primaryColor,
-            ),
-            _buildNavBarItem(
-              icon: Icons.fact_check,
-              label: 'Checklist',
-              isSelected: _selectedIndex == 1,
-              onTap: () => _onItemTapped(1),
-              primaryColor: primaryColor,
-            ),
-            _buildNavBarItem(
-              icon: Icons.book,
-              label: 'Flight Book',
-              isSelected: _selectedIndex == 2,
-              onTap: () => _onItemTapped(2),
-              primaryColor: primaryColor,
-            ),
-            _buildNavBarItem(
-              icon: Icons.school,
-              label: 'Theory',
-              isSelected: _selectedIndex == 3,
-              onTap: () => _onItemTapped(3),
-              primaryColor: primaryColor,
-            ),
-            _buildNavBarItem(
-              icon: Icons.quiz,
-              label: 'Tests',
-              isSelected: _selectedIndex == 4,
-              onTap: () => _onItemTapped(4),
-              primaryColor: primaryColor,
-            ),
-            InkWell(
-              onTap: () => _showBottomMenu(context),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.menu,
-                    size: 24,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Menu',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade400,
-                    ),
-                  ),
-                ],
               ),
+            ],
+          ),
+          body: ResponsiveContainer(
+            maxWidth: 1200,
+            padding: EdgeInsets.zero,
+            child: PageView(
+              controller: _pageController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              onPageChanged: _onPageChanged,
+              children: _widgetOptions,
             ),
-          ],
-        ),
-      ),
+          ),
+          bottomNavigationBar: Container(
+            color: navBarColor,
+            height: 70,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildNavBarItem(
+                  icon: Icons.dashboard,
+                  label: _getLabel(context, 'dashboard'),
+                  isSelected: _selectedIndex == 0,
+                  onTap: () => _onItemTapped(0),
+                  primaryColor: primaryColor,
+                ),
+                _buildNavBarItem(
+                  icon: Icons.fact_check,
+                  label: _getLabel(context, 'checklist'),
+                  isSelected: _selectedIndex == 1,
+                  onTap: () => _onItemTapped(1),
+                  primaryColor: primaryColor,
+                ),
+                _buildNavBarItem(
+                  icon: Icons.book,
+                  label: _getLabel(context, 'flightbook'),
+                  isSelected: _selectedIndex == 2,
+                  onTap: () => _onItemTapped(2),
+                  primaryColor: primaryColor,
+                ),
+                _buildNavBarItem(
+                  icon: Icons.school,
+                  label: _getLabel(context, 'theory'),
+                  isSelected: _selectedIndex == 3,
+                  onTap: () => _onItemTapped(3),
+                  primaryColor: primaryColor,
+                ),
+                _buildNavBarItem(
+                  icon: Icons.quiz,
+                  label: _getLabel(context, 'tests'),
+                  isSelected: _selectedIndex == 4,
+                  onTap: () => _onItemTapped(4),
+                  primaryColor: primaryColor,
+                ),
+                InkWell(
+                  onTap: () => _showBottomMenu(context),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.menu,
+                        size: 24,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getLabel(context, 'menu'),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
