@@ -31,6 +31,14 @@ dependencies:
   url_launcher: ^6.2.4
   http: ^1.1.0
   
+  # GPS & Sensors for flight tracking
+  geolocator: ^13.0.2          # GPS location services
+  sensors_plus: ^6.1.1         # Accelerometer & gyroscope
+  permission_handler: ^11.3.1  # Runtime permissions
+  flutter_background_service: ^5.0.10  # Background service
+  flutter_local_notifications: ^18.0.1 # Notifications for background service
+  file_picker: ^8.1.2          # File selection for tracklogs (v2 embedding compatible)
+  
   # UI
   cupertino_icons: ^1.0.6 
   # -------------------------------------

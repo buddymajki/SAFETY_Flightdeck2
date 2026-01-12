@@ -7,6 +7,7 @@ import 'profile_screen.dart';
 import 'theory_screen.dart';
 import 'checklists_screen.dart';
 import 'flightbook_screen.dart';
+import 'gps_screen.dart';
 import 'tests_screen.dart';
 import '../services/app_config_service.dart';
 import '../widgets/responsive_layout.dart';
@@ -27,6 +28,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const DashboardScreen(),
     const ChecklistsScreen(),
     const FlightBookScreen(),
+    const GpsScreen(),
     const TheoryScreen(),
     const TestsScreen(),
     const ProfileScreen(),
@@ -38,6 +40,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       'dashboard': 'Dashboard',
       'checklist': 'Checklist',
       'flightbook': 'Flight Book',
+      'gps': 'GPS',
       'theory': 'Theory',
       'tests': 'Tests',
       'profile': 'Profile',
@@ -48,6 +51,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       'dashboard': 'Übersicht',
       'checklist': 'Checkliste',
       'flightbook': 'Flugbuch',
+      'gps': 'GPS',
       'theory': 'Theorie',
       'tests': 'Prüfungen',
       'profile': 'Profil',
@@ -66,6 +70,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _getLabel(context, 'dashboard'),
       _getLabel(context, 'checklist'),
       _getLabel(context, 'flightbook'),
+      _getLabel(context, 'gps'),
       _getLabel(context, 'theory'),
       _getLabel(context, 'tests'),
       _getLabel(context, 'profile'),
@@ -134,7 +139,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               title: Text(_getLabel(context, 'profile'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
-                _onItemTapped(5); // Navigate to Profile screen
+                _onItemTapped(6); // Navigate to Profile screen
               },
             ),
             const Divider(color: Colors.grey),
@@ -228,17 +233,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   primaryColor: primaryColor,
                 ),
                 _buildNavBarItem(
-                  icon: Icons.school,
-                  label: _getLabel(context, 'theory'),
+                  icon: Icons.gps_fixed,
+                  label: _getLabel(context, 'gps'),
                   isSelected: _selectedIndex == 3,
                   onTap: () => _onItemTapped(3),
                   primaryColor: primaryColor,
                 ),
                 _buildNavBarItem(
-                  icon: Icons.quiz,
-                  label: _getLabel(context, 'tests'),
+                  icon: Icons.school,
+                  label: _getLabel(context, 'theory'),
                   isSelected: _selectedIndex == 4,
                   onTap: () => _onItemTapped(4),
+                  primaryColor: primaryColor,
+                ),
+                _buildNavBarItem(
+                  icon: Icons.quiz,
+                  label: _getLabel(context, 'tests'),
+                  isSelected: _selectedIndex == 5,
+                  onTap: () => _onItemTapped(5),
                   primaryColor: primaryColor,
                 ),
                 InkWell(

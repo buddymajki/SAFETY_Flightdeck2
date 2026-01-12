@@ -45,5 +45,29 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- GPS Location Permissions -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>FlightDeck needs access to your location to track your paragliding flights and detect takeoff/landing sites.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>FlightDeck needs continuous location access to track your flights even when the app is in the background.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>FlightDeck needs continuous location access to track your flights even when the app is in the background.</string>
+	
+	<!-- Motion/Sensor Permissions -->
+	<key>NSMotionUsageDescription</key>
+	<string>FlightDeck uses motion sensors (accelerometer and gyroscope) to improve flight detection accuracy for takeoff and landing.</string>
+	
+	<!-- Background Modes -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
+	
+	<!-- Battery optimization - request precise location -->
+	<key>NSLocationDefaultAccuracyReduced</key>
+	<false/>
 </dict>
 </plist>

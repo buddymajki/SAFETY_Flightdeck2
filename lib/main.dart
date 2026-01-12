@@ -12,6 +12,8 @@ import 'services/app_config_service.dart';
 import 'services/dashboard_config_service.dart';
 import 'services/profile_service.dart';
 import 'services/flight_service.dart';
+import 'services/flight_tracking_service.dart';
+import 'services/gps_sensor_service.dart';
 import 'services/stats_service.dart';
 import 'services/gtc_service.dart';
 import 'services/test_service.dart';
@@ -77,6 +79,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => GTCService()),
         ChangeNotifierProvider(create: (_) => TestService()),
         ChangeNotifierProvider(create: (_) => DashboardConfigService()),
+        ChangeNotifierProvider(create: (_) => GpsSensorService()),
         Provider(create: (_) => AuthService()),
         // ProfileService lifecycle: reload when auth state changes
         ChangeNotifierProxyProvider<AuthService, ProfileService>(
@@ -120,6 +123,21 @@ class MyApp extends StatelessWidget {
               service.initializeData(uid, mainSchoolId ?? '');
             } else {
               service.resetService();
+            }
+            return service;
+          },
+        ),
+        // FlightTrackingService lifecycle: depends on GlobalDataService and AppConfigService
+        ChangeNotifierProxyProvider2<GlobalDataService, AppConfigService,
+            FlightTrackingService>(
+          create: (_) => FlightTrackingService(),
+          update: (_, globalDataService, appConfigService, trackingService) {
+            final service = trackingService ?? FlightTrackingService();
+            if (globalDataService.globalLocations != null) {
+              service.initialize(
+                globalDataService.globalLocations!,
+                lang: appConfigService.currentLanguageCode,
+              );
             }
             return service;
           },
