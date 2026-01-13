@@ -252,13 +252,16 @@ class FlightTrackingService extends ChangeNotifier {
   /// Handle takeoff detection
   Future<void> _handleTakeoff(FlightEvent event, TrackPoint position) async {
     // Find nearest takeoff site within 500m radius
+    // Use the current position (position parameter) which is the fresh GPS reading,
+    // not the event coordinates which may be from the detection algorithm
     String takeoffSiteName = 'Unknown Location';
     String? takeoffSiteId;
 
     // Search for any site typed as "takeoff" within 500m radius (no altitude restriction)
+    // Use position.latitude/longitude for fresh GPS data
     final takeoffSiteMatch = LocationService.findNearestSiteByTypeWithinRadius(
-      event.latitude,
-      event.longitude,
+      position.latitude,
+      position.longitude,
       _cachedSites,
       'takeoff',
       radiusThreshold: 500.0,
@@ -272,24 +275,26 @@ class FlightTrackingService extends ChangeNotifier {
     } else {
       // If no takeoff site found, use "Unknown Location (coordinates)" format
       // This allows the user to edit and name the location later
-      takeoffSiteName = 'Unknown Location (${event.latitude.toStringAsFixed(4)}, ${event.longitude.toStringAsFixed(4)})';
+      // Use position coordinates (fresh GPS) instead of event coordinates
+      takeoffSiteName = 'Unknown Location (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
       log('[FlightTrackingService] No takeoff site found within 500m - saving as Unknown Location with coordinates');
     }
 
     // Create new flight
+    // Store position coordinates (fresh GPS data) instead of event coordinates
     _currentFlight = TrackedFlight(
       id: _generateFlightId(),
       takeoffTime: event.timestamp,
       takeoffSiteId: takeoffSiteId,
       takeoffSiteName: takeoffSiteName,
-      takeoffLatitude: event.latitude,
-      takeoffLongitude: event.longitude,
-      takeoffAltitude: event.altitude,
+      takeoffLatitude: position.latitude,
+      takeoffLongitude: position.longitude,
+      takeoffAltitude: position.altitude,
       status: FlightTrackingStatus.inFlight,
       trackPoints: [position],
     );
 
-    log('[FlightTrackingService] TAKEOFF: lat=${event.latitude.toStringAsFixed(6)}, lon=${event.longitude.toStringAsFixed(6)}, alt=${event.altitude.toStringAsFixed(0)}m at $takeoffSiteName');
+    log('[FlightTrackingService] TAKEOFF: lat=${position.latitude.toStringAsFixed(6)}, lon=${position.longitude.toStringAsFixed(6)}, alt=${position.altitude.toStringAsFixed(0)}m at $takeoffSiteName');
 
     _updateStatus('IN FLIGHT - Takeoff: $takeoffSiteName');
     await _saveCurrentFlight();
@@ -651,8 +656,13 @@ class FlightTrackingService extends ChangeNotifier {
   }
 
   /// Set status to Standby (after flight is saved)
+  /// Also clears all flight-related state to ensure clean UI display
   void setStatusToStandby() {
     _updateStatus('Standby');
+    // Clear flight-related state to ensure status card shows only "Standby"
+    _nearestSiteName = null;
+    _nearestSiteDistance = null;
+    _lastFlightEvent = null;
     notifyListeners();
   }
 
