@@ -681,36 +681,19 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _saveFlightToBook(context, service, lang),
-                    icon: const Icon(Icons.save, color: Colors.white70),
-                    label: Text(
-                      _t('Save_To_Flight_Book', lang),
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white54),
-                    ),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _confirmCancelFlight(context, service, lang),
+                icon: const Icon(Icons.cancel, color: Colors.white70),
+                label: Text(
+                  _t('Cancel_Flight', lang),
+                  style: const TextStyle(color: Colors.white70),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmCancelFlight(context, service, lang),
-                    icon: const Icon(Icons.cancel, color: Colors.white70),
-                    label: Text(
-                      _t('Cancel_Flight', lang),
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white54),
-                    ),
-                  ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.white54),
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -930,7 +913,6 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
               FlightTrackingService.formatDuration(flight.flightTimeMinutes),
             ),
 
-            // Actions
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -938,9 +920,9 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
                 if (!flight.isSyncedToFirebase &&
                     flight.status == FlightTrackingStatus.completed)
                   TextButton.icon(
-                    onPressed: () => _sendToFirebase(context, flight, lang),
-                    icon: const Icon(Icons.cloud_upload, size: 18),
-                    label: Text(_t('Send_Firebase', lang)),
+                    onPressed: () => _saveFlightToBook(context, flight, lang),
+                    icon: const Icon(Icons.save, size: 18),
+                    label: Text(_t('Save_To_Flight_Book', lang)),
                   ),
                 IconButton(
                   onPressed: () =>
@@ -1215,12 +1197,9 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
 
   void _saveFlightToBook(
     BuildContext context,
-    FlightTrackingService trackingService,
+    TrackedFlight trackedFlight,
     String lang,
   ) {
-    final trackedFlight = trackingService.currentFlight;
-    if (trackedFlight == null) return;
-
     final profileService = context.read<ProfileService>();
     final profile = profileService.userProfile;
     if (profile == null) return;
@@ -1253,13 +1232,12 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     );
 
     // Show the flight book form with pre-filled data using a helper method
-    _showSaveToFlightBookModal(context, flight, trackingService, lang);
+    _showSaveToFlightBookModal(context, flight, lang);
   }
 
   void _showSaveToFlightBookModal(
     BuildContext context,
     Flight flight,
-    FlightTrackingService trackingService,
     String lang,
   ) {
     showModalBottomSheet(
@@ -1270,10 +1248,9 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
         profileService: context.read<ProfileService>(),
         flight: flight,
         gpsTracked: true,
+        isNewFromGps: true,
         onSaved: () {
           Navigator.pop(context);
-          // Clear the current flight after saving
-          trackingService.clearCurrentFlightAfterSave();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(_t('Flight_Saved', lang)),
@@ -1316,23 +1293,4 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     );
   }
 
-  void _sendToFirebase(
-    BuildContext context,
-    TrackedFlight flight,
-    String lang,
-  ) {
-    // Stub implementation - show message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_t('Feature_Stub', lang)),
-        action: SnackBarAction(
-          label: 'OK',
-          onPressed: () {},
-        ),
-      ),
-    );
-
-    // TODO: Implement actual Firebase sync
-    // This will convert TrackedFlight to Flight model and use FlightService.addFlight()
-  }
 }

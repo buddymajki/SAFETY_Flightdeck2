@@ -475,6 +475,7 @@ class AddEditFlightForm extends StatefulWidget {
   final ProfileService profileService;
   final Flight? flight; // null for new, non-null for edit
   final bool gpsTracked; // whether this flight was GPS tracked (locks flight time if true)
+  final bool isNewFromGps; // whether this is a new flight created from GPS (has pre-filled data but is not an edit)
   final VoidCallback onSaved;
 
   const AddEditFlightForm({
@@ -483,6 +484,7 @@ class AddEditFlightForm extends StatefulWidget {
     required this.flight,
     required this.gpsTracked,
     required this.onSaved,
+    this.isNewFromGps = false,
   });
 
   @override
@@ -517,6 +519,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
     'Close': {'en': 'Close', 'de': 'Schließen'},
     'Validation_Error': {'en': 'Please fill in all required fields', 'de': 'Bitte füllen Sie alle erforderlichen Felder aus'},
     'School_This_Flight': {'en': 'School (this flight)', 'de': 'Schule (für diesen Flug)'},
+    'Save_GPS_Flight': {'en': 'Save Flight', 'de': 'Flug speichern'},
   };
 
   String _t(String key, String lang) {
@@ -909,11 +912,12 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
         gpsTracked: widget.gpsTracked,
       );
 
-      if (widget.flight == null) {
+      // GPS tracked flights always add as NEW (never update), even if flight object has data
+      if (widget.flight == null || widget.isNewFromGps) {
         // Add new flight
         await widget.flightService.addFlight(flight);
       } else {
-        // Update existing flight
+        // Update existing flight (only for manual edits)
         await widget.flightService.updateFlight(flight);
       }
 
@@ -1318,7 +1322,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isEdit = widget.flight != null;
+    final isEdit = widget.flight != null && !widget.isNewFromGps;
     final canEditDateAndLocation = !isEdit || widget.flight!.canEdit();
     final appConfig = context.watch<AppConfigService>();
     final lang = appConfig.currentLanguageCode;
@@ -1657,7 +1661,13 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(isEdit ? _t('Edit_Flight', lang) : _t('Save', lang)),
+                    : Text(
+                        isEdit
+                            ? _t('Edit_Flight', lang)
+                            : (widget.isNewFromGps
+                                ? _t('Save_GPS_Flight', lang)
+                                : _t('Save', lang)),
+                      ),
               ),
             ),
           ],
