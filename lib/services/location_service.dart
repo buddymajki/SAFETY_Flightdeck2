@@ -195,6 +195,52 @@ class LocationService {
     return (site: nearestSite, distance: minDistance);
   }
 
+  /// Find the nearest site of a specific type within a radius threshold
+  /// Searches for sites within [radiusThreshold] meters (default 500m)
+  /// Does NOT check altitude threshold - only horizontal distance
+  /// This is useful for takeoff/landing detection where altitude varies during flight
+  /// Returns the closest site within radius, or null if no sites found
+  static ({Map<String, dynamic> site, double distance})? findNearestSiteByTypeWithinRadius(
+    double currentLat,
+    double currentLon,
+    List<Map<String, dynamic>> sites,
+    String siteType, {
+    double radiusThreshold = 500.0,
+  }) {
+    if (sites.isEmpty) return null;
+
+    Map<String, dynamic>? nearestSite;
+    double minDistance = double.infinity;
+
+    for (final site in sites) {
+      // Filter by type if specified
+      final type = getSiteType(site);
+      if (type != siteType) continue;
+
+      final siteLat = _parseDouble(site['latitude'] ?? site['lat'] ?? site['coords']?['lat']);
+      final siteLon = _parseDouble(site['longitude'] ?? site['lon'] ?? site['coords']?['lng']);
+
+      if (siteLat == null || siteLon == null) continue;
+
+      final distance = calculateDistance(
+        currentLat,
+        currentLon,
+        siteLat,
+        siteLon,
+      );
+
+      // Only consider sites within the radius threshold
+      if (distance <= radiusThreshold && distance < minDistance) {
+        minDistance = distance;
+        nearestSite = site;
+      }
+    }
+
+    if (nearestSite == null) return null;
+
+    return (site: nearestSite, distance: minDistance);
+  }
+
   /// Get site name from site data
   static String getSiteName(Map<String, dynamic> site, {String lang = 'en'}) {
     return site['name_$lang'] as String? ??

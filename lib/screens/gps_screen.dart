@@ -156,6 +156,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     final appConfig = context.read<AppConfigService>();
 
     // Initialize with sites from GlobalDataService
+    // This will load pending tracklogs from cache and notify listeners
     if (globalData.globalLocations != null) {
       await trackingService.initialize(
         globalData.globalLocations!,
@@ -1281,6 +1282,8 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
           // Remove the tracked flight from pending tracklogs after successful save
           final trackingService = context.read<FlightTrackingService>();
           trackingService.removeTrackedFlight(trackedFlightId);
+          // Set status to Standby after flight is saved
+          trackingService.setStatusToStandby();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(_t('Flight_Saved', lang)),

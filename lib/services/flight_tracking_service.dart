@@ -251,43 +251,29 @@ class FlightTrackingService extends ChangeNotifier {
 
   /// Handle takeoff detection
   Future<void> _handleTakeoff(FlightEvent event, TrackPoint position) async {
-    // Find nearest takeoff site by type
+    // Find nearest takeoff site within 500m radius
     String takeoffSiteName = 'Unknown Location';
     String? takeoffSiteId;
 
-    // First try to find a site specifically typed as "takeoff"
-    final takeoffSiteMatch = LocationService.findNearestSiteByType(
+    // Search for any site typed as "takeoff" within 500m radius (no altitude restriction)
+    final takeoffSiteMatch = LocationService.findNearestSiteByTypeWithinRadius(
       event.latitude,
       event.longitude,
-      event.altitude,
       _cachedSites,
       'takeoff',
+      radiusThreshold: 500.0,
     );
 
     if (takeoffSiteMatch != null) {
       final site = takeoffSiteMatch.site;
       takeoffSiteName = LocationService.getSiteName(site, lang: _currentLanguage);
       takeoffSiteId = LocationService.getSiteId(site);
-      log('[FlightTrackingService] Found takeoff site: $takeoffSiteName (distance: ${takeoffSiteMatch.distance.toStringAsFixed(0)}m)');
+      log('[FlightTrackingService] Found takeoff site within 500m: $takeoffSiteName (distance: ${takeoffSiteMatch.distance.toStringAsFixed(0)}m)');
     } else {
-      // Fallback to any nearby site if no takeoff-specific site found
-      final nearbySites = LocationService.findSitesWithinProximity(
-        event.latitude,
-        event.longitude,
-        event.altitude,
-        _cachedSites,
-      );
-
-      if (nearbySites.isNotEmpty) {
-        final site = nearbySites.first.site;
-        takeoffSiteName = LocationService.getSiteName(site, lang: _currentLanguage);
-        takeoffSiteId = LocationService.getSiteId(site);
-        log('[FlightTrackingService] Found nearby site (not typed as takeoff): $takeoffSiteName (distance: ${nearbySites.first.horizontalDistance.toStringAsFixed(0)}m)');
-      } else {
-        // Final fallback to coordinates if no site found
-        takeoffSiteName = 'Unknown Takeoff (${event.latitude.toStringAsFixed(4)}, ${event.longitude.toStringAsFixed(4)})';
-        log('[FlightTrackingService] No takeoff site found nearby - using coordinates');
-      }
+      // If no takeoff site found, use "Unknown Location (coordinates)" format
+      // This allows the user to edit and name the location later
+      takeoffSiteName = 'Unknown Location (${event.latitude.toStringAsFixed(4)}, ${event.longitude.toStringAsFixed(4)})';
+      log('[FlightTrackingService] No takeoff site found within 500m - saving as Unknown Location with coordinates');
     }
 
     // Create new flight
@@ -662,6 +648,12 @@ class FlightTrackingService extends ChangeNotifier {
 
     notifyListeners();
     log('[FlightTrackingService] Current flight cleared after saving to Flight Book');
+  }
+
+  /// Set status to Standby (after flight is saved)
+  void setStatusToStandby() {
+    _updateStatus('Standby');
+    notifyListeners();
   }
 
   /// Remove a tracked flight from the recent flights list (after it's been saved to Flight Book)
