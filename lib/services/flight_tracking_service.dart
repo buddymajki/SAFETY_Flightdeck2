@@ -664,6 +664,14 @@ class FlightTrackingService extends ChangeNotifier {
     log('[FlightTrackingService] Current flight cleared after saving to Flight Book');
   }
 
+  /// Remove a tracked flight from the recent flights list (after it's been saved to Flight Book)
+  Future<void> removeTrackedFlight(String flightId) async {
+    _trackedFlights.removeWhere((flight) => flight.id == flightId);
+    await _saveTrackedFlights();
+    notifyListeners();
+    log('[FlightTrackingService] Tracked flight $flightId removed from recent flights');
+  }
+
   /// Delete a tracked flight
   Future<void> deleteTrackedFlight(String flightId) async {
     _trackedFlights.removeWhere((f) => f.id == flightId);

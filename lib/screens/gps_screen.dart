@@ -37,8 +37,8 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     'Current_Status': {'en': 'Current Status', 'de': 'Aktueller Status'},
     'In_Flight': {'en': 'IN FLIGHT', 'de': 'IM FLUG'},
     'On_Ground': {'en': 'On Ground', 'de': 'Am Boden'},
-    'Recent_Flights': {'en': 'Recent Flights', 'de': 'Letzte Flüge'},
-    'No_Flights': {'en': 'No tracked flights yet', 'de': 'Noch keine Flüge aufgezeichnet'},
+    'Recent_Flights': {'en': 'Pending Tracklogs', 'de': 'Ausstehende Trackprotokolle'},
+    'No_Flights': {'en': 'No pending tracklogs yet', 'de': 'Noch keine ausstehenden Trackprotokolle'},
     'Flight': {'en': 'Flight', 'de': 'Flug'},
     'Takeoff': {'en': 'Takeoff', 'de': 'Start'},
     'Landing': {'en': 'Landing', 'de': 'Landung'},
@@ -1201,8 +1201,34 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     String lang,
   ) {
     final profileService = context.read<ProfileService>();
+    final globalDataService = context.read<GlobalDataService>();
     final profile = profileService.userProfile;
     if (profile == null) return;
+
+    // Get locations from global data service
+    final locations = globalDataService.globalLocations ?? [];
+
+    // Find takeoff location in database to get official altitude
+    double takeoffAltitude = trackedFlight.takeoffAltitude;
+    final takeoffLocation = locations.firstWhere(
+      (loc) => (loc['name'] ?? '').toString().toLowerCase() == trackedFlight.takeoffSiteName.toLowerCase(),
+      orElse: () => <String, dynamic>{},
+    );
+    if (takeoffLocation.isNotEmpty && takeoffLocation['altitude'] != null) {
+      takeoffAltitude = (takeoffLocation['altitude'] as num).toDouble();
+    }
+
+    // Find landing location in database to get official altitude
+    double landingAltitude = trackedFlight.landingAltitude ?? 0.0;
+    if (trackedFlight.landingSiteName != null) {
+      final landingLocation = locations.firstWhere(
+        (loc) => (loc['name'] ?? '').toString().toLowerCase() == trackedFlight.landingSiteName!.toLowerCase(),
+        orElse: () => <String, dynamic>{},
+      );
+      if (landingLocation.isNotEmpty && landingLocation['altitude'] != null) {
+        landingAltitude = (landingLocation['altitude'] as num).toDouble();
+      }
+    }
 
     // Create a Flight object pre-filled with GPS tracking data
     // Handle nullable fields from TrackedFlight with defaults
@@ -1213,11 +1239,11 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
       date: trackedFlight.takeoffTime.toIso8601String(),
       takeoffName: trackedFlight.takeoffSiteName,
       takeoffId: null,
-      takeoffAltitude: trackedFlight.takeoffAltitude,
+      takeoffAltitude: takeoffAltitude,
       landingName: trackedFlight.landingSiteName ?? 'Unknown Landing',
       landingId: null,
-      landingAltitude: trackedFlight.landingAltitude ?? 0.0,
-      altitudeDifference: trackedFlight.takeoffAltitude - (trackedFlight.landingAltitude ?? 0.0),
+      landingAltitude: landingAltitude,
+      altitudeDifference: takeoffAltitude - landingAltitude,
       flightTimeMinutes: trackedFlight.flightTimeMinutes,
       comment: null,
       startTypeId: null,
@@ -1232,12 +1258,13 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     );
 
     // Show the flight book form with pre-filled data using a helper method
-    _showSaveToFlightBookModal(context, flight, lang);
+    _showSaveToFlightBookModal(context, flight, trackedFlight.id, lang);
   }
 
   void _showSaveToFlightBookModal(
     BuildContext context,
     Flight flight,
+    String trackedFlightId,
     String lang,
   ) {
     showModalBottomSheet(
@@ -1251,6 +1278,9 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
         isNewFromGps: true,
         onSaved: () {
           Navigator.pop(context);
+          // Remove the tracked flight from pending tracklogs after successful save
+          final trackingService = context.read<FlightTrackingService>();
+          trackingService.removeTrackedFlight(trackedFlightId);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(_t('Flight_Saved', lang)),
