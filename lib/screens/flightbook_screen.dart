@@ -421,10 +421,11 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _AddEditFlightForm(
+      builder: (context) => AddEditFlightForm(
         flightService: flightService,
         profileService: profileService,
         flight: null,
+        gpsTracked: false,
         onSaved: () {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -448,10 +449,11 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _AddEditFlightForm(
+      builder: (context) => AddEditFlightForm(
         flightService: flightService,
         profileService: profileService,
         flight: flight,
+        gpsTracked: flight.gpsTracked,
         onSaved: () {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -468,24 +470,26 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
 
 // --- Add/Edit Flight Form ---
 
-class _AddEditFlightForm extends StatefulWidget {
+class AddEditFlightForm extends StatefulWidget {
   final FlightService flightService;
   final ProfileService profileService;
   final Flight? flight; // null for new, non-null for edit
+  final bool gpsTracked; // whether this flight was GPS tracked (locks flight time if true)
   final VoidCallback onSaved;
 
-  const _AddEditFlightForm({
+  const AddEditFlightForm({
     required this.flightService,
     required this.profileService,
     required this.flight,
+    required this.gpsTracked,
     required this.onSaved,
   });
 
   @override
-  State<_AddEditFlightForm> createState() => _AddEditFlightFormState();
+  State<AddEditFlightForm> createState() => _AddEditFlightFormState();
 }
 
-class _AddEditFlightFormState extends State<_AddEditFlightForm> {
+class _AddEditFlightFormState extends State<AddEditFlightForm> {
   // Translation dictionary for the form
   static const Map<String, Map<String, String>> _formTexts = {
     'Edit_Flight': {'en': 'Edit Flight', 'de': 'Flug bearbeiten'},
@@ -902,6 +906,7 @@ class _AddEditFlightFormState extends State<_AddEditFlightForm> {
         status: widget.flight?.status ?? 'pending',
         createdAt: widget.flight?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
+        gpsTracked: widget.gpsTracked,
       );
 
       if (widget.flight == null) {

@@ -26,6 +26,7 @@ class Flight {
   String status; // 'pending' or 'accepted'
   DateTime? createdAt;
   DateTime? updatedAt;
+  bool gpsTracked; // true if tracked by GPS, false if manually added
   bool isPendingUpload; // Local flag: not synced yet
 
   Flight({
@@ -51,6 +52,7 @@ class Flight {
     this.status = 'pending',
     this.createdAt,
     this.updatedAt,
+    this.gpsTracked = false,
     this.isPendingUpload = false,
   });
 
@@ -79,6 +81,7 @@ class Flight {
       status: data['status'] ?? 'pending',
       createdAt: _parseTimestamp(data['created_at']),
       updatedAt: _parseTimestamp(data['updated_at']),
+      gpsTracked: data['gps_tracked'] ?? false,
       isPendingUpload: false,
     );
   }
@@ -108,6 +111,7 @@ class Flight {
       status: data['status'] ?? 'pending',
       createdAt: data['created_at'] != null ? DateTime.parse(data['created_at']) : null,
       updatedAt: data['updated_at'] != null ? DateTime.parse(data['updated_at']) : null,
+      gpsTracked: data['gps_tracked'] ?? false,
       isPendingUpload: data['isPendingUpload'] ?? false,
     );
   }
@@ -136,6 +140,7 @@ class Flight {
       'status': status,
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       'updated_at': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+      'gps_tracked': gpsTracked,
     };
   }
 
@@ -164,6 +169,7 @@ class Flight {
       'status': status,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'gps_tracked': gpsTracked,
       'isPendingUpload': isPendingUpload,
     };
   }

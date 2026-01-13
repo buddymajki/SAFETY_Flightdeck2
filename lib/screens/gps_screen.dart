@@ -9,12 +9,16 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../models/tracked_flight.dart';
+import '../models/flight.dart';
 import '../services/flight_tracking_service.dart';
+import '../services/flight_service.dart';
 import '../services/gps_sensor_service.dart';
+import '../services/profile_service.dart';
 import '../services/app_config_service.dart';
 import '../services/global_data_service.dart';
 import '../services/tracklog_parser_service.dart';
 import '../widgets/responsive_layout.dart';
+import 'flightbook_screen.dart';
 
 class GpsScreen extends StatefulWidget {
   const GpsScreen({super.key});
@@ -40,6 +44,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     'Landing': {'en': 'Landing', 'de': 'Landung'},
     'Airtime': {'en': 'Airtime', 'de': 'Flugzeit'},
     'Send_Firebase': {'en': 'Send to Firebase', 'de': 'An Firebase senden'},
+    'Save_To_Flight_Book': {'en': 'Save to Flight Book', 'de': 'In Flugbuch speichern'},
     'Synced': {'en': 'Synced', 'de': 'Synchronisiert'},
     'Delete': {'en': 'Delete', 'de': 'Löschen'},
     'Cancel_Flight': {'en': 'Cancel Flight', 'de': 'Flug abbrechen'},
@@ -55,6 +60,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     'Confirm_Delete': {'en': 'Delete this flight?', 'de': 'Diesen Flug löschen?'},
     'Yes': {'en': 'Yes', 'de': 'Ja'},
     'No': {'en': 'No', 'de': 'Nein'},
+    'Flight_Saved': {'en': 'Flight saved to Flight Book', 'de': 'Flug ins Flugbuch gespeichert'},
     'Feature_Stub': {'en': 'Firebase sync will be implemented later', 'de': 'Firebase-Sync wird später implementiert'},
     'Vertical_Speed': {'en': 'V/S', 'de': 'V/S'},
     'Web_Not_Supported': {'en': 'GPS tracking is not available in web browser', 'de': 'GPS-Tracking ist im Webbrowser nicht verfügbar'},
@@ -382,21 +388,23 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
               value: isEnabled,
               onChanged: isWebPlatform
                   ? null // Disabled on web
-                  : (value) async {
-                      if (value) {
-                        // Request permissions before enabling
-                        final status = await gpsSensorService.checkAndRequestPermissions();
-                        if (status.isGranted) {
+                  : (value) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) async {
+                        if (value) {
+                          // Request permissions before enabling
+                          final status = await gpsSensorService.checkAndRequestPermissions();
+                          if (status.isGranted) {
+                            await service.toggleTracking();
+                            // Start GPS tracking
+                            await gpsSensorService.startTracking();
+                            // Request battery optimization exemption
+                            await gpsSensorService.requestBatteryOptimizationExemption();
+                          }
+                        } else {
                           await service.toggleTracking();
-                          // Start GPS tracking
-                          await gpsSensorService.startTracking();
-                          // Request battery optimization exemption
-                          await gpsSensorService.requestBatteryOptimizationExemption();
+                          await gpsSensorService.stopTracking();
                         }
-                      } else {
-                        await service.toggleTracking();
-                        await gpsSensorService.stopTracking();
-                      }
+                      });
                     },
               activeColor: Colors.green,
             ),
@@ -673,19 +681,36 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
               ],
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _confirmCancelFlight(context, service, lang),
-                icon: const Icon(Icons.cancel, color: Colors.white70),
-                label: Text(
-                  _t('Cancel_Flight', lang),
-                  style: const TextStyle(color: Colors.white70),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _saveFlightToBook(context, service, lang),
+                    icon: const Icon(Icons.save, color: Colors.white70),
+                    label: Text(
+                      _t('Save_To_Flight_Book', lang),
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white54),
+                    ),
+                  ),
                 ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white54),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmCancelFlight(context, service, lang),
+                    icon: const Icon(Icons.cancel, color: Colors.white70),
+                    label: Text(
+                      _t('Cancel_Flight', lang),
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white54),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
@@ -1184,6 +1209,78 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _saveFlightToBook(
+    BuildContext context,
+    FlightTrackingService trackingService,
+    String lang,
+  ) {
+    final trackedFlight = trackingService.currentFlight;
+    if (trackedFlight == null) return;
+
+    final profileService = context.read<ProfileService>();
+    final profile = profileService.userProfile;
+    if (profile == null) return;
+
+    // Create a Flight object pre-filled with GPS tracking data
+    // Handle nullable fields from TrackedFlight with defaults
+    final flight = Flight(
+      studentUid: profile.uid ?? '',
+      mainSchoolId: profile.mainSchoolId ?? '',
+      thisFlightSchoolId: profile.mainSchoolId ?? '',
+      date: trackedFlight.takeoffTime.toIso8601String(),
+      takeoffName: trackedFlight.takeoffSiteName,
+      takeoffId: null,
+      takeoffAltitude: trackedFlight.takeoffAltitude,
+      landingName: trackedFlight.landingSiteName ?? 'Unknown Landing',
+      landingId: null,
+      landingAltitude: trackedFlight.landingAltitude ?? 0.0,
+      altitudeDifference: trackedFlight.takeoffAltitude - (trackedFlight.landingAltitude ?? 0.0),
+      flightTimeMinutes: trackedFlight.flightTimeMinutes,
+      comment: null,
+      startTypeId: null,
+      flightTypeId: null,
+      advancedManeuvers: const [],
+      schoolManeuvers: const [],
+      licenseType: profile.license ?? 'student',
+      status: 'pending',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      gpsTracked: true,
+    );
+
+    // Show the flight book form with pre-filled data using a helper method
+    _showSaveToFlightBookModal(context, flight, trackingService, lang);
+  }
+
+  void _showSaveToFlightBookModal(
+    BuildContext context,
+    Flight flight,
+    FlightTrackingService trackingService,
+    String lang,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => AddEditFlightForm(
+        flightService: context.read<FlightService>(),
+        profileService: context.read<ProfileService>(),
+        flight: flight,
+        gpsTracked: true,
+        onSaved: () {
+          Navigator.pop(context);
+          // Clear the current flight after saving
+          trackingService.clearCurrentFlightAfterSave();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_t('Flight_Saved', lang)),
+              backgroundColor: Colors.green,
+            ),
+          );
+        },
       ),
     );
   }

@@ -649,6 +649,21 @@ class FlightTrackingService extends ChangeNotifier {
     log('[FlightTrackingService] Flight cancelled');
   }
 
+  /// Clear current flight after it has been saved to the Flight Book
+  Future<void> clearCurrentFlightAfterSave() async {
+    if (_currentFlight == null) return;
+
+    _cancelAutoCloseTimer();
+    _currentFlight = null;
+    await _clearCurrentFlight();
+
+    _detectionService.reset();
+    _updateStatus('Flight saved to Flight Book. Ready for next flight.');
+
+    notifyListeners();
+    log('[FlightTrackingService] Current flight cleared after saving to Flight Book');
+  }
+
   /// Delete a tracked flight
   Future<void> deleteTrackedFlight(String flightId) async {
     _trackedFlights.removeWhere((f) => f.id == flightId);
