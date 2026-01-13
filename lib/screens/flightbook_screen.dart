@@ -912,12 +912,16 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
         gpsTracked: widget.gpsTracked,
       );
 
+      debugPrint('[AddEditFlightForm] Saving flight: gpsTracked=${flight.gpsTracked}, isNewFromGps=${widget.isNewFromGps}');
+
       // GPS tracked flights always add as NEW (never update), even if flight object has data
       if (widget.flight == null || widget.isNewFromGps) {
         // Add new flight
+        debugPrint('[AddEditFlightForm] Adding NEW flight with gpsTracked=${flight.gpsTracked}');
         await widget.flightService.addFlight(flight);
       } else {
         // Update existing flight (only for manual edits)
+        debugPrint('[AddEditFlightForm] Updating existing flight');
         await widget.flightService.updateFlight(flight);
       }
 

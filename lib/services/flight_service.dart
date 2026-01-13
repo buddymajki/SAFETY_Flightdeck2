@@ -169,8 +169,11 @@ class FlightService extends ChangeNotifier {
       status: 'pending',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      gpsTracked: flight.gpsTracked,
       isPendingUpload: true,
     );
+
+    debugPrint('[FlightService] addFlight: gpsTracked=${flightWithId.gpsTracked}');
 
     // Optimistic cache update
     _flights.insert(0, flightWithId);
