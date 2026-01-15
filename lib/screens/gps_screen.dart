@@ -389,23 +389,21 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
               value: isEnabled,
               onChanged: isWebPlatform
                   ? null // Disabled on web
-                  : (value) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) async {
-                        if (value) {
-                          // Request permissions before enabling
-                          final status = await gpsSensorService.checkAndRequestPermissions();
-                          if (status.isGranted) {
-                            await service.toggleTracking();
-                            // Start GPS tracking
-                            await gpsSensorService.startTracking();
-                            // Request battery optimization exemption
-                            await gpsSensorService.requestBatteryOptimizationExemption();
-                          }
-                        } else {
+                  : (value) async {
+                      if (value) {
+                        // Request permissions before enabling
+                        final status = await gpsSensorService.checkAndRequestPermissions();
+                        if (status.isGranted) {
                           await service.toggleTracking();
-                          await gpsSensorService.stopTracking();
+                          // Start GPS tracking
+                          await gpsSensorService.startTracking();
+                          // Request battery optimization exemption
+                          await gpsSensorService.requestBatteryOptimizationExemption();
                         }
-                      });
+                      } else {
+                        await service.toggleTracking();
+                        await gpsSensorService.stopTracking();
+                      }
                     },
               activeColor: Colors.green,
             ),
@@ -449,148 +447,301 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
               ],
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: isInFlight
-                    ? Colors.green.shade700
-                    : theme.cardColor.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(8),
+            if (isInFlight)
+              _buildInFlightStatus(context, service, position, theme, lang)
+            else
+              _buildGroundStatus(context, service, position, theme, lang),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build status display for in-flight state
+  Widget _buildInFlightStatus(
+    BuildContext context,
+    FlightTrackingService service,
+    TrackPoint? position,
+    ThemeData theme,
+    String lang,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.green.shade700,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                service.currentStatus,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    service.currentStatus,
-                    style: theme.textTheme.titleLarge?.copyWith(
+              // Show current location (coordinates and site name)
+              if (position != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      size: 16,
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          if (service.nearestSiteName != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              '📍 ${service.nearestSiteName}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              // Show flight event status
+              if (service.lastFlightEvent != null) ...[
+                const SizedBox(height: 8),
+                Chip(
+                  label: Text(
+                    service.lastFlightEvent!.type.toString().split('.').last.toUpperCase() == 'TAKEOFF'
+                        ? _t('Takeoff_Detected', lang)
+                        : _t('Landing_Detected', lang),
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      color: isInFlight ? Colors.white : null,
                     ),
                   ),
-                  // Show current location (coordinates and site name)
-                  if (position != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 16,
-                          color: isInFlight ? Colors.white70 : Colors.grey,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  backgroundColor: service.lastFlightEvent!.type.toString().split('.').last.toUpperCase() == 'TAKEOFF'
+                      ? Colors.green.shade600
+                      : Colors.red.shade600,
+                  side: const BorderSide(color: Colors.white30),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (position != null) ...[
+          const SizedBox(height: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDataRow(
+                context,
+                Icons.height,
+                '${_t('Altitude', lang)}',
+                '${position.altitude.toStringAsFixed(0)} m',
+                true,
+              ),
+              const SizedBox(height: 6),
+              _buildDataRow(
+                context,
+                Icons.speed,
+                '${_t('Speed', lang)}',
+                '${((position.speed ?? 0.0) * 3.6).toStringAsFixed(1)} km/h',
+                true,
+              ),
+              const SizedBox(height: 6),
+              _buildDataRow(
+                context,
+                (position.verticalSpeed ?? 0.0) >= 0
+                    ? Icons.arrow_upward
+                    : Icons.arrow_downward,
+                '${_t('Vertical_Speed', lang)}',
+                '${(position.verticalSpeed ?? 0.0).toStringAsFixed(2)} m/s',
+                true,
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Build status display for ground state
+  Widget _buildGroundStatus(
+    BuildContext context,
+    FlightTrackingService service,
+    TrackPoint? position,
+    ThemeData theme,
+    String lang,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: theme.cardColor.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Show current coordinates only (no status message)
+              if (position != null) ...[
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      size: 18,
+                      color: Colors.blue,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Current Position',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.grey,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              // Show nearest takeoff site
+              if (service.nearestTakeoffSiteName != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.flight_takeoff,
+                      size: 18,
+                      color: Colors.green,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Closest Takeoff',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.grey,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
                             children: [
-                              Text(
-                                '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: isInFlight ? Colors.white70 : Colors.grey,
-                                  fontFamily: 'monospace',
+                              Expanded(
+                                child: Text(
+                                  service.nearestTakeoffSiteName!,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                              if (service.nearestSiteName != null) ...[
-                                const SizedBox(height: 2),
+                              if (service.nearestTakeoffSiteDistance != null) ...[
+                                const SizedBox(width: 8),
                                 Text(
-                                  '📍 ${service.nearestSiteName}',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: isInFlight ? Colors.white : Colors.blue,
-                                    fontWeight: FontWeight.w500,
+                                  '${service.nearestTakeoffSiteDistance!.toStringAsFixed(0)} m',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
                                   ),
                                 ),
                               ],
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  // Show flight event status
-                  if (service.lastFlightEvent != null) ...[
-                    const SizedBox(height: 8),
-                    Chip(
-                      label: Text(
-                        service.lastFlightEvent!.type.toString().split('.').last.toUpperCase() == 'TAKEOFF'
-                            ? _t('Takeoff_Detected', lang)
-                            : _t('Landing_Detected', lang),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        ],
                       ),
-                      backgroundColor: service.lastFlightEvent!.type.toString().split('.').last.toUpperCase() == 'TAKEOFF'
-                          ? Colors.green.shade600
-                          : Colors.red.shade600,
-                      side: const BorderSide(color: Colors.white30),
                     ),
                   ],
-                ],
-              ),
-            ),
-            if (service.nearestSiteName != null) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.place,
-                    size: 16,
-                    color: isInFlight ? Colors.white70 : Colors.grey,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${_t('Nearest_Site', lang)}: ${service.nearestSiteName}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isInFlight ? Colors.white70 : Colors.grey,
+                ),
+              ],
+              // Show nearest landing site
+              if (service.nearestLandingSiteName != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.flight_land,
+                      size: 18,
+                      color: Colors.orange,
                     ),
-                  ),
-                  if (service.nearestSiteDistance != null) ...[
                     const SizedBox(width: 8),
-                    Text(
-                      '(${service.nearestSiteDistance!.toStringAsFixed(0)}m)',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: isInFlight ? Colors.white60 : Colors.grey,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Closest Landing',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.grey,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  service.nearestLandingSiteName!,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              if (service.nearestLandingSiteDistance != null) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${service.nearestLandingSiteDistance!.toStringAsFixed(0)} m',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.orange,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ],
-              ),
+                ),
+              ],
             ],
-            if (position != null) ...[
-              const SizedBox(height: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDataRow(
-                    context,
-                    Icons.height,
-                    '${_t('Altitude', lang)}',
-                    '${position.altitude.toStringAsFixed(0)} m',
-                    isInFlight,
-                  ),
-                  const SizedBox(height: 6),
-                  _buildDataRow(
-                    context,
-                    Icons.speed,
-                    '${_t('Speed', lang)}',
-                    '${((position.speed ?? 0.0) * 3.6).toStringAsFixed(1)} km/h',
-                    isInFlight,
-                  ),
-                  const SizedBox(height: 6),
-                  _buildDataRow(
-                    context,
-                    (position.verticalSpeed ?? 0.0) >= 0
-                        ? Icons.arrow_upward
-                        : Icons.arrow_downward,
-                    '${_t('Vertical_Speed', lang)}',
-                    '${(position.verticalSpeed ?? 0.0).toStringAsFixed(2)} m/s',
-                    isInFlight,
-                  ),
-                ],
-              ),
-            ],
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 

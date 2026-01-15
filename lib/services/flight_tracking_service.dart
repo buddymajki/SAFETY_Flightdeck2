@@ -40,8 +40,10 @@ class FlightTrackingService extends ChangeNotifier {
   TrackPoint? _lastPosition;
   Timer? _autoCloseFlightTimer;
   String _currentStatus = 'Idle';
-  String? _nearestSiteName;
-  double? _nearestSiteDistance;
+  String? _nearestTakeoffSiteName;
+  double? _nearestTakeoffSiteDistance;
+  String? _nearestLandingSiteName;
+  double? _nearestLandingSiteDistance;
   FlightEvent? _lastFlightEvent;
 
   // ============================================
@@ -68,8 +70,13 @@ class FlightTrackingService extends ChangeNotifier {
   List<TrackedFlight> get trackedFlights => List.unmodifiable(_trackedFlights);
   TrackPoint? get lastPosition => _lastPosition;
   String get currentStatus => _currentStatus;
-  String? get nearestSiteName => _nearestSiteName;
-  double? get nearestSiteDistance => _nearestSiteDistance;
+  String? get nearestTakeoffSiteName => _nearestTakeoffSiteName;
+  double? get nearestTakeoffSiteDistance => _nearestTakeoffSiteDistance;
+  String? get nearestLandingSiteName => _nearestLandingSiteName;
+  double? get nearestLandingSiteDistance => _nearestLandingSiteDistance;
+  // Backward compatibility
+  String? get nearestSiteName => _nearestTakeoffSiteName;
+  double? get nearestSiteDistance => _nearestTakeoffSiteDistance;
   FlightEvent? get lastFlightEvent => _lastFlightEvent;
 
   FlightTrackingService() {
@@ -384,19 +391,47 @@ class FlightTrackingService extends ChangeNotifier {
     onStatusChanged?.call(_currentStatus);
     notifyListeners();
 
+    // Reset status to Idle after notifying listeners so UI shows ground state
+    _updateStatus('Idle');
+    notifyListeners();
+
     log('[FlightTrackingService] Landing detected at ${completedFlight.landingSiteName}');
   }
 
   /// Update nearest site information
   void _updateNearbySite(double lat, double lon, double alt) {
-    final nearest = LocationService.findNearestSite(lat, lon, alt, _cachedSites);
+    // Find nearest takeoff site
+    final nearestTakeoff = LocationService.findNearestSiteByType(
+      lat,
+      lon,
+      alt,
+      _cachedSites,
+      'takeoff',
+    );
 
-    if (nearest != null) {
-      _nearestSiteName = LocationService.getSiteName(nearest.site, lang: _currentLanguage);
-      _nearestSiteDistance = nearest.distance;
+    if (nearestTakeoff != null) {
+      _nearestTakeoffSiteName = LocationService.getSiteName(nearestTakeoff.site, lang: _currentLanguage);
+      _nearestTakeoffSiteDistance = nearestTakeoff.distance;
     } else {
-      _nearestSiteName = null;
-      _nearestSiteDistance = null;
+      _nearestTakeoffSiteName = null;
+      _nearestTakeoffSiteDistance = null;
+    }
+
+    // Find nearest landing site
+    final nearestLanding = LocationService.findNearestSiteByType(
+      lat,
+      lon,
+      alt,
+      _cachedSites,
+      'landing',
+    );
+
+    if (nearestLanding != null) {
+      _nearestLandingSiteName = LocationService.getSiteName(nearestLanding.site, lang: _currentLanguage);
+      _nearestLandingSiteDistance = nearestLanding.distance;
+    } else {
+      _nearestLandingSiteName = null;
+      _nearestLandingSiteDistance = null;
     }
   }
 
@@ -503,6 +538,10 @@ class FlightTrackingService extends ChangeNotifier {
 
     onFlightEnded?.call(completedFlight);
     onStatusChanged?.call(_currentStatus);
+    notifyListeners();
+
+    // Reset status to Idle after notifying listeners so UI shows ground state
+    _updateStatus('Idle');
     notifyListeners();
 
     log('[FlightTrackingService] Flight auto-closed with landing at ${completedFlight.landingSiteName}');
@@ -660,8 +699,10 @@ class FlightTrackingService extends ChangeNotifier {
   void setStatusToStandby() {
     _updateStatus('Standby');
     // Clear flight-related state to ensure status card shows only "Standby"
-    _nearestSiteName = null;
-    _nearestSiteDistance = null;
+    _nearestTakeoffSiteName = null;
+    _nearestTakeoffSiteDistance = null;
+    _nearestLandingSiteName = null;
+    _nearestLandingSiteDistance = null;
     _lastFlightEvent = null;
     notifyListeners();
   }
@@ -729,6 +770,8 @@ class FlightTrackingService extends ChangeNotifier {
       }
 
       log('[FlightTrackingService] Loaded ${_trackedFlights.length} flights from cache');
+      // Notify listeners after loading cached data so UI updates with pending tracklogs on startup
+      notifyListeners();
     } catch (e) {
       log('[FlightTrackingService] Cache load error: $e');
     }
@@ -798,8 +841,10 @@ class FlightTrackingService extends ChangeNotifier {
 
     _lastPosition = null;
     _currentStatus = 'Idle';
-    _nearestSiteName = null;
-    _nearestSiteDistance = null;
+    _nearestTakeoffSiteName = null;
+    _nearestTakeoffSiteDistance = null;
+    _nearestLandingSiteName = null;
+    _nearestLandingSiteDistance = null;
 
     notifyListeners();
   }
