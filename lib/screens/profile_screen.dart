@@ -96,7 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const Map<String, Map<String, String>> _texts = {
     'Personal_Details': {'en': 'Personal Details', 'de': 'Persönliche Angaben'},
     'Address': {'en': 'Address', 'de': 'Adresse'},
-    'Emergency_Contact': {'en': 'Emergency Contact (Required)', 'de': 'Notfallkontakt (Erforderlich)'},
+    'Emergency_Contact': {'en': 'Emergency Contact', 'de': 'Notfallkontakt'},
     'License_Equipment': {'en': 'License and Equipment', 'de': 'Lizenz und Ausrüstung'},
     'Change_Password': {'en': 'Change Password', 'de': 'Passwort ändern'},
     'Family_Name': {'en': 'Family Name', 'de': 'Familienname'},

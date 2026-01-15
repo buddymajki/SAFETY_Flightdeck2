@@ -751,8 +751,8 @@ class FlightTrackingService extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Load tracking state
-      _isTrackingEnabled = prefs.getBool(_trackingEnabledKey) ?? false;
+      // Always start with tracking disabled (toggle OFF)
+      _isTrackingEnabled = false;
 
       // Load tracked flights
       final flightsJson = prefs.getString(_trackedFlightsCacheKey);
