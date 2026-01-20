@@ -61,8 +61,8 @@ class Flight {
     return Flight(
       id: docId,
       studentUid: studentUid,
-      mainSchoolId: data['main_school_id'] ?? data['mainschool_id'] ?? data['school_id'] ?? '',
-      thisFlightSchoolId: data['thisflight_school_id'] ?? data['school_id'] ?? data['main_school_id'] ?? data['mainschool_id'] ?? '',
+      mainSchoolId: data['mainschool_id'] ?? data['main_school_id'] ?? data['mainschool_id'] ?? data['school_id'] ?? '',
+      thisFlightSchoolId: data['thisflight_school_id'] ?? data['main_school_id'] ?? data['mainschool_id'] ?? data['school_id'] ?? '',
       date: _parseDate(data['date']),
       takeoffName: data['takeoffName'] ?? '',
       takeoffId: data['takeoffId'],
@@ -91,8 +91,8 @@ class Flight {
     return Flight(
       id: data['id'],
       studentUid: studentUid,
-      mainSchoolId: data['main_school_id'] ?? data['mainschool_id'] ?? data['school_id'] ?? '',
-      thisFlightSchoolId: data['thisflight_school_id'] ?? data['school_id'] ?? data['main_school_id'] ?? data['mainschool_id'] ?? '',
+      mainSchoolId: data['mainschool_id'] ?? data['main_school_id'] ?? data['mainschool_id'] ?? data['school_id'] ?? '',
+      thisFlightSchoolId: data['thisflight_school_id'] ?? data['main_school_id'] ?? data['mainschool_id'] ?? data['school_id'] ?? '',
       date: data['date'] ?? DateTime.now().toIso8601String(),
       takeoffName: data['takeoffName'] ?? '',
       takeoffId: data['takeoffId'],
@@ -119,7 +119,7 @@ class Flight {
   /// Convert to Firestore map
   Map<String, dynamic> toFirestore() {
     return {
-      'main_school_id': mainSchoolId,
+      'mainschool_id': mainSchoolId,
       'thisflight_school_id': thisFlightSchoolId,
       'date': Timestamp.fromDate(DateTime.parse(date)),
       'takeoffName': takeoffName,
@@ -148,7 +148,7 @@ class Flight {
   Map<String, dynamic> toCache() {
     return {
       'id': id,
-      'main_school_id': mainSchoolId,
+      'mainschool_id': mainSchoolId,
       'thisflight_school_id': thisFlightSchoolId,
       'date': date,
       'takeoffName': takeoffName,

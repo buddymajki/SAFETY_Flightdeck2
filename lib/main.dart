@@ -13,6 +13,7 @@ import 'services/dashboard_config_service.dart';
 import 'services/profile_service.dart';
 import 'services/flight_service.dart';
 import 'services/flight_tracking_service.dart';
+import 'services/live_tracking_service.dart';
 import 'services/gps_sensor_service.dart';
 import 'services/stats_service.dart';
 import 'services/gtc_service.dart';
@@ -127,11 +128,21 @@ class MyApp extends StatelessWidget {
             return service;
           },
         ),
-        // FlightTrackingService lifecycle: depends on GlobalDataService and AppConfigService
-        ChangeNotifierProxyProvider2<GlobalDataService, AppConfigService,
+        // LiveTrackingService - depends on ProfileService
+        ChangeNotifierProxyProvider<ProfileService, LiveTrackingService>(
+          create: (_) => LiveTrackingService(),
+          update: (_, profileService, liveTrackingService) {
+            final service = liveTrackingService ?? LiveTrackingService();
+            // Update profile data for live tracking
+            service.updateProfile(profileService.userProfile);
+            return service;
+          },
+        ),
+        // FlightTrackingService lifecycle: depends on GlobalDataService, AppConfigService, and LiveTrackingService
+        ChangeNotifierProxyProvider3<GlobalDataService, AppConfigService, LiveTrackingService,
             FlightTrackingService>(
           create: (_) => FlightTrackingService(),
-          update: (_, globalDataService, appConfigService, trackingService) {
+          update: (_, globalDataService, appConfigService, liveTrackingService, trackingService) {
             final service = trackingService ?? FlightTrackingService();
             if (globalDataService.globalLocations != null) {
               service.initialize(
@@ -139,6 +150,8 @@ class MyApp extends StatelessWidget {
                 lang: appConfigService.currentLanguageCode,
               );
             }
+            // Connect live tracking service
+            service.setLiveTrackingService(liveTrackingService);
             return service;
           },
         ),

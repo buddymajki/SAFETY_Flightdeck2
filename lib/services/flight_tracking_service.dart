@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/tracked_flight.dart';
 import 'flight_detection_service.dart';
+import 'live_tracking_service.dart';
 import 'location_service.dart';
 import 'tracklog_parser_service.dart';
 
@@ -21,6 +22,9 @@ class FlightTrackingService extends ChangeNotifier {
 
   // Services
   final FlightDetectionService _detectionService = FlightDetectionService();
+  
+  // Live tracking service for authorities (optional, can be null if not injected)
+  LiveTrackingService? _liveTrackingService;
 
   // State
   bool _isTrackingEnabled = false;
@@ -78,6 +82,11 @@ class FlightTrackingService extends ChangeNotifier {
   String? get nearestSiteName => _nearestTakeoffSiteName;
   double? get nearestSiteDistance => _nearestTakeoffSiteDistance;
   FlightEvent? get lastFlightEvent => _lastFlightEvent;
+  
+  // Live tracking getters
+  LiveTrackingService? get liveTrackingService => _liveTrackingService;
+  bool get isLiveTrackingEnabled => _liveTrackingService?.isEnabled ?? false;
+  bool get isLiveTrackingActive => _liveTrackingService?.isActive ?? false;
 
   FlightTrackingService() {
     _loadFromCache();
@@ -90,6 +99,13 @@ class FlightTrackingService extends ChangeNotifier {
     _isInitialized = true;
     notifyListeners();
     log('[FlightTrackingService] Initialized with ${sites.length} sites');
+  }
+  
+  /// Set the live tracking service for authorities
+  /// Call this after creating both services in your app initialization
+  void setLiveTrackingService(LiveTrackingService service) {
+    _liveTrackingService = service;
+    log('[FlightTrackingService] Live tracking service connected');
   }
 
   /// Update cached sites (when GlobalDataService updates)
@@ -113,7 +129,7 @@ class FlightTrackingService extends ChangeNotifier {
     if (_isTrackingEnabled) return;
 
     _isTrackingEnabled = true;
-    _updateStatus('Tracking Active');
+    _updateStatus('Tracking Active');;
 
     // Reset detection service to prepare for new flight
     _detectionService.reset();
@@ -199,8 +215,10 @@ class FlightTrackingService extends ChangeNotifier {
 
     // Process through flight detection
     final event = _detectionService.processTrackPoint(trackPoint);
+    print('🔍 [FlightTracking] Detection result: ${event?.type ?? "null (no event)"}');
 
     if (event != null) {
+      print('🔍 [FlightTracking] Event detected! Type: ${event.type}');
       await _handleFlightEvent(event, trackPoint);
     }
 
@@ -210,6 +228,13 @@ class FlightTrackingService extends ChangeNotifier {
         trackPoints: [..._currentFlight!.trackPoints, trackPoint],
       );
       await _saveCurrentFlight();
+      
+      // Send position to live tracking service
+      print('🌐 [FlightTracking] In flight, sending position to LiveTrackingService');
+      print('🌐 [FlightTracking] LiveTrackingService is ${_liveTrackingService == null ? "NULL" : "connected"}');
+      await _liveTrackingService?.processPosition(trackPoint);
+    } else {
+      print('⚪ [FlightTracking] Not in flight, skipping live tracking');
     }
 
     // Notify listeners
@@ -243,14 +268,19 @@ class FlightTrackingService extends ChangeNotifier {
 
   /// Handle flight events (takeoff/landing)
   Future<void> _handleFlightEvent(FlightEvent event, TrackPoint position) async {
+    print('🎯 [FlightTracking] _handleFlightEvent called: ${event.type}');
+    print('🎯 [FlightTracking] Event details: lat=${event.latitude}, lon=${event.longitude}, alt=${event.altitude}');
+    
     _lastFlightEvent = event;
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
     
     switch (event.type) {
       case FlightEventType.takeoff:
+        print('🎯 [FlightTracking] Calling _handleTakeoff...');
         await _handleTakeoff(event, position);
         break;
       case FlightEventType.landing:
+        print('🎯 [FlightTracking] Calling _handleLanding...');
         await _handleLanding(event, position);
         break;
     }
@@ -308,6 +338,11 @@ class FlightTrackingService extends ChangeNotifier {
 
     // Start auto-close timer for testing/simulation
     _resetAutoCloseTimer();
+    
+    // Start live tracking for authorities
+    print('🛫 [FlightTracking] Takeoff detected, starting live tracking...');
+    print('🛫 [FlightTracking] LiveTrackingService is ${_liveTrackingService == null ? "NULL ⚠️" : "connected ✓"}');
+    await _liveTrackingService?.startTracking(takeoffSiteName: takeoffSiteName);
 
     onFlightStarted?.call(_currentFlight!);
     onStatusChanged?.call(_currentStatus);
@@ -318,7 +353,14 @@ class FlightTrackingService extends ChangeNotifier {
 
   /// Handle landing detection
   Future<void> _handleLanding(FlightEvent event, TrackPoint position) async {
-    if (_currentFlight == null) return;
+    print('🛬🛬🛬 [FlightTracking] ========================================');
+    print('🛬 [FlightTracking] _handleLanding CALLED!');
+    print('🛬 [FlightTracking] Current flight: ${_currentFlight?.id ?? "NULL"}');
+    
+    if (_currentFlight == null) {
+      print('🛬 [FlightTracking] ❌ No current flight, cannot handle landing');
+      return;
+    }
 
     // Find nearest landing site by type
     String landingSiteName = 'Unknown Location';
@@ -384,16 +426,32 @@ class FlightTrackingService extends ChangeNotifier {
 
     // Reset detection service so next takeoff can be detected
     _detectionService.reset();
+    
+    // Stop live tracking for authorities
+    print('🛬 [FlightTracking] Landing detected, stopping live tracking...');
+    print('🛬 [FlightTracking] LiveTrackingService is ${_liveTrackingService == null ? "NULL" : "connected"}');
+    print('🛬 [FlightTracking] LiveTrackingService.isActive = ${_liveTrackingService?.isActive}');
+    
+    try {
+      print('🛬 [FlightTracking] Calling stopTracking()...');
+      await _liveTrackingService?.stopTracking();
+      print('🛬 [FlightTracking] ✅ stopTracking() completed successfully');
+    } catch (e, st) {
+      print('🛬 [FlightTracking] ❌ Error calling stopTracking(): $e');
+      print('🛬 [FlightTracking] Stack trace: $st');
+    }
 
     _updateStatus('Flight Complete: ${completedFlight.takeoffSiteName} → ${completedFlight.landingSiteName}');
 
     onFlightEnded?.call(completedFlight);
     onStatusChanged?.call(_currentStatus);
-    notifyListeners();
+    
+    // Wrap notifyListeners in microtask to avoid "setState during build" error
+    Future.microtask(() => notifyListeners());
 
     // Reset status to Idle after notifying listeners so UI shows ground state
     _updateStatus('Idle');
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
 
     log('[FlightTrackingService] Landing detected at ${completedFlight.landingSiteName}');
   }
@@ -533,6 +591,20 @@ class FlightTrackingService extends ChangeNotifier {
 
     // Reset detection service for next flight
     _detectionService.reset();
+    
+    // Stop live tracking for authorities
+    print('🛬 [FlightTracking] AUTO-CLOSE: Stopping live tracking...');
+    print('🛬 [FlightTracking] LiveTrackingService is ${_liveTrackingService == null ? "NULL" : "connected"}');
+    print('🛬 [FlightTracking] LiveTrackingService.isActive = ${_liveTrackingService?.isActive}');
+    
+    try {
+      print('🛬 [FlightTracking] Calling stopTracking()...');
+      await _liveTrackingService?.stopTracking();
+      print('🛬 [FlightTracking] ✅ stopTracking() completed successfully');
+    } catch (e, st) {
+      print('🛬 [FlightTracking] ❌ Error calling stopTracking(): $e');
+      print('🛬 [FlightTracking] Stack trace: $st');
+    }
 
     _updateStatus('Flight Recorded: ${completedFlight.takeoffSiteName} → ${completedFlight.landingSiteName}');
 
