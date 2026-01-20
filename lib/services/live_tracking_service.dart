@@ -1,8 +1,9 @@
 // File: lib/services/live_tracking_service.dart
 
+// ignore_for_file: unused_field
+
 import 'dart:async';
 import 'dart:developer';
-import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -270,35 +271,6 @@ class LiveTrackingService extends ChangeNotifier {
     await _uploadPosition(position);
   }
   
-  /// Check if we should upload this position
-  bool _shouldUpload(TrackPoint position) {
-    final now = DateTime.now();
-    
-    // Always upload if never uploaded
-    if (_lastUploadTime == null || _lastUploadedPosition == null) {
-      return true;
-    }
-    
-    // Check time threshold (12 seconds)
-    final timeSinceLastUpload = now.difference(_lastUploadTime!);
-    if (timeSinceLastUpload >= minUploadInterval) {
-      return true;
-    }
-    
-    // Check distance threshold (50 meters)
-    final distance = _calculateDistance(
-      _lastUploadedPosition!.latitude,
-      _lastUploadedPosition!.longitude,
-      position.latitude,
-      position.longitude,
-    );
-    
-    if (distance >= minDistanceMeters) {
-      return true;
-    }
-    
-    return false;
-  }
   
   /// Upload position to Firestore
   Future<void> _uploadPosition(TrackPoint position) async {
@@ -368,26 +340,7 @@ class LiveTrackingService extends ChangeNotifier {
     }
   }
   
-  /// Calculate distance between two points using Haversine formula
-  double _calculateDistance(
-    double lat1, double lon1,
-    double lat2, double lon2,
-  ) {
-    const earthRadius = 6371000.0; // meters
-    
-    final dLat = _toRadians(lat2 - lat1);
-    final dLon = _toRadians(lon2 - lon1);
-    
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_toRadians(lat1)) * math.cos(_toRadians(lat2)) *
-        math.sin(dLon / 2) * math.sin(dLon / 2);
-    
-    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    
-    return earthRadius * c;
-  }
   
-  double _toRadians(double degrees) => degrees * math.pi / 180;
   
   /// Get current tracking status for UI display
   Map<String, dynamic> getStatus() {
