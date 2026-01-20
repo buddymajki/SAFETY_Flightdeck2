@@ -57,6 +57,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/logo_512.png
+    - assets/airspace/swiss_airspace.json
 
 flutter_launcher_icons:
   android: true

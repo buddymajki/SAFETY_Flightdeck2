@@ -339,10 +339,15 @@ class FlightTrackingService extends ChangeNotifier {
     // Start auto-close timer for testing/simulation
     _resetAutoCloseTimer();
     
-    // Start live tracking for authorities
+    // Start live tracking for authorities (pass position for credential checks at takeoff)
     print('🛫 [FlightTracking] Takeoff detected, starting live tracking...');
     print('🛫 [FlightTracking] LiveTrackingService is ${_liveTrackingService == null ? "NULL ⚠️" : "connected ✓"}');
-    await _liveTrackingService?.startTracking(takeoffSiteName: takeoffSiteName);
+    await _liveTrackingService?.startTracking(
+      takeoffSiteName: takeoffSiteName,
+      latitude: position.latitude,
+      longitude: position.longitude,
+      altitude: position.altitude,
+    );
 
     onFlightStarted?.call(_currentFlight!);
     onStatusChanged?.call(_currentStatus);

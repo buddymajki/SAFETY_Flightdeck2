@@ -4,26 +4,16 @@ service cloud.firestore {
     
     // Helper functions
     function isAuth() { return request.auth != null; }
-    function getUid() { return request.auth.uid; }
+    function isOwner(uid) { return request.auth.uid == uid; }
     function isAdmin() { return isAuth() && (request.auth.token.admin == true || request.auth.token.fireCMSUser == true); }
-    function isOwner(uid) { return isAuth() && getUid() == uid; }
-
-    // ============================================
-    // LIVE TRACKING (SkyWatch)
-    // ============================================
+    function isSuperadmin() { return isAuth() && request.auth.token.admin == true; }
     
-    // Live tracking - pilots can only write their own position, admins can read all
-    match /live_tracking/{userId} {
-      // Users can write/delete their own tracking document
-      allow write, delete: if isAuth() && getUid() == userId;
-      // Users can read their own tracking, admins can read all
-      allow read: if isAuth() && (getUid() == userId || isAdmin());
-    }
-    
-    // Airspace alerts - any authenticated user can create, only admins can read/delete
-    match /airspace_alerts/{alertId} {
-      allow create: if isAuth();
-      allow read, delete: if isAdmin();
+    // Check if user is admin at a specific school
+    function isSchoolAdmin(schoolId) {
+      return isAuth() && 
+             (request.auth.token.admin == true || 
+              (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+               schoolId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminAt));
     }
 
     // Global Collections (Public Read, Admin Write)
@@ -57,9 +47,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /schools/{document=**} {
+    match /schools/{schoolId} {
       allow read: if true;
       allow write: if isAdmin();
+      
+      // Cache for dashboard
+      match /cache/{document=**} {
+        allow read: if isSchoolAdmin(schoolId) || isAdmin();
+        allow write: if isAdmin();
+      }
     }
 
     match /globalTests/{document=**} {
@@ -67,28 +63,94 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // User Data Access (Owner-Only with Admin Override)
+    // User Data Access
     match /users/{uid} {
-      // Read, create, update allowed for owner only. Delete restricted to Admin.
+      // Owner can always read/write their own data
       allow read, create, update: if isOwner(uid);
       allow delete: if isAdmin();
+      
+      // School admins can read users in their schools
+      allow read: if isAdmin() || 
+                      (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                       isSchoolAdmin(get(/databases/$(database)/documents/users/$(uid)).data.mainschool_id));
 
-      // Sub-collections: Read, create, update, delete allowed for owner only.
+      // Sub-collections: Owner can always access
       match /flightlog/{document=**} {
         allow read, create, update, delete: if isOwner(uid);
+        // Admins can read and update for reporting and flight approval
+        allow read, update: if isAdmin() || 
+                        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                         isSchoolAdmin(get(/databases/$(database)/documents/users/$(uid)).data.mainschool_id));
       }
 
       match /checklistprogress/{document=**} {
         allow read, create, update, delete: if isOwner(uid);
+        // Admins can read for dashboard
+        allow read: if isAdmin() || 
+                        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                         isSchoolAdmin(get(/databases/$(database)/documents/users/$(uid)).data.mainschool_id));
       }
 
       match /gtc_acceptances/{document=**} {
         allow read, create, update, delete: if isOwner(uid);
+        // Admins can read for compliance
+        allow read: if isAdmin() || 
+                        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                         isSchoolAdmin(get(/databases/$(database)/documents/users/$(uid)).data.mainschool_id));
+      }
+
+      match /stats/{document=**} {
+        allow read, create, update, delete: if isOwner(uid);
+        // Admins can read for dashboard
+        allow read: if isAdmin() || 
+                        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                         isSchoolAdmin(get(/databases/$(database)/documents/users/$(uid)).data.mainschool_id));
       }
 
       match /tests/{document=**} {
         allow read, create, update, delete: if isOwner(uid);
       }
     }
+
+    // Pending flights collection
+    match /schools/{schoolId}/pendingFlights/{flightId} {
+      allow read: if isSchoolAdmin(schoolId);
+      allow write: if false; // Only Cloud Functions can write
+    }
+
+    // Cache for admin dashboard
+    match /schools/{schoolId}/cache/adminDashboard {
+      allow read: if isSchoolAdmin(schoolId);
+      allow write: if false; // Only Cloud Functions can write
+    }
+
+    // Guest students dashboard
+    match /schools/{schoolId}/dashboard/guestStudents/students/{studentUid} {
+      allow read: if isSchoolAdmin(schoolId);
+      allow write: if false; // Only Cloud Functions can write
+    }
+
+    // ============================================
+    // LIVE TRACKING & ALERTS (FlightRadar)
+    // ============================================
+    
+    // Live tracking - pilots can only write their own position, admins can read all
+    match /live_tracking/{userId} {
+      // Users can write/delete their own tracking document
+      allow write, delete: if isAuth() && request.auth.uid == userId;
+      // Users can read their own tracking, admins can read all
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Alerts - pilots create alerts, admins can read/update/delete
+    match /alerts/{alertId} {
+      // Any authenticated user can create an alert
+      allow create: if isAuth();
+      // Any authenticated user can read alerts, admins can read all
+      allow read: if isAuth();
+      // Admins can update/delete (to mark as resolved or clean up)
+      allow update, delete: if isAdmin();
+    }
   }
 }
+

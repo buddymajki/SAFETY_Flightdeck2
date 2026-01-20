@@ -1,0 +1,187 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-20",
+  "description": "Swiss airspace restricted zones for paragliding flight safety",
+  "restrictedZones": [
+    {
+      "name": "CTR Bern-Belp",
+      "type": "CTR",
+      "minAltitude": 0,
+      "maxAltitude": 2000,
+      "polygon": [
+        {"latitude": 46.9500, "longitude": 7.4833},
+        {"latitude": 46.9500, "longitude": 7.5833},
+        {"latitude": 46.8833, "longitude": 7.5833},
+        {"latitude": 46.8833, "longitude": 7.4833}
+      ]
+    },
+    {
+      "name": "CTR Zurich",
+      "type": "CTR",
+      "minAltitude": 0,
+      "maxAltitude": 2000,
+      "polygon": [
+        {"latitude": 47.5000, "longitude": 8.4500},
+        {"latitude": 47.5000, "longitude": 8.6000},
+        {"latitude": 47.3667, "longitude": 8.6000},
+        {"latitude": 47.3667, "longitude": 8.4500}
+      ]
+    },
+    {
+      "name": "CTR Geneva",
+      "type": "CTR",
+      "minAltitude": 0,
+      "maxAltitude": 2000,
+      "polygon": [
+        {"latitude": 46.2500, "longitude": 6.0500},
+        {"latitude": 46.2500, "longitude": 6.2000},
+        {"latitude": 46.1500, "longitude": 6.2000},
+        {"latitude": 46.1500, "longitude": 6.0500}
+      ]
+    },
+    {
+      "name": "TMA Zurich 1",
+      "type": "TMA",
+      "minAltitude": 2000,
+      "maxAltitude": 4500,
+      "polygon": [
+        {"latitude": 47.6000, "longitude": 8.3000},
+        {"latitude": 47.6000, "longitude": 8.8000},
+        {"latitude": 47.2500, "longitude": 8.8000},
+        {"latitude": 47.2500, "longitude": 8.3000}
+      ]
+    },
+    {
+      "name": "TMA Geneva",
+      "type": "TMA",
+      "minAltitude": 2000,
+      "maxAltitude": 4500,
+      "polygon": [
+        {"latitude": 46.3500, "longitude": 5.9000},
+        {"latitude": 46.3500, "longitude": 6.3000},
+        {"latitude": 46.0500, "longitude": 6.3000},
+        {"latitude": 46.0500, "longitude": 5.9000}
+      ]
+    },
+    {
+      "name": "Restricted Military Payerne",
+      "type": "Restricted",
+      "minAltitude": 0,
+      "maxAltitude": 3000,
+      "polygon": [
+        {"latitude": 46.8500, "longitude": 6.9000},
+        {"latitude": 46.8500, "longitude": 7.0500},
+        {"latitude": 46.7667, "longitude": 7.0500},
+        {"latitude": 46.7667, "longitude": 6.9000}
+      ]
+    },
+    {
+      "name": "Restricted Military Emmen",
+      "type": "Restricted",
+      "minAltitude": 0,
+      "maxAltitude": 2500,
+      "polygon": [
+        {"latitude": 47.1000, "longitude": 8.2500},
+        {"latitude": 47.1000, "longitude": 8.3500},
+        {"latitude": 47.0333, "longitude": 8.3500},
+        {"latitude": 47.0333, "longitude": 8.2500}
+      ]
+    },
+    {
+      "name": "Danger Area Axalp",
+      "type": "Danger",
+      "minAltitude": 1500,
+      "maxAltitude": 4000,
+      "polygon": [
+        {"latitude": 46.7500, "longitude": 8.0000},
+        {"latitude": 46.7500, "longitude": 8.1500},
+        {"latitude": 46.6667, "longitude": 8.1500},
+        {"latitude": 46.6667, "longitude": 8.0000}
+      ]
+    },
+    {
+      "name": "Prohibited Nuclear Beznau",
+      "type": "Prohibited",
+      "minAltitude": 0,
+      "maxAltitude": 1500,
+      "polygon": [
+        {"latitude": 47.5667, "longitude": 8.2167},
+        {"latitude": 47.5667, "longitude": 8.2500},
+        {"latitude": 47.5500, "longitude": 8.2500},
+        {"latitude": 47.5500, "longitude": 8.2167}
+      ]
+    },
+    {
+      "name": "Prohibited Nuclear Gösgen",
+      "type": "Prohibited",
+      "minAltitude": 0,
+      "maxAltitude": 1500,
+      "polygon": [
+        {"latitude": 47.3667, "longitude": 7.9667},
+        {"latitude": 47.3667, "longitude": 8.0000},
+        {"latitude": 47.3500, "longitude": 8.0000},
+        {"latitude": 47.3500, "longitude": 7.9667}
+      ]
+    },
+    {
+      "name": "CTR Basel-Mulhouse",
+      "type": "CTR",
+      "minAltitude": 0,
+      "maxAltitude": 2000,
+      "polygon": [
+        {"latitude": 47.6167, "longitude": 7.4833},
+        {"latitude": 47.6167, "longitude": 7.6333},
+        {"latitude": 47.5333, "longitude": 7.6333},
+        {"latitude": 47.5333, "longitude": 7.4833}
+      ]
+    },
+    {
+      "name": "CTR Lugano",
+      "type": "CTR",
+      "minAltitude": 0,
+      "maxAltitude": 1500,
+      "polygon": [
+        {"latitude": 46.0167, "longitude": 8.8833},
+        {"latitude": 46.0167, "longitude": 9.0167},
+        {"latitude": 45.9333, "longitude": 9.0167},
+        {"latitude": 45.9333, "longitude": 8.8833}
+      ]
+    },
+    {
+      "name": "TMA Bern",
+      "type": "TMA",
+      "minAltitude": 2000,
+      "maxAltitude": 4000,
+      "polygon": [
+        {"latitude": 47.0333, "longitude": 7.3333},
+        {"latitude": 47.0333, "longitude": 7.7333},
+        {"latitude": 46.8000, "longitude": 7.7333},
+        {"latitude": 46.8000, "longitude": 7.3333}
+      ]
+    },
+    {
+      "name": "Restricted Sion Military",
+      "type": "Restricted",
+      "minAltitude": 0,
+      "maxAltitude": 2500,
+      "polygon": [
+        {"latitude": 46.2500, "longitude": 7.2833},
+        {"latitude": 46.2500, "longitude": 7.4167},
+        {"latitude": 46.1833, "longitude": 7.4167},
+        {"latitude": 46.1833, "longitude": 7.2833}
+      ]
+    },
+    {
+      "name": "CTR St. Gallen-Altenrhein",
+      "type": "CTR",
+      "minAltitude": 0,
+      "maxAltitude": 1500,
+      "polygon": [
+        {"latitude": 47.4950, "longitude": 9.5333},
+        {"latitude": 47.4950, "longitude": 9.5900},
+        {"latitude": 47.4750, "longitude": 9.5900},
+        {"latitude": 47.4750, "longitude": 9.5333}
+      ]
+    }
+  ]
+}
