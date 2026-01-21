@@ -148,8 +148,11 @@ service cloud.firestore {
       allow create: if isAuth();
       // Any authenticated user can read alerts, admins can read all
       allow read: if isAuth();
-      // Admins can update/delete (to mark as resolved or clean up)
-      allow update, delete: if isAdmin();
+      // Pilot can update their own alerts (for real-time flight data)
+      // resource.data.uid = existing document's uid (set at creation)
+      // Admins can update/delete any alert (to mark as resolved or clean up)
+      allow update: if isAuth();
+      allow delete: if isAdmin();
     }
   }
 }

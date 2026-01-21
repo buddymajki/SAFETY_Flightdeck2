@@ -255,6 +255,13 @@ class LiveTrackingService extends ChangeNotifier {
     print('🛬 [LiveTracking] Calling _markAsLanded...');
     await _markAsLanded();
 
+    // Finalize any active violations (pilot landed, possibly inside airspace)
+    await _alertService.finalizeActiveViolationsOnLanding(
+      latitude: _lastUploadedPosition?.latitude ?? 0.0,
+      longitude: _lastUploadedPosition?.longitude ?? 0.0,
+      altitudeM: 0.0, // On ground
+    );
+
     // Clear alert tracking for next flight
     _alertService.clearRecentAlerts();
 
@@ -348,6 +355,16 @@ class LiveTrackingService extends ChangeNotifier {
     try {
       final docRef = _firestore.collection('live_tracking').doc(_uid);
 
+      // Check if currently in restricted airspace
+      final isInRestrictedAirspace = _alertService.isInRestrictedAirspace;
+      
+      print('🚨 [LiveTracking] airspaceViolation check:');
+      print('   isInRestrictedAirspace: $isInRestrictedAirspace');
+      print('   Active violations count: ${_alertService.activeViolations.length}');
+      if (_alertService.activeViolations.isNotEmpty) {
+        print('   Active zones: ${_alertService.activeViolations.keys.join(", ")}');
+      }
+
       final data = {
         'uid': _uid,
         'shvNumber': _shvNumber ?? '',
@@ -360,14 +377,16 @@ class LiveTrackingService extends ChangeNotifier {
         'altitude': position.altitude,
         'heading': position.heading,
         'speed': position.speed,
+        'airspaceViolation': isInRestrictedAirspace, // TRUE if in restricted airspace
         'lastUpdate': FieldValue.serverTimestamp(),
         'flightStartTime': _flightStartTime != null
             ? Timestamp.fromDate(_flightStartTime!)
             : FieldValue.serverTimestamp(),
         'glider': _glider,
         'takeoffSite': _takeoffSiteName,
-        'inFlight':
-            true, // IMPORTANT: Used to filter active flights in admin app
+        'inFlight': true, // IMPORTANT: Used to filter active flights in admin app
+        // NEW: expose current alertId for admin app
+        'alertId': _alertService.currentFlightAlertId,
       };
 
       print('📤 [LiveTracking] Attempting to write to Firestore...');
