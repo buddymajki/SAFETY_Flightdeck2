@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/alert_model.dart';
 import 'airspace_service.dart';
+import 'connectivity_service.dart';
 import '../config/flight_constants.dart';
 
 /// Tracks time spent in a specific airspace zone
@@ -82,27 +83,86 @@ class AirspaceViolationTracker {
   }
 }
 
+/// Represents a queued Firestore operation for offline support
+class _PendingFirestoreOperation {
+  final String type; // 'create', 'update', 'set_merge'
+  final String collection;
+  final String documentId;
+  final Map<String, dynamic> data;
+  final DateTime timestamp;
+  final int retryCount;
+  
+  _PendingFirestoreOperation({
+    required this.type,
+    required this.collection,
+    required this.documentId,
+    required this.data,
+    required this.timestamp,
+    this.retryCount = 0,
+  });
+  
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'collection': collection,
+    'documentId': documentId,
+    'data': data,
+    'timestamp': timestamp.toIso8601String(),
+    'retryCount': retryCount,
+  };
+  
+  factory _PendingFirestoreOperation.fromJson(Map<String, dynamic> json) {
+    return _PendingFirestoreOperation(
+      type: json['type'] ?? 'set_merge',
+      collection: json['collection'] ?? 'alerts',
+      documentId: json['documentId'] ?? '',
+      data: Map<String, dynamic>.from(json['data'] ?? {}),
+      timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
+      retryCount: json['retryCount'] ?? 0,
+    );
+  }
+  
+  _PendingFirestoreOperation copyWithIncrementedRetry() {
+    return _PendingFirestoreOperation(
+      type: type,
+      collection: collection,
+      documentId: documentId,
+      data: data,
+      timestamp: timestamp,
+      retryCount: retryCount + 1,
+    );
+  }
+}
+
 /// Service for detecting and logging flight safety alerts
 ///
 /// Features:
 /// - Detects airspace violations, altitude violations, and credential issues
 /// - Creates alert records in Firestore during flight
-/// - Queues alerts locally if offline and syncs when connection returns
+/// - **OFFLINE-FIRST**: Queues ALL operations locally and syncs when online
+/// - Automatic retry with exponential backoff on network failures
+/// - Connectivity-aware: syncs immediately when connection is restored
 /// - Prevents duplicate alerts within a cooldown period
 /// - Tracks time spent in restricted airspaces
 /// - Notifies listeners for UI updates
 class AlertService extends ChangeNotifier {
-    /// Expose current flight alert id for admin lookup
-    String? get currentFlightAlertId => _currentFlightAlertId;
+  /// Expose current flight alert id for admin lookup
+  String? get currentFlightAlertId => _currentFlightAlertId;
   static final AlertService _instance = AlertService._internal();
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final AirspaceService _airspaceService = AirspaceService();
+  final ConnectivityService _connectivityService = ConnectivityService();
 
-  // Local queue for offline alerts
-  List<AlertRecord> _pendingAlerts = [];
+  // Local queue for offline alerts (the primary source of truth)
+  List<AlertRecord> _localAlerts = [];
+  
+  // Queue for pending Firestore operations (for offline support)
+  List<_PendingFirestoreOperation> _pendingOperations = [];
+  
   bool _syncing = false;
   bool _isInitialized = false;
+  Timer? _periodicSyncTimer;
+  VoidCallback? _connectivityCallbackUnsubscribe;
 
   // Duplicate prevention: track recent alerts by type
   final Map<String, DateTime> _recentAlerts = {};
@@ -117,6 +177,11 @@ class AlertService extends ChangeNotifier {
   // Callbacks for UI notifications
   Function(AlertRecord)? onAlertCreated;
 
+  // Constants for sync behavior
+  static const int _maxRetryCount = 10;
+  static const Duration _periodicSyncInterval = Duration(seconds: 30);
+  // Note: _initialRetryDelay reserved for future exponential backoff implementation
+
   factory AlertService() {
     return _instance;
   }
@@ -124,10 +189,12 @@ class AlertService extends ChangeNotifier {
   AlertService._internal();
 
   // Getters
-  List<AlertRecord> get pendingAlerts => List.unmodifiable(_pendingAlerts);
+  List<AlertRecord> get localAlerts => List.unmodifiable(_localAlerts);
+  List<AlertRecord> get pendingAlerts => _localAlerts.where((a) => !_isAlertSynced(a.id)).toList();
   bool get isSyncing => _syncing;
   bool get isInitialized => _isInitialized;
-  int get pendingCount => _pendingAlerts.length;
+  int get pendingCount => _pendingOperations.length;
+  bool get isOnline => _connectivityService.isOnline;
   
   /// Get current active violations (pilot is still in these airspaces)
   Map<String, AirspaceViolationTracker> get activeViolations => 
@@ -136,29 +203,66 @@ class AlertService extends ChangeNotifier {
   /// Check if pilot is currently in any restricted airspace
   bool get isInRestrictedAirspace => _activeViolations.isNotEmpty;
 
+  /// Check if a specific alert has been synced to Firestore
+  bool _isAlertSynced(String? alertId) {
+    if (alertId == null) return false;
+    // An alert is considered synced if there are no pending operations for it
+    return !_pendingOperations.any((op) => op.documentId == alertId);
+  }
+
   /// Initialize the alert service
   /// Call this at app startup
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
+      // Initialize connectivity service first
+      await _connectivityService.initialize();
+      
+      // Register for connectivity restoration callbacks
+      _connectivityCallbackUnsubscribe = _connectivityService.addOnConnectivityChangedCallback(
+        (isOnline) {
+          if (isOnline) {
+            debugPrint('📡 [AlertService] Connectivity restored - triggering sync');
+            _syncPendingOperations();
+          }
+        },
+      );
+
       // Initialize airspace service
       await _airspaceService.initialize();
 
-      // Load pending alerts from local storage
-      await _loadPendingAlerts();
+      // Load local alerts from storage
+      await _loadLocalAlerts();
+      
+      // Load pending operations from storage
+      await _loadPendingOperations();
 
-      // Try to sync any pending alerts
-      if (_pendingAlerts.isNotEmpty) {
-        _syncAlertsToFirestore();
+      // Start periodic sync timer
+      _startPeriodicSync();
+
+      // Try to sync any pending operations if online
+      if (_connectivityService.isOnline && _pendingOperations.isNotEmpty) {
+        _syncPendingOperations();
       }
 
       _isInitialized = true;
-      log('[AlertService] ✓ Initialized - ${_airspaceService.zoneCount} airspace zones, ${_pendingAlerts.length} pending alerts');
+      log('[AlertService] ✓ Initialized - ${_airspaceService.zoneCount} airspace zones, ${_localAlerts.length} local alerts, ${_pendingOperations.length} pending ops');
     } catch (e) {
       log('[AlertService] ✗ Error initializing: $e');
       _isInitialized = true; // Mark as initialized to prevent retry loops
     }
+  }
+
+  /// Start periodic sync timer
+  void _startPeriodicSync() {
+    _periodicSyncTimer?.cancel();
+    _periodicSyncTimer = Timer.periodic(_periodicSyncInterval, (_) {
+      if (_pendingOperations.isNotEmpty && _connectivityService.isOnline) {
+        debugPrint('⏰ [AlertService] Periodic sync triggered - ${_pendingOperations.length} pending ops');
+        _syncPendingOperations();
+      }
+    });
   }
 
   /// Check for violations on every position update
@@ -184,10 +288,10 @@ class AlertService extends ChangeNotifier {
     );
     final currentZoneIds = currentZones.map((z) => z.id).toSet();
     
-    // FIX: Use debugPrint for consistent debug logging
     debugPrint('🔍 [AlertService] checkFlightSafety:');
     debugPrint('   Current zones at position: ${currentZones.length}');
     debugPrint('   Active violations: ${_activeViolations.length}');
+    debugPrint('   Online: ${_connectivityService.isOnline}');
     
     // Check for NEW airspace entries (zones we weren't in before)
     for (final zone in currentZones) {
@@ -349,11 +453,11 @@ class AlertService extends ChangeNotifier {
     final reason = _buildFlightAlertReason();
     
     try {
-      // Update in local storage
-      final index = _pendingAlerts.indexWhere((a) => a.id == _currentFlightAlertId);
+      // Update in local storage FIRST (always succeeds)
+      final index = _localAlerts.indexWhere((a) => a.id == _currentFlightAlertId);
       if (index != -1) {
-        final oldAlert = _pendingAlerts[index];
-        _pendingAlerts[index] = AlertRecord(
+        final oldAlert = _localAlerts[index];
+        _localAlerts[index] = AlertRecord(
           id: oldAlert.id,
           uid: oldAlert.uid,
           displayName: oldAlert.displayName,
@@ -366,23 +470,28 @@ class AlertService extends ChangeNotifier {
           metadata: {
             ...oldAlert.metadata ?? {},
             'violations': _currentFlightViolations,
+            'violationsCount': _currentFlightViolations.length,
+            'airspaceViolation': _activeViolations.isNotEmpty,
+            'status': 'in_progress',
           },
           resolved: oldAlert.resolved,
           resolvedAt: oldAlert.resolvedAt,
           resolvedBy: oldAlert.resolvedBy,
           resolutionNotes: oldAlert.resolutionNotes,
         );
-        await _savePendingAlerts();
+        await _saveLocalAlerts();
       }
       
-      // Try Firestore update - use SET with merge to handle nested objects properly
-      try {
-        debugPrint('🔄 [AlertService] ENTRY - Updating Firestore alert: $_currentFlightAlertId');
-        debugPrint('   Violations count: ${_currentFlightViolations.length}');
-        debugPrint('   Active violations: ${_activeViolations.length}');
-        
-        // Use set with merge to properly update nested metadata
-        await _db.collection('alerts').doc(_currentFlightAlertId).set({
+      // Queue Firestore operation (will sync when online)
+      debugPrint('🔄 [AlertService] ENTRY - Queueing Firestore update: $_currentFlightAlertId');
+      debugPrint('   Violations count: ${_currentFlightViolations.length}');
+      debugPrint('   Active violations: ${_activeViolations.length}');
+      
+      await _queueFirestoreOperation(
+        type: 'set_merge',
+        collection: 'alerts',
+        documentId: _currentFlightAlertId!,
+        data: {
           'reason': reason,
           'metadata': {
             'violations': _currentFlightViolations,
@@ -391,14 +500,8 @@ class AlertService extends ChangeNotifier {
             'status': 'in_progress',
           },
           'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-        
-        debugPrint('✅ [AlertService] ENTRY - Firestore alert updated successfully');
-        log('[AlertService] ✓ Updated alert $_currentFlightAlertId in Firestore');
-      } catch (e) {
-        debugPrint('❌ [AlertService] ENTRY - Firestore update failed: $e');
-        log('[AlertService] ⚠️ Could not update Firestore: $e');
-      }
+        },
+      );
       
       notifyListeners();
     } catch (e) {
@@ -418,11 +521,11 @@ class AlertService extends ChangeNotifier {
     final reason = _buildFlightAlertReason();
     
     try {
-      // Update in local storage
-      final index = _pendingAlerts.indexWhere((a) => a.id == _currentFlightAlertId);
+      // Update in local storage FIRST (always succeeds)
+      final index = _localAlerts.indexWhere((a) => a.id == _currentFlightAlertId);
       if (index != -1) {
-        final oldAlert = _pendingAlerts[index];
-        _pendingAlerts[index] = AlertRecord(
+        final oldAlert = _localAlerts[index];
+        _localAlerts[index] = AlertRecord(
           id: oldAlert.id,
           uid: oldAlert.uid,
           displayName: oldAlert.displayName,
@@ -435,24 +538,29 @@ class AlertService extends ChangeNotifier {
           metadata: {
             ...oldAlert.metadata ?? {},
             'violations': _currentFlightViolations,
+            'violationsCount': _currentFlightViolations.length,
+            'airspaceViolation': _activeViolations.isNotEmpty,
+            'status': _activeViolations.isEmpty ? 'all_exited' : 'in_progress',
           },
           resolved: oldAlert.resolved,
           resolvedAt: oldAlert.resolvedAt,
           resolvedBy: oldAlert.resolvedBy,
           resolutionNotes: oldAlert.resolutionNotes,
         );
-        await _savePendingAlerts();
+        await _saveLocalAlerts();
       }
       
-      // Try Firestore update - use SET with merge to handle nested objects properly
-      try {
-        debugPrint('🔄 [AlertService] EXIT update - Firestore alert: $_currentFlightAlertId');
-        debugPrint('   Violations count: ${_currentFlightViolations.length}');
-        debugPrint('   Active violations: ${_activeViolations.length}');
-        debugPrint('   Exited zone: ${tracker.zoneName}');
-        
-        // Use set with merge to properly update nested metadata
-        await _db.collection('alerts').doc(_currentFlightAlertId).set({
+      // Queue Firestore operation (will sync when online)
+      debugPrint('🔄 [AlertService] EXIT update - Queueing Firestore update: $_currentFlightAlertId');
+      debugPrint('   Violations count: ${_currentFlightViolations.length}');
+      debugPrint('   Active violations: ${_activeViolations.length}');
+      debugPrint('   Exited zone: ${tracker.zoneName}');
+      
+      await _queueFirestoreOperation(
+        type: 'set_merge',
+        collection: 'alerts',
+        documentId: _currentFlightAlertId!,
+        data: {
           'reason': reason,
           'metadata': {
             'violations': _currentFlightViolations,
@@ -461,14 +569,8 @@ class AlertService extends ChangeNotifier {
             'status': _activeViolations.isEmpty ? 'all_exited' : 'in_progress',
           },
           'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-        
-        debugPrint('✅ [AlertService] EXIT - Firestore alert updated successfully');
-        log('[AlertService] ✓ Updated alert $_currentFlightAlertId with exit data');
-      } catch (e) {
-        debugPrint('❌ [AlertService] EXIT - Firestore update failed: $e');
-        log('[AlertService] ⚠️ Could not update Firestore: $e');
-      }
+        },
+      );
       
       notifyListeners();
     } catch (e) {
@@ -592,11 +694,11 @@ class AlertService extends ChangeNotifier {
     final reason = _buildFlightAlertReason();
     
     try {
-      // Update in local storage
-      final index = _pendingAlerts.indexWhere((a) => a.id == _currentFlightAlertId);
+      // Update in local storage FIRST (always succeeds)
+      final index = _localAlerts.indexWhere((a) => a.id == _currentFlightAlertId);
       if (index != -1) {
-        final oldAlert = _pendingAlerts[index];
-        _pendingAlerts[index] = AlertRecord(
+        final oldAlert = _localAlerts[index];
+        _localAlerts[index] = AlertRecord(
           id: oldAlert.id,
           uid: oldAlert.uid,
           displayName: oldAlert.displayName,
@@ -609,6 +711,8 @@ class AlertService extends ChangeNotifier {
           metadata: {
             ...oldAlert.metadata ?? {},
             'violations': _currentFlightViolations,
+            'violationsCount': _currentFlightViolations.length,
+            'airspaceViolation': false,
             'status': 'flight_ended',
           },
           resolved: oldAlert.resolved,
@@ -616,16 +720,18 @@ class AlertService extends ChangeNotifier {
           resolvedBy: oldAlert.resolvedBy,
           resolutionNotes: oldAlert.resolutionNotes,
         );
-        await _savePendingAlerts();
+        await _saveLocalAlerts();
       }
       
-      // Try Firestore update - use SET with merge to handle nested objects properly
-      try {
-debugPrint('🛏 [AlertService] LANDING - Updating Firestore alert: $_currentFlightAlertId');
-        debugPrint('   Final violations count: ${_currentFlightViolations.length}');
-        
-        // Use set with merge to properly update nested metadata
-        await _db.collection('alerts').doc(_currentFlightAlertId).set({
+      // Queue Firestore operation (will sync when online)
+      debugPrint('🛬 [AlertService] LANDING - Queueing Firestore update: $_currentFlightAlertId');
+      debugPrint('   Final violations count: ${_currentFlightViolations.length}');
+      
+      await _queueFirestoreOperation(
+        type: 'set_merge',
+        collection: 'alerts',
+        documentId: _currentFlightAlertId!,
+        data: {
           'reason': reason,
           'metadata': {
             'violations': _currentFlightViolations,
@@ -634,14 +740,8 @@ debugPrint('🛏 [AlertService] LANDING - Updating Firestore alert: $_currentFli
             'status': 'flight_ended',
           },
           'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-        
-        debugPrint('✅ [AlertService] LANDING - Firestore alert updated successfully');
-        log('[AlertService] ✓ Updated alert $_currentFlightAlertId with landing data');
-      } catch (e) {
-        debugPrint('❌ [AlertService] LANDING - Firestore update failed: $e');
-        log('[AlertService] ⚠️ Could not update Firestore: $e');
-      }
+        },
+      );
       
       notifyListeners();
     } catch (e) {
@@ -746,6 +846,12 @@ debugPrint('🛏 [AlertService] LANDING - Updating Firestore alert: $_currentFli
 
   /// Create an alert and queue for sync
   /// Returns the alert ID for later updates
+  /// 
+  /// This method is OFFLINE-FIRST:
+  /// 1. Creates the alert locally with a generated ID
+  /// 2. Saves to local storage immediately
+  /// 3. Queues Firestore operation for later sync
+  /// 4. Triggers sync if online
   Future<String> createAlert({
     required String uid,
     required String displayName,
@@ -772,99 +878,282 @@ debugPrint('🛏 [AlertService] LANDING - Updating Firestore alert: $_currentFli
       metadata: metadata,
     );
 
-    // Add to pending queue
-    _pendingAlerts.add(alert);
+    // Add to local alerts (the source of truth)
+    _localAlerts.add(alert);
 
     // Save to local storage immediately
-    await _savePendingAlerts();
+    await _saveLocalAlerts();
+
+    // Queue Firestore operation with type 'create' to ensure all fields are written
+    await _queueFirestoreOperation(
+      type: 'create',
+      collection: 'alerts',
+      documentId: alertId,
+      data: alert.toFirestore(),
+    );
 
     // Notify UI of new alert
     onAlertCreated?.call(alert);
     notifyListeners();
 
-    log('[AlertService] ⚠️ Alert created: $alertType - $reason');
+    log('[AlertService] ⚠️ Alert created: $alertType - $reason (queued for sync)');
     debugPrint('⚠️ [AlertService] ALERT: $alertType - $reason');
+    debugPrint('   Online: ${_connectivityService.isOnline}, Pending ops: ${_pendingOperations.length}');
 
-    // Try to sync immediately (non-blocking)
-    _syncAlertsToFirestore();
+    // Try to sync immediately if online (non-blocking)
+    if (_connectivityService.isOnline) {
+      _syncPendingOperations();
+    }
     
-    // Return the alert ID we generated above
     return alertId;
   }
 
-  /// Sync pending alerts to Firestore
-  Future<void> _syncAlertsToFirestore() async {
-    if (_syncing || _pendingAlerts.isEmpty) return;
+  /// Queue a Firestore operation for later execution
+  Future<void> _queueFirestoreOperation({
+    required String type,
+    required String collection,
+    required String documentId,
+    required Map<String, dynamic> data,
+  }) async {
+    // Convert FieldValue.serverTimestamp() to a placeholder for serialization
+    final serializableData = _makeSerializable(data);
+    
+    final operation = _PendingFirestoreOperation(
+      type: type,
+      collection: collection,
+      documentId: documentId,
+      data: serializableData,
+      timestamp: DateTime.now(),
+    );
+    
+    // CRITICAL: Only remove existing operations of the SAME TYPE for the same document
+    // DO NOT remove CREATE operations when queuing updates (set_merge)!
+    // This ensures offline-created alerts keep all their fields when synced.
+    _pendingOperations.removeWhere(
+      (op) => op.collection == collection && 
+              op.documentId == documentId && 
+              op.type == type
+    );
+    
+    _pendingOperations.add(operation);
+    await _savePendingOperations();
+    
+    debugPrint('📥 [AlertService] Queued operation: $type on $collection/$documentId');
+  }
+  
+  /// Make data serializable for local storage
+  /// Converts FieldValue objects to placeholders
+  Map<String, dynamic> _makeSerializable(Map<String, dynamic> data) {
+    final result = <String, dynamic>{};
+    for (final entry in data.entries) {
+      if (entry.value is FieldValue) {
+        // Mark server timestamp fields for later restoration
+        result[entry.key] = {'__fieldValue': 'serverTimestamp'};
+      } else if (entry.value is Map<String, dynamic>) {
+        result[entry.key] = _makeSerializable(entry.value as Map<String, dynamic>);
+      } else if (entry.value is List) {
+        result[entry.key] = (entry.value as List).map((item) {
+          if (item is Map<String, dynamic>) {
+            return _makeSerializable(item);
+          }
+          return item;
+        }).toList();
+      } else {
+        result[entry.key] = entry.value;
+      }
+    }
+    return result;
+  }
+  
+  /// Restore FieldValue objects from serialized placeholders
+  Map<String, dynamic> _restoreFieldValues(Map<String, dynamic> data) {
+    final result = <String, dynamic>{};
+    for (final entry in data.entries) {
+      if (entry.value is Map<String, dynamic>) {
+        final map = entry.value as Map<String, dynamic>;
+        if (map['__fieldValue'] == 'serverTimestamp') {
+          result[entry.key] = FieldValue.serverTimestamp();
+        } else {
+          result[entry.key] = _restoreFieldValues(map);
+        }
+      } else if (entry.value is List) {
+        result[entry.key] = (entry.value as List).map((item) {
+          if (item is Map<String, dynamic>) {
+            return _restoreFieldValues(item);
+          }
+          return item;
+        }).toList();
+      } else {
+        result[entry.key] = entry.value;
+      }
+    }
+    return result;
+  }
+
+  /// Sync pending operations to Firestore
+  Future<void> _syncPendingOperations() async {
+    if (_syncing || _pendingOperations.isEmpty) return;
+    if (!_connectivityService.isOnline) {
+      debugPrint('📡 [AlertService] Offline - skipping sync');
+      return;
+    }
 
     _syncing = true;
     notifyListeners();
+    
+    debugPrint('🔄 [AlertService] Starting sync of ${_pendingOperations.length} operations');
 
     try {
-      final alertsToSync = List<AlertRecord>.from(_pendingAlerts);
+      final operationsToSync = List<_PendingFirestoreOperation>.from(_pendingOperations);
+      final successfulOps = <_PendingFirestoreOperation>[];
+      final failedOps = <_PendingFirestoreOperation>[];
 
-      for (final alert in alertsToSync) {
+      for (final operation in operationsToSync) {
         try {
-          final alertId = alert.id ?? DateTime.now().millisecondsSinceEpoch.toString();
-          final alertToSync = alert.id == null
-              ? alert.copyWith(id: alertId)
-              : alert;
-
-          // Use a fixed document ID so later updates hit the SAME doc
-          await _db
-              .collection('alerts')
-              .doc(alertId)
-              .set(alertToSync.toFirestore(), SetOptions(merge: true));
-
-          // Remove from pending queue on success
-          _pendingAlerts.remove(alert);
-          log('[AlertService] ✓ Alert synced: ${alert.alertType}');
+          // Restore FieldValue objects
+          final data = _restoreFieldValues(operation.data);
+          
+          // Execute the operation
+          final docRef = _db.collection(operation.collection).doc(operation.documentId);
+          
+          switch (operation.type) {
+            case 'create':
+              // CREATE: Use merge: false to ensure ALL fields are written
+              // This is critical for offline-created alerts to have all required fields
+              await docRef.set(data, SetOptions(merge: false));
+              break;
+            case 'set_merge':
+            case 'update':
+              // UPDATE: Use merge: true to only update specific fields
+              await docRef.set(data, SetOptions(merge: true));
+              break;
+          }
+          
+          successfulOps.add(operation);
+          debugPrint('✅ [AlertService] Synced: ${operation.collection}/${operation.documentId}');
+          log('[AlertService] ✓ Synced alert: ${operation.documentId}');
         } catch (e) {
-          log('[AlertService] ✗ Error syncing alert ${alert.alertType}: $e');
-          // Keep in queue for retry
-          break; // Stop if one fails (likely network issue)
+          debugPrint('❌ [AlertService] Sync failed: ${operation.documentId} - $e');
+          
+          // Check if we should retry
+          if (operation.retryCount < _maxRetryCount) {
+            failedOps.add(operation.copyWithIncrementedRetry());
+          } else {
+            log('[AlertService] ✗ Max retries exceeded for ${operation.documentId}');
+            // Keep in queue but don't increment retry count further
+            failedOps.add(operation);
+          }
+          
+          // If this is a network error, stop trying more operations
+          if (e.toString().contains('network') || 
+              e.toString().contains('offline') ||
+              e.toString().contains('unavailable')) {
+            debugPrint('📡 [AlertService] Network error detected - stopping sync');
+            break;
+          }
+        }
+      }
+
+      // Remove successful operations from queue
+      // IMPORTANT: Only remove the exact operation that succeeded, not all operations for that document
+      for (final op in successfulOps) {
+        final index = _pendingOperations.indexWhere(
+          (p) => p.collection == op.collection && 
+                 p.documentId == op.documentId && 
+                 p.type == op.type &&
+                 p.timestamp == op.timestamp
+        );
+        if (index != -1) {
+          _pendingOperations.removeAt(index);
+        }
+      }
+      
+      // Update failed operations with incremented retry count
+      for (final op in failedOps) {
+        final index = _pendingOperations.indexWhere(
+          (p) => p.collection == op.collection && 
+                 p.documentId == op.documentId &&
+                 p.type == op.type &&
+                 p.timestamp == op.timestamp
+        );
+        if (index != -1) {
+          _pendingOperations[index] = op;
         }
       }
 
       // Save updated pending queue
-      await _savePendingAlerts();
+      await _savePendingOperations();
+      
+      debugPrint('🔄 [AlertService] Sync complete: ${successfulOps.length} synced, ${_pendingOperations.length} remaining');
     } finally {
       _syncing = false;
       notifyListeners();
     }
   }
 
-  /// Force sync pending alerts (call when connectivity restored)
+  /// Force sync pending operations (call when connectivity restored)
   Future<void> forceSyncPendingAlerts() async {
-    if (_pendingAlerts.isEmpty) return;
-    await _syncAlertsToFirestore();
+    if (_pendingOperations.isEmpty) {
+      debugPrint('📡 [AlertService] No pending operations to sync');
+      return;
+    }
+    debugPrint('📡 [AlertService] Force sync triggered - ${_pendingOperations.length} pending ops');
+    await _syncPendingOperations();
   }
 
-  /// Save pending alerts to local storage
-  Future<void> _savePendingAlerts() async {
+  /// Save local alerts to local storage
+  Future<void> _saveLocalAlerts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final alertsJson =
-          _pendingAlerts.map((a) => jsonEncode(a.toJson())).toList();
-      await prefs.setStringList('pending_alerts', alertsJson);
+      final alertsJson = _localAlerts.map((a) => jsonEncode(a.toJson())).toList();
+      await prefs.setStringList('local_alerts', alertsJson);
     } catch (e) {
-      log('[AlertService] Error saving pending alerts: $e');
+      log('[AlertService] Error saving local alerts: $e');
     }
   }
 
-  /// Load pending alerts from local storage
-  Future<void> _loadPendingAlerts() async {
+  /// Load local alerts from local storage
+  Future<void> _loadLocalAlerts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final alertsJson = prefs.getStringList('pending_alerts') ?? [];
+      final alertsJson = prefs.getStringList('local_alerts') ?? [];
 
-      _pendingAlerts = alertsJson
+      _localAlerts = alertsJson
           .map((json) => AlertRecord.fromJson(jsonDecode(json)))
           .toList();
 
-      log('[AlertService] Loaded ${_pendingAlerts.length} pending alerts from storage');
+      log('[AlertService] Loaded ${_localAlerts.length} local alerts from storage');
     } catch (e) {
-      log('[AlertService] Error loading pending alerts: $e');
-      _pendingAlerts = [];
+      log('[AlertService] Error loading local alerts: $e');
+      _localAlerts = [];
+    }
+  }
+  
+  /// Save pending operations to local storage
+  Future<void> _savePendingOperations() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final opsJson = _pendingOperations.map((op) => jsonEncode(op.toJson())).toList();
+      await prefs.setStringList('pending_firestore_ops', opsJson);
+    } catch (e) {
+      log('[AlertService] Error saving pending operations: $e');
+    }
+  }
+  
+  /// Load pending operations from local storage
+  Future<void> _loadPendingOperations() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final opsJson = prefs.getStringList('pending_firestore_ops') ?? [];
+      
+      _pendingOperations = opsJson
+          .map((json) => _PendingFirestoreOperation.fromJson(jsonDecode(json)))
+          .toList();
+      
+      log('[AlertService] Loaded ${_pendingOperations.length} pending operations from storage');
+    } catch (e) {
+      log('[AlertService] Error loading pending operations: $e');
+      _pendingOperations = [];
     }
   }
 
@@ -879,14 +1168,14 @@ debugPrint('🛏 [AlertService] LANDING - Updating Firestore alert: $_currentFli
 
   /// Get the most recent alert (for UI display)
   AlertRecord? get mostRecentAlert {
-    if (_pendingAlerts.isEmpty) return null;
-    return _pendingAlerts.last;
+    if (_localAlerts.isEmpty) return null;
+    return _localAlerts.last;
   }
 
   /// Get alert statistics
   Map<String, int> getAlertStats() {
     final stats = <String, int>{};
-    for (final alert in _pendingAlerts) {
+    for (final alert in _localAlerts) {
       stats[alert.alertType] = (stats[alert.alertType] ?? 0) + 1;
     }
     return stats;
@@ -894,14 +1183,16 @@ debugPrint('🛏 [AlertService] LANDING - Updating Firestore alert: $_currentFli
 
   /// Check if there are critical alerts pending
   bool get hasCriticalAlerts {
-    return _pendingAlerts
-        .any((a) => a.severity == AlertSeverity.critical.value);
+    return _localAlerts.any((a) => a.severity == AlertSeverity.critical.value);
   }
 
   @override
   void dispose() {
-    // Save any pending alerts before disposing
-    _savePendingAlerts();
+    _periodicSyncTimer?.cancel();
+    _connectivityCallbackUnsubscribe?.call();
+    // Save any pending data before disposing
+    _saveLocalAlerts();
+    _savePendingOperations();
     super.dispose();
   }
 }

@@ -24,10 +24,13 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
   late Future<void> _loadIndexFuture;
   bool _canScrollLeft = false;
   bool _canScrollRight = false;
+  bool _isDisposed = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_isDisposed) return; // Skip if disposed
+    
     final global = context.read<GlobalDataService>();
     final items = global.allChecklistItems;
 
@@ -40,6 +43,7 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
     // Only reinitialize tab controller if number of categories changed
     if (newCategoryIds.length != _categoryIds.length) {
       _categoryIds = newCategoryIds;
+      _tabController.removeListener(_onTabChanged); // Remove listener before disposing
       _tabController.dispose();
       _tabController = TabController(length: _categoryIds.length, vsync: this);
       _tabController.addListener(_onTabChanged);
@@ -94,15 +98,19 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
 
   void _onTabChanged() {
     if (!_tabController.indexIsChanging) {
-      setState(() {
-        _selectedTabIndex = _tabController.index;
-      });
+      if (mounted) {
+        setState(() {
+          _selectedTabIndex = _tabController.index;
+        });
+      }
       _saveTabIndex(_tabController.index);
     }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _tabScrollController.dispose();
     super.dispose();

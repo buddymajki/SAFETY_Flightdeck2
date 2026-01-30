@@ -18,6 +18,7 @@ import 'services/gps_sensor_service.dart';
 import 'services/stats_service.dart';
 import 'services/gtc_service.dart';
 import 'services/test_service.dart';
+import 'services/connectivity_service.dart';
 import 'auth/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -75,6 +76,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // ConnectivityService - initialized early for offline support
+        ChangeNotifierProvider(create: (_) {
+          final service = ConnectivityService();
+          service.initialize();
+          return service;
+        }),
         ChangeNotifierProvider(create: (_) => GlobalDataService()),
         ChangeNotifierProvider(create: (_) => AppConfigService()),
         ChangeNotifierProvider(create: (_) => GTCService()),

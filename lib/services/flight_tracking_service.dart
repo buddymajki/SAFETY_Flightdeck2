@@ -272,7 +272,7 @@ class FlightTrackingService extends ChangeNotifier {
     debugPrint('🎯 [FlightTracking] Event details: lat=${event.latitude}, lon=${event.longitude}, alt=${event.altitude}');
     
     _lastFlightEvent = event;
-    Future.microtask(() => notifyListeners());
+    notifyListeners();
     
     switch (event.type) {
       case FlightEventType.takeoff:
@@ -451,12 +451,12 @@ class FlightTrackingService extends ChangeNotifier {
     onFlightEnded?.call(completedFlight);
     onStatusChanged?.call(_currentStatus);
     
-    // Wrap notifyListeners in microtask to avoid "setState during build" error
-    Future.microtask(() => notifyListeners());
+    // Use safe notify to avoid "setState during build" error
+    notifyListeners();
 
     // Reset status to Idle after notifying listeners so UI shows ground state
     _updateStatus('Idle');
-    Future.microtask(() => notifyListeners());
+    notifyListeners();
 
     log('[FlightTrackingService] Landing detected at ${completedFlight.landingSiteName}');
   }

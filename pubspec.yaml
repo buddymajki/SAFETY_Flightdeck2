@@ -38,6 +38,7 @@ dependencies:
   flutter_background_service: ^5.0.10  # Background service
   flutter_local_notifications: ^18.0.1 # Notifications for background service
   file_picker: ^8.1.2          # File selection for tracklogs (v2 embedding compatible)
+  connectivity_plus: ^6.1.0    # Network connectivity monitoring for offline sync
   
   # UI
   cupertino_icons: ^1.0.6 

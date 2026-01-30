@@ -149,10 +149,18 @@ class GpsSensorService extends ChangeNotifier {
   }
 
   /// Start GPS and sensor tracking
+  /// 
+  /// Parameters:
+  /// - accuracy: GPS accuracy level (default: best)
+  /// - distanceFilter: Minimum distance (meters) before generating a new update (default: 5m)
+  /// - interval: Time interval between position updates (default: 1 second for flight tracking)
+  /// 
+  /// NOTE: The 1-second interval ensures real-time safety monitoring (airspace violations).
+  /// Position uploads to Firestore are separately throttled in LiveTrackingService.
   Future<bool> startTracking({
     LocationAccuracy accuracy = LocationAccuracy.best,
     int distanceFilter = 5, // meters
-    Duration? interval,
+    Duration? interval, // Defaults to 1 second if not specified
   }) async {
     if (!platformSupported) {
       _errorMessage = 'GPS tracking is not supported on this platform';

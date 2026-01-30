@@ -101,6 +101,7 @@ class AlertRecord {
   final DateTime? resolvedAt;
   final String? resolvedBy; // Admin UID who resolved it
   final String? resolutionNotes;
+  final DateTime? updatedAt; // Last update timestamp
 
   AlertRecord({
     this.id,
@@ -117,6 +118,7 @@ class AlertRecord {
     this.resolvedAt,
     this.resolvedBy,
     this.resolutionNotes,
+    this.updatedAt,
   });
 
   /// Convert to Firestore document
@@ -135,6 +137,8 @@ class AlertRecord {
             resolvedAt != null ? Timestamp.fromDate(resolvedAt!) : null,
         'resolvedBy': resolvedBy,
         'resolutionNotes': resolutionNotes,
+        'updatedAt':
+            updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
       };
 
   /// Create from Firestore document
@@ -161,6 +165,11 @@ class AlertRecord {
               : null),
       resolvedBy: data['resolvedBy'],
       resolutionNotes: data['resolutionNotes'],
+      updatedAt: data['updatedAt'] is Timestamp
+          ? (data['updatedAt'] as Timestamp).toDate()
+          : (data['updatedAt'] != null
+              ? DateTime.tryParse(data['updatedAt'].toString())
+              : null),
     );
   }
 
@@ -180,6 +189,7 @@ class AlertRecord {
         'resolvedAt': resolvedAt?.toIso8601String(),
         'resolvedBy': resolvedBy,
         'resolutionNotes': resolutionNotes,
+        'updatedAt': updatedAt?.toIso8601String(),
       };
 
   /// Create from JSON (local storage)
@@ -202,6 +212,9 @@ class AlertRecord {
           : null,
       resolvedBy: json['resolvedBy'],
       resolutionNotes: json['resolutionNotes'],
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'])
+          : null,
     );
   }
 
@@ -221,6 +234,7 @@ class AlertRecord {
     DateTime? resolvedAt,
     String? resolvedBy,
     String? resolutionNotes,
+    DateTime? updatedAt,
   }) {
     return AlertRecord(
       id: id ?? this.id,
@@ -237,6 +251,7 @@ class AlertRecord {
       resolvedAt: resolvedAt ?? this.resolvedAt,
       resolvedBy: resolvedBy ?? this.resolvedBy,
       resolutionNotes: resolutionNotes ?? this.resolutionNotes,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
