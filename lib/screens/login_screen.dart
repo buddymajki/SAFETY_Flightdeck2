@@ -116,13 +116,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                         return;
                       }
+                      // FIX: Capture ScaffoldMessenger before async gap to avoid
+                      // BuildContext usage across async gaps
+                      final messenger = ScaffoldMessenger.of(context);
+                      final authService = context.read<AuthService>();
                       try {
-                        await context.read<AuthService>().sendPasswordResetEmail(email: email);
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        await authService.sendPasswordResetEmail(email: email);
+                        if (!context.mounted) return;
+                        messenger.showSnackBar(
                           const SnackBar(content: Text('Password reset email sent!')),
                         );
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        if (!context.mounted) return;
+                        messenger.showSnackBar(
                           SnackBar(content: Text('Error: $e')),
                         );
                       }

@@ -1,11 +1,11 @@
-/// Service for managing tests - loading metadata, content, and submissions
-///
-/// This service handles all test-related operations:
-/// - Loading test metadata from Firestore (globalTests/)
-/// - Fetching test content from JSON URLs
-/// - Submitting user answers to Firestore (users/{uid}/tests/{testId})
-///
-/// Uses ChangeNotifier for state management to integrate with Provider.
+// Service for managing tests - loading metadata, content, and submissions
+//
+// This service handles all test-related operations:
+// - Loading test metadata from Firestore (globalTests/)
+// - Fetching test content from JSON URLs
+// - Submitting user answers to Firestore (users/{uid}/tests/{testId})
+//
+// Uses ChangeNotifier for state management to integrate with Provider.
 
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -232,7 +232,8 @@ class TestService extends ChangeNotifier {
       if (!doc.exists) return null;
       
       final submission = TestSubmission.fromFirestore(doc);
-      print('[TestService] getSubmission result: questionFeedback keys = ${submission.questionFeedback?.keys.toList()}');
+      // FIX: Use debugPrint for consistent debug logging
+      debugPrint('[TestService] getSubmission result: questionFeedback keys = ${submission.questionFeedback?.keys.toList()}');
       return submission;
     } catch (e) {
       debugPrint('[TestService] Error getting submission: $e');

@@ -1,7 +1,7 @@
-/// Data models for the test system
-///
-/// This file contains all model classes for representing tests,
-/// questions, and user submissions.
+// Data models for the test system
+//
+// This file contains all model classes for representing tests,
+// questions, and user submissions.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 

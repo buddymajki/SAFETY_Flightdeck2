@@ -184,9 +184,10 @@ class AlertService extends ChangeNotifier {
     );
     final currentZoneIds = currentZones.map((z) => z.id).toSet();
     
-    print('🔍 [AlertService] checkFlightSafety:');
-    print('   Current zones at position: ${currentZones.length}');
-    print('   Active violations: ${_activeViolations.length}');
+    // FIX: Use debugPrint for consistent debug logging
+    debugPrint('🔍 [AlertService] checkFlightSafety:');
+    debugPrint('   Current zones at position: ${currentZones.length}');
+    debugPrint('   Active violations: ${_activeViolations.length}');
     
     // Check for NEW airspace entries (zones we weren't in before)
     for (final zone in currentZones) {
@@ -223,7 +224,7 @@ class AlertService extends ChangeNotifier {
             shvNumber: shvNumber,
             licenseType: licenseType,
           );
-          print('🚨 [AlertService] Created flight safety alert: $_currentFlightAlertId');
+          debugPrint('🚨 [AlertService] Created flight safety alert: $_currentFlightAlertId');
         } else {
           // Update existing alert with new entry
           await _updateFlightAlertWithEntry(
@@ -234,7 +235,7 @@ class AlertService extends ChangeNotifier {
           );
         }
         
-        print('⚠️ [AlertService] ENTERED AIRSPACE: ${zone.name} (${zone.type})');
+        debugPrint('⚠️ [AlertService] ENTERED AIRSPACE: ${zone.name} (${zone.type})');
         log('[AlertService] ⚠️ ENTERED RESTRICTED AIRSPACE: ${zone.name} (${zone.type})');
       } else {
         // Still in same airspace - update tracking
@@ -248,12 +249,12 @@ class AlertService extends ChangeNotifier {
         .where((id) => !currentZoneIds.contains(id))
         .toList();
     
-    print('   Exited zones: ${exitedZoneIds.length}');
+    debugPrint('   Exited zones: ${exitedZoneIds.length}');
     
     for (final zoneId in exitedZoneIds) {
       final tracker = _activeViolations.remove(zoneId);
       if (tracker != null) {
-        print('✅ [AlertService] EXITING AIRSPACE: ${tracker.zoneName}');
+        debugPrint('✅ [AlertService] EXITING AIRSPACE: ${tracker.zoneName}');
         
         // Find the violation entry in our list and update with exit data
         final violationIndex = _currentFlightViolations.indexWhere(
@@ -376,9 +377,9 @@ class AlertService extends ChangeNotifier {
       
       // Try Firestore update - use SET with merge to handle nested objects properly
       try {
-        print('🔄 [AlertService] ENTRY - Updating Firestore alert: $_currentFlightAlertId');
-        print('   Violations count: ${_currentFlightViolations.length}');
-        print('   Active violations: ${_activeViolations.length}');
+        debugPrint('🔄 [AlertService] ENTRY - Updating Firestore alert: $_currentFlightAlertId');
+        debugPrint('   Violations count: ${_currentFlightViolations.length}');
+        debugPrint('   Active violations: ${_activeViolations.length}');
         
         // Use set with merge to properly update nested metadata
         await _db.collection('alerts').doc(_currentFlightAlertId).set({
@@ -392,10 +393,10 @@ class AlertService extends ChangeNotifier {
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
         
-        print('✅ [AlertService] ENTRY - Firestore alert updated successfully');
+        debugPrint('✅ [AlertService] ENTRY - Firestore alert updated successfully');
         log('[AlertService] ✓ Updated alert $_currentFlightAlertId in Firestore');
       } catch (e) {
-        print('❌ [AlertService] ENTRY - Firestore update failed: $e');
+        debugPrint('❌ [AlertService] ENTRY - Firestore update failed: $e');
         log('[AlertService] ⚠️ Could not update Firestore: $e');
       }
       
@@ -445,10 +446,10 @@ class AlertService extends ChangeNotifier {
       
       // Try Firestore update - use SET with merge to handle nested objects properly
       try {
-        print('🔄 [AlertService] EXIT update - Firestore alert: $_currentFlightAlertId');
-        print('   Violations count: ${_currentFlightViolations.length}');
-        print('   Active violations: ${_activeViolations.length}');
-        print('   Exited zone: ${tracker.zoneName}');
+        debugPrint('🔄 [AlertService] EXIT update - Firestore alert: $_currentFlightAlertId');
+        debugPrint('   Violations count: ${_currentFlightViolations.length}');
+        debugPrint('   Active violations: ${_activeViolations.length}');
+        debugPrint('   Exited zone: ${tracker.zoneName}');
         
         // Use set with merge to properly update nested metadata
         await _db.collection('alerts').doc(_currentFlightAlertId).set({
@@ -462,10 +463,10 @@ class AlertService extends ChangeNotifier {
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
         
-        print('✅ [AlertService] EXIT - Firestore alert updated successfully');
+        debugPrint('✅ [AlertService] EXIT - Firestore alert updated successfully');
         log('[AlertService] ✓ Updated alert $_currentFlightAlertId with exit data');
       } catch (e) {
-        print('❌ [AlertService] EXIT - Firestore update failed: $e');
+        debugPrint('❌ [AlertService] EXIT - Firestore update failed: $e');
         log('[AlertService] ⚠️ Could not update Firestore: $e');
       }
       
@@ -558,7 +559,7 @@ class AlertService extends ChangeNotifier {
     if (_activeViolations.isEmpty || _currentFlightAlertId == null) return;
     
     final now = DateTime.now();
-    print('🛬 [AlertService] Finalizing ${_activeViolations.length} active violations on landing');
+    debugPrint('🛬 [AlertService] Finalizing ${_activeViolations.length} active violations on landing');
     
     // Mark all active violations as "landed in airspace"
     for (final tracker in _activeViolations.values) {
@@ -576,7 +577,7 @@ class AlertService extends ChangeNotifier {
         _currentFlightViolations[violationIndex]['maxAltitude'] = tracker.maxAltitude;
         _currentFlightViolations[violationIndex]['minAltitude'] = tracker.minAltitude;
         
-        print('🛬 [AlertService] Finalized ${tracker.zoneName} as landed_in_airspace');
+        debugPrint('🛬 [AlertService] Finalized ${tracker.zoneName} as landed_in_airspace');
       }
     }
     
@@ -620,8 +621,8 @@ class AlertService extends ChangeNotifier {
       
       // Try Firestore update - use SET with merge to handle nested objects properly
       try {
-        print('🛬 [AlertService] LANDING - Updating Firestore alert: $_currentFlightAlertId');
-        print('   Final violations count: ${_currentFlightViolations.length}');
+debugPrint('🛏 [AlertService] LANDING - Updating Firestore alert: $_currentFlightAlertId');
+        debugPrint('   Final violations count: ${_currentFlightViolations.length}');
         
         // Use set with merge to properly update nested metadata
         await _db.collection('alerts').doc(_currentFlightAlertId).set({
@@ -635,10 +636,10 @@ class AlertService extends ChangeNotifier {
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
         
-        print('✅ [AlertService] LANDING - Firestore alert updated successfully');
+        debugPrint('✅ [AlertService] LANDING - Firestore alert updated successfully');
         log('[AlertService] ✓ Updated alert $_currentFlightAlertId with landing data');
       } catch (e) {
-        print('❌ [AlertService] LANDING - Firestore update failed: $e');
+        debugPrint('❌ [AlertService] LANDING - Firestore update failed: $e');
         log('[AlertService] ⚠️ Could not update Firestore: $e');
       }
       
@@ -782,7 +783,7 @@ class AlertService extends ChangeNotifier {
     notifyListeners();
 
     log('[AlertService] ⚠️ Alert created: $alertType - $reason');
-    print('⚠️ [AlertService] ALERT: $alertType - $reason');
+    debugPrint('⚠️ [AlertService] ALERT: $alertType - $reason');
 
     // Try to sync immediately (non-blocking)
     _syncAlertsToFirestore();

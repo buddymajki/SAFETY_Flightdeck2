@@ -20,6 +20,7 @@ class FlightService extends ChangeNotifier {
   List<Flight> _flights = [];
   bool _isLoading = false;
   String? _currentUid;
+  // NOTE: _currentSchoolId is stored for potential future use in school-specific queries
   // ignore: unused_field
   String? _currentSchoolId;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _flightsSubscription;
@@ -222,6 +223,7 @@ class FlightService extends ChangeNotifier {
     }
 
     // Optimistic cache update
+    // REFACTORED: Fixed incorrect field assignment - landingAltitude was using altitudeDifference
     updatedFlight = Flight(
       id: updatedFlight.id,
       studentUid: uid,
@@ -233,7 +235,7 @@ class FlightService extends ChangeNotifier {
       takeoffAltitude: updatedFlight.takeoffAltitude,
       landingName: updatedFlight.landingName,
       landingId: updatedFlight.landingId,
-      landingAltitude: updatedFlight.altitudeDifference,
+      landingAltitude: updatedFlight.landingAltitude,
       altitudeDifference: updatedFlight.altitudeDifference,
       flightTimeMinutes: updatedFlight.flightTimeMinutes,
       comment: updatedFlight.comment,

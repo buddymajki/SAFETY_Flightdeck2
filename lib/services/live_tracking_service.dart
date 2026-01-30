@@ -139,7 +139,7 @@ class LiveTrackingService extends ChangeNotifier {
   /// Fetch membership and insurance validity from Firestore
   Future<void> _loadMembershipAndInsuranceStatus() async {
     if (_uid == null) {
-      print(
+      debugPrint(
           '📋 [LiveTracking] UID is null, cannot fetch membership/insurance status');
       _membershipValid = false;
       _insuranceValid = false;
@@ -147,12 +147,12 @@ class LiveTrackingService extends ChangeNotifier {
     }
 
     try {
-      print(
+      debugPrint(
           '📋 [LiveTracking] Fetching membership/insurance status from users/$_uid/');
       final doc = await _firestore.collection('users').doc(_uid).get();
 
       if (!doc.exists) {
-        print('⚠️ [LiveTracking] User document not found in Firestore');
+        debugPrint('⚠️ [LiveTracking] User document not found in Firestore');
         _membershipValid = false;
         _insuranceValid = false;
         return;
@@ -162,12 +162,12 @@ class LiveTrackingService extends ChangeNotifier {
       _membershipValid = data?['membershipValid'] ?? false;
       _insuranceValid = data?['insuranceValid'] ?? false;
 
-      print('✅ [LiveTracking] Membership/Insurance loaded:');
-      print('   Membership: $_membershipValid');
-      print('   Insurance: $_insuranceValid');
+      debugPrint('✅ [LiveTracking] Membership/Insurance loaded:');
+      debugPrint('   Membership: $_membershipValid');
+      debugPrint('   Insurance: $_insuranceValid');
       log('[LiveTrackingService] Membership: $_membershipValid, Insurance: $_insuranceValid');
     } catch (e) {
-      print('❌ [LiveTracking] Error fetching membership/insurance: $e');
+      debugPrint('❌ [LiveTracking] Error fetching membership/insurance: $e');
       log('[LiveTrackingService] Error loading membership/insurance: $e');
       _membershipValid = false;
       _insuranceValid = false;
@@ -182,20 +182,20 @@ class LiveTrackingService extends ChangeNotifier {
     double? longitude,
     double? altitude,
   }) async {
-    print('🛫 [LiveTracking] ========================================');
-    print('🛫 [LiveTracking] startTracking called');
-    print('🛫 [LiveTracking] Enabled: $_isEnabled');
-    print('🛫 [LiveTracking] Currently active: $_isActive');
+    debugPrint('🛫 [LiveTracking] ========================================');
+    debugPrint('🛫 [LiveTracking] startTracking called');
+    debugPrint('🛫 [LiveTracking] Enabled: $_isEnabled');
+    debugPrint('🛫 [LiveTracking] Currently active: $_isActive');
 
     if (!_isEnabled) {
-      print('❌ [LiveTracking] Live tracking is DISABLED in settings');
+      debugPrint('❌ [LiveTracking] Live tracking is DISABLED in settings');
       log('[LiveTrackingService] Live tracking disabled, not starting');
       return;
     }
 
     final user = _auth.currentUser;
     if (user == null) {
-      print('❌ [LiveTracking] No authenticated user');
+      debugPrint('❌ [LiveTracking] No authenticated user');
       log('[LiveTrackingService] ✗ No authenticated user, cannot start tracking');
       return;
     }
@@ -207,11 +207,11 @@ class LiveTrackingService extends ChangeNotifier {
     _lastUploadTime = null;
     _lastUploadedPosition = null;
 
-    print('✅ [LiveTracking] LIVE TRACKING STARTED!');
-    print('✅ [LiveTracking] UID: $_uid');
-    print('✅ [LiveTracking] Name: $_displayName');
-    print('✅ [LiveTracking] Takeoff: $takeoffSiteName');
-    print('🛫 [LiveTracking] ========================================');
+    debugPrint('✅ [LiveTracking] LIVE TRACKING STARTED!');
+    debugPrint('✅ [LiveTracking] UID: $_uid');
+    debugPrint('✅ [LiveTracking] Name: $_displayName');
+    debugPrint('✅ [LiveTracking] Takeoff: $takeoffSiteName');
+    debugPrint('🛫 [LiveTracking] ========================================');
 
     // Initialize alert service and check credentials at takeoff
     await _alertService.initialize();
@@ -242,17 +242,17 @@ class LiveTrackingService extends ChangeNotifier {
 
   /// Stop live tracking (called when flight ends)
   Future<void> stopTracking() async {
-    print('🛬 [LiveTracking] stopTracking called - active: $_isActive');
+    debugPrint('🛬 [LiveTracking] stopTracking called - active: $_isActive');
 
     if (!_isActive) {
-      print('🛬 [LiveTracking] Not active, skipping');
+      debugPrint('🛬 [LiveTracking] Not active, skipping');
       return;
     }
 
     _isActive = false;
 
     // Mark as not in flight (instead of deleting)
-    print('🛬 [LiveTracking] Calling _markAsLanded...');
+    debugPrint('🛬 [LiveTracking] Calling _markAsLanded...');
     await _markAsLanded();
 
     // Finalize any active violations (pilot landed, possibly inside airspace)
@@ -274,30 +274,30 @@ class LiveTrackingService extends ChangeNotifier {
     _lastUploadedPosition = null;
 
     notifyListeners();
-    print('🛬 [LiveTracking] Stopped live tracking - marked as landed');
+    debugPrint('🛬 [LiveTracking] Stopped live tracking - marked as landed');
     log('[LiveTrackingService] Stopped live tracking');
   }
 
   /// Mark pilot as landed (set inFlight = false)
   /// This keeps the document for history/statistics
   Future<void> _markAsLanded() async {
-    print('🛬 [LiveTracking] _markAsLanded called, UID: $_uid');
+    debugPrint('🛬 [LiveTracking] _markAsLanded called, UID: $_uid');
 
     if (_uid == null) {
-      print('🛬 [LiveTracking] UID is null, cannot mark as landed');
+      debugPrint('🛬 [LiveTracking] UID is null, cannot mark as landed');
       return;
     }
 
     try {
-      print('🛬 [LiveTracking] Updating Firestore document...');
+      debugPrint('🛬 [LiveTracking] Updating Firestore document...');
       await _firestore.collection('live_tracking').doc(_uid).update({
         'inFlight': false,
         'landingTime': FieldValue.serverTimestamp(),
       });
-      print('✅ [LiveTracking] ✓ Successfully marked as landed in Firestore');
+      debugPrint('✅ [LiveTracking] ✓ Successfully marked as landed in Firestore');
       log('[LiveTrackingService] Marked as landed');
     } catch (e) {
-      print('❌ [LiveTracking] ✗ Error marking as landed: $e');
+      debugPrint('❌ [LiveTracking] ✗ Error marking as landed: $e');
     }
   }
 
@@ -306,7 +306,7 @@ class LiveTrackingService extends ChangeNotifier {
   /// Also checks for airspace and altitude violations
   Future<void> processPosition(TrackPoint position) async {
     // Debug: Always log when this is called
-    print(
+    debugPrint(
         '🔵 [LiveTracking] processPosition called - enabled: $_isEnabled, active: $_isActive');
 
     if (!_isEnabled || !_isActive) {
@@ -314,7 +314,7 @@ class LiveTrackingService extends ChangeNotifier {
         // Silently skip if not active (expected behavior)
         return;
       }
-      print(
+      debugPrint(
           '🔴 [LiveTracking] Skipping - enabled: $_isEnabled, active: $_isActive');
       return;
     }
@@ -333,23 +333,23 @@ class LiveTrackingService extends ChangeNotifier {
     }
 
     // TEMPORARY: Remove throttling - send EVERY position for debugging
-    print(
+    debugPrint(
         '🟢 [LiveTracking] Sending position NOW (throttling disabled for debugging)');
     await _uploadPosition(position);
   }
 
   /// Upload position to Firestore
   Future<void> _uploadPosition(TrackPoint position) async {
-    print('📍 [LiveTracking] _uploadPosition called');
+    debugPrint('📍 [LiveTracking] _uploadPosition called');
 
     if (_uid == null) {
-      print('❌ [LiveTracking] No UID, cannot upload position');
+      debugPrint('❌ [LiveTracking] No UID, cannot upload position');
       log('[LiveTrackingService] No UID, cannot upload position');
       return;
     }
 
-    print('📍 [LiveTracking] UID: $_uid');
-    print(
+    debugPrint('📍 [LiveTracking] UID: $_uid');
+    debugPrint(
         '📍 [LiveTracking] Position: lat=${position.latitude}, lon=${position.longitude}, alt=${position.altitude}');
 
     try {
@@ -358,11 +358,11 @@ class LiveTrackingService extends ChangeNotifier {
       // Check if currently in restricted airspace
       final isInRestrictedAirspace = _alertService.isInRestrictedAirspace;
       
-      print('🚨 [LiveTracking] airspaceViolation check:');
-      print('   isInRestrictedAirspace: $isInRestrictedAirspace');
-      print('   Active violations count: ${_alertService.activeViolations.length}');
+      debugPrint('🚨 [LiveTracking] airspaceViolation check:');
+      debugPrint('   isInRestrictedAirspace: $isInRestrictedAirspace');
+      debugPrint('   Active violations count: ${_alertService.activeViolations.length}');
       if (_alertService.activeViolations.isNotEmpty) {
-        print('   Active zones: ${_alertService.activeViolations.keys.join(", ")}');
+        debugPrint('   Active zones: ${_alertService.activeViolations.keys.join(", ")}');
       }
 
       final data = {
@@ -389,20 +389,20 @@ class LiveTrackingService extends ChangeNotifier {
         'alertId': _alertService.currentFlightAlertId,
       };
 
-      print('📤 [LiveTracking] Attempting to write to Firestore...');
-      print('📤 [LiveTracking] Collection: live_tracking, Doc ID: $_uid');
-      print('📤 [LiveTracking] Data: $data');
+      debugPrint('📤 [LiveTracking] Attempting to write to Firestore...');
+      debugPrint('📤 [LiveTracking] Collection: live_tracking, Doc ID: $_uid');
+      debugPrint('📤 [LiveTracking] Data: $data');
 
       await docRef.set(data, SetOptions(merge: false));
 
       _lastUploadTime = DateTime.now();
       _lastUploadedPosition = position;
 
-      print('✅ [LiveTracking] SUCCESS! Position uploaded to Firestore');
+      debugPrint('✅ [LiveTracking] SUCCESS! Position uploaded to Firestore');
       log('[LiveTrackingService] ✓ Position uploaded: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}, ${position.altitude.toStringAsFixed(0)}m');
     } catch (e, st) {
-      print('❌ [LiveTracking] ERROR uploading position: $e');
-      print('❌ [LiveTracking] Stack trace: $st');
+      debugPrint('❌ [LiveTracking] ERROR uploading position: $e');
+      debugPrint('❌ [LiveTracking] Stack trace: $st');
       log('[LiveTrackingService] ✗ Error uploading position: $e');
       log('[LiveTrackingService] Stack trace: $st');
     }

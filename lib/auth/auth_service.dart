@@ -11,15 +11,18 @@ import '../services/stats_service.dart';
 import '../services/profile_service.dart';
 
 class AuthService {
-    /// Jelszó-visszaállító email küldése
-    Future<void> sendPasswordResetEmail({required String email}) async {
-      await _auth.sendPasswordResetEmail(email: email);
-    }
+  // FIX: Reorganized class structure - fields should come before methods
+  // following Dart style guide conventions
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
-  
+
   User? get currentUser => _auth.currentUser;
+
+  /// Sends password reset email (Jelszó-visszaállító email küldése)
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
 
   Future<UserCredential> signInWithEmailPassword({
     required String email,

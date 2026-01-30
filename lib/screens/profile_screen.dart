@@ -4,7 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
+// FIX: Removed unnecessary import - foundation.dart is already included via material.dart
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -57,7 +57,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _suppressAutoSave = false;
   
   // GT&C state
-  Map<String, bool> _gtcCheckboxStates = {}; // Track checkbox states per GT&C section
+  // FIX: Use final since we only modify the map contents, not reassign the map itself
+  final Map<String, bool> _gtcCheckboxStates = {}; // Track checkbox states per GT&C section
   String? _lastCheckedSchoolId;
   bool _gtcExpanded = false; // Track if GT&C is expanded (for accepted state)
 
@@ -940,13 +941,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     });
 
-    final gtcService_data = gtcService.currentGTC;
-    final currentGTCVersion = gtcService_data?['gtc_version'] as String?;
+    // FIX: Use camelCase naming convention for local variables
+    final gtcServiceData = gtcService.currentGTC;
+    final currentGTCVersion = gtcServiceData?['gtc_version'] as String?;
     final isAccepted = gtcService.isGTCAccepted;
     final acceptanceRecord = gtcService.currentAcceptance;
 
     // Once accepted, always valid (no version re-check needed)
-    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, hasData=${gtcService_data != null}, isAccepted=$isAccepted, currentVersion=$currentGTCVersion');
+    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, hasData=${gtcServiceData != null}, isAccepted=$isAccepted, currentVersion=$currentGTCVersion');
 
     if (gtcService.isLoading) {
       return Card(
@@ -959,13 +961,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    if (gtcService_data == null) {
+    if (gtcServiceData == null) {
       debugPrint('[ProfileScreen] GT&C data is null, hiding section');
       return const SizedBox.shrink();
     }
 
     // Get the language-specific sections from the fetched JSON
-    final gtcJsonData = gtcService_data['gtc_data'] as Map<String, dynamic>?;
+    final gtcJsonData = gtcServiceData['gtc_data'] as Map<String, dynamic>?;
     if (gtcJsonData == null) {
       debugPrint('[ProfileScreen] GT&C JSON data is null');
       return const SizedBox.shrink();

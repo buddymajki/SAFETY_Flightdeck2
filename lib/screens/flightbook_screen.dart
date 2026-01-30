@@ -1107,7 +1107,8 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
     final flightTypes = globalService.globalFlighttypes ?? [];
 
     // Helper to safely convert place value to int
-    int _getPlaceValue(dynamic value) {
+    // FIX: Renamed from _getPlaceValue - local functions shouldn't start with underscore
+    int getPlaceValue(dynamic value) {
       if (value is int) return value;
       if (value is String) return int.tryParse(value) ?? 999;
       return 999;
@@ -1127,7 +1128,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
 
     // Create dropdown menu items, sorted by place
     final sortedFlightTypes = flightTypes.toList()
-      ..sort((a, b) => _getPlaceValue(a['place']).compareTo(_getPlaceValue(b['place'])));
+      ..sort((a, b) => getPlaceValue(a['place']).compareTo(getPlaceValue(b['place'])));
 
     final items = sortedFlightTypes.map((type) {
       // Use localized labels (labels.en, labels.de, etc.)
@@ -1173,7 +1174,8 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
     final startTypes = globalService.globalStarttypes ?? [];
 
     // Helper to safely convert place value to int
-    int _getPlaceValue(dynamic value) {
+    // FIX: Renamed from _getPlaceValue - local functions shouldn't start with underscore
+    int getPlaceValue(dynamic value) {
       if (value is int) return value;
       if (value is String) return int.tryParse(value) ?? 999;
       return 999;
@@ -1181,7 +1183,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
 
     // Sort by place
     final sortedStartTypes = startTypes.toList()
-      ..sort((a, b) => _getPlaceValue(a['place']).compareTo(_getPlaceValue(b['place'])));
+      ..sort((a, b) => getPlaceValue(a['place']).compareTo(getPlaceValue(b['place'])));
 
     final items = sortedStartTypes.map((type) {
       final labels = type['labels'] as Map<String, dynamic>? ?? {};
@@ -1224,7 +1226,8 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
     final allManeuvers = globalService.globalManeuvers ?? [];
 
     // Helper to safely convert place value to int
-    int _getPlaceValue(dynamic value) {
+    // FIX: Renamed from _getPlaceValue - local functions shouldn't start with underscore
+    int getPlaceValue(dynamic value) {
       if (value is int) return value;
       if (value is String) return int.tryParse(value) ?? 999;
       return 999;
@@ -1232,7 +1235,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
 
     // Sort maneuvers by place
     final sortedManeuvers = allManeuvers.toList()
-      ..sort((a, b) => _getPlaceValue(a['place']).compareTo(_getPlaceValue(b['place'])));
+      ..sort((a, b) => getPlaceValue(a['place']).compareTo(getPlaceValue(b['place'])));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
