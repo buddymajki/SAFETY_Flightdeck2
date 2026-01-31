@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/tracked_flight.dart';
@@ -15,10 +16,16 @@ import 'tracklog_parser_service.dart';
 
 /// Main service for flight tracking functionality
 /// Manages GPS tracking, flight detection, and local caching
+/// 
+/// IMPORTANT: Cache keys are USER-SPECIFIC to prevent data leakage between accounts
 class FlightTrackingService extends ChangeNotifier {
-  static const String _trackedFlightsCacheKey = 'gps_tracked_flights';
-  static const String _currentFlightCacheKey = 'gps_current_flight';
+  // Base cache keys - actual keys include user ID suffix
+  static const String _trackedFlightsCacheKeyBase = 'gps_tracked_flights';
+  static const String _currentFlightCacheKeyBase = 'gps_current_flight';
   static const String _trackingEnabledKey = 'gps_tracking_enabled';
+  
+  // Current user ID for cache isolation
+  String? _currentUserId;
 
   // Services
   final FlightDetectionService _detectionService = FlightDetectionService();
@@ -51,13 +58,23 @@ class FlightTrackingService extends ChangeNotifier {
   FlightEvent? _lastFlightEvent;
 
   // ============================================
-  // AUTO-CLOSE SETTINGS (For Testing/Simulation)
+  // AUTO-CLOSE SETTINGS
   // ============================================
+  // TUNING: This timeout determines how long to wait for GPS updates
+  // before automatically closing a flight.
+  // 
+  // For REAL FLIGHTS: Should be 5-10 minutes to handle:
+  //   - Brief GPS dropouts in valleys
+  //   - Phone entering power saving mode
+  //   - Temporary signal loss
+  //
+  // For TESTING/SIMULATION: Can be shorter (30-60 seconds)
+  // ============================================
+  
   /// Auto-close flight if no position update for this duration
-  /// NOTE: In production/real-world flying, this should be MUCH longer (5-10 minutes)
-  /// This is set to 10 seconds for testing tracklog files that may end abruptly
-  /// static const Duration autoCloseFlightTimeout = Duration(minutes: 5); // or longer
-  static const Duration autoCloseFlightTimeout = Duration(seconds: 10);
+  /// TUNING: 5 minutes for real flights - handles GPS dropouts
+  /// Change to Duration(seconds: 30) for testing with tracklog files
+  static const Duration autoCloseFlightTimeout = Duration(minutes: 5);
 
   // Callbacks for UI updates
   Function(TrackPoint)? onPositionUpdate;
@@ -89,15 +106,68 @@ class FlightTrackingService extends ChangeNotifier {
   bool get isLiveTrackingActive => _liveTrackingService?.isActive ?? false;
 
   FlightTrackingService() {
-    _loadFromCache();
+    // Don't load from cache in constructor - wait for setCurrentUser
+    // _loadFromCache(); // Removed - called after user is set
   }
+  
+  // ============================================
+  // USER-SPECIFIC CACHE KEY MANAGEMENT
+  // ============================================
+  
+  /// Get the user-specific cache key for tracked flights
+  String get _trackedFlightsCacheKey => 
+      _currentUserId != null 
+          ? '${_trackedFlightsCacheKeyBase}_$_currentUserId'
+          : _trackedFlightsCacheKeyBase;
+  
+  /// Get the user-specific cache key for current flight
+  String get _currentFlightCacheKey => 
+      _currentUserId != null 
+          ? '${_currentFlightCacheKeyBase}_$_currentUserId'
+          : _currentFlightCacheKeyBase;
+  
+  /// Helper to safely notify listeners without triggering during build
+  void _safeNotifyListeners() {
+    // Use addPostFrameCallback to ensure we're not in a build phase
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+  }
+  
+  /// Set the current user ID for cache isolation
+  /// Call this when user logs in or changes
+  /// This will reload cached flights for the new user
+  Future<void> setCurrentUser(String? userId) async {
+    if (_currentUserId == userId) return;
+    
+    log('[FlightTrackingService] User changed: $_currentUserId -> $userId');
+    
+    // Clear in-memory data before switching user
+    _trackedFlights.clear();
+    _currentFlight = null;
+    _detectionService.reset();
+    
+    _currentUserId = userId;
+    
+    // Load cached data for the new user
+    if (userId != null) {
+      await _loadFromCache();
+    }
+    
+    // Defer notifyListeners to avoid calling during build phase
+    _safeNotifyListeners();
+  }
+  
+  /// Get current user ID (for debugging)
+  String? get currentUserId => _currentUserId;
 
   /// Initialize the service with site data from GlobalDataService
   Future<void> initialize(List<Map<String, dynamic>> sites, {String lang = 'en'}) async {
     _cachedSites = sites;
     _currentLanguage = lang;
     _isInitialized = true;
-    notifyListeners();
+    // Defer notifyListeners to avoid calling during build phase
+    _safeNotifyListeners();
     log('[FlightTrackingService] Initialized with ${sites.length} sites');
   }
   
@@ -110,14 +180,16 @@ class FlightTrackingService extends ChangeNotifier {
 
   /// Update cached sites (when GlobalDataService updates)
   void updateSites(List<Map<String, dynamic>> sites) {
+    if (_cachedSites == sites) return; // Skip if same reference
     _cachedSites = sites;
-    notifyListeners();
+    // Don't notify - this is called during build, just update the data
   }
 
   /// Set current language for site names
   void setLanguage(String lang) {
+    if (_currentLanguage == lang) return; // Skip if unchanged
     _currentLanguage = lang;
-    notifyListeners();
+    // Don't notify - this is called during build, just update the data
   }
 
   // ============================================
@@ -319,8 +391,10 @@ class FlightTrackingService extends ChangeNotifier {
 
     // Create new flight
     // Store position coordinates (fresh GPS data) instead of event coordinates
+    // Include userId for data isolation between accounts
     _currentFlight = TrackedFlight(
       id: _generateFlightId(),
+      userId: _currentUserId, // Associate flight with current user
       takeoffTime: event.timestamp,
       takeoffSiteId: takeoffSiteId,
       takeoffSiteName: takeoffSiteName,
@@ -693,6 +767,7 @@ class FlightTrackingService extends ChangeNotifier {
   }
 
   /// Generate a test tracklog for simulation
+  /// Default coordinates: Brunni (takeoff) → Engelberg (landing), Switzerland
   List<TrackPoint> generateTestTracklog({
     double? startLat,
     double? startLon,
@@ -702,30 +777,27 @@ class FlightTrackingService extends ChangeNotifier {
     double? endAlt,
     Duration? duration,
   }) {
-    // Use first site as default if available
-    double defaultLat = 47.0;
-    double defaultLon = 10.0;
-    double defaultAlt = 1000;
-
-    if (_cachedSites.isNotEmpty) {
-      final site = _cachedSites.first;
-      final latVal = site['latitude'] ?? site['lat'] ?? 47.0;
-      final lonVal = site['longitude'] ?? site['lon'] ?? 10.0;
-      final altVal = site['altitude'] ?? site['alt'] ?? 1000;
-      
-      defaultLat = (latVal is int) ? latVal.toDouble() : (latVal as double);
-      defaultLon = (lonVal is int) ? lonVal.toDouble() : (lonVal as double);
-      defaultAlt = (altVal is int) ? altVal.toDouble() : (altVal as double);
-    }
+    // Real paragliding location: Brunni → Engelberg, Switzerland
+    // Takeoff: Brunni cable car top station (1100m)
+    // Landing: Engelberg valley (550m)
+    // Distance: ~900m horizontal, 550m vertical drop
+    // Typical sled ride duration: 3-5 minutes
+    const double brunniLat = 46.8810;
+    const double brunniLon = 8.3656;
+    const double brunniAlt = 1100.0;
+    const double engelbergLat = 46.882748;
+    const double engelbergLon = 8.377085;
+    const double engelbergAlt = 550.0;
 
     return TracklogParserService.generateTestTracklog(
-      startLat: startLat ?? defaultLat,
-      startLon: startLon ?? defaultLon,
-      startAlt: startAlt ?? defaultAlt,
-      endLat: endLat ?? defaultLat + 0.05,
-      endLon: endLon ?? defaultLon + 0.05,
-      endAlt: endAlt ?? defaultAlt - 200,
-      flightDuration: duration ?? const Duration(minutes: 30),
+      startLat: startLat ?? brunniLat,
+      startLon: startLon ?? brunniLon,
+      startAlt: startAlt ?? brunniAlt,
+      endLat: endLat ?? engelbergLat,
+      endLon: endLon ?? engelbergLon,
+      endAlt: endAlt ?? engelbergAlt,
+      // 4 minutes for ~900m sled ride (realistic speed ~15-20 km/h)
+      flightDuration: duration ?? const Duration(minutes: 4),
     );
   }
 
@@ -893,7 +965,7 @@ class FlightTrackingService extends ChangeNotifier {
     }
   }
 
-  /// Clear all cached data
+  /// Clear all cached data for current user
   Future<void> clearAllData() async {
     _trackedFlights.clear();
     _currentFlight = null;
@@ -904,8 +976,35 @@ class FlightTrackingService extends ChangeNotifier {
     await prefs.remove(_currentFlightCacheKey);
 
     notifyListeners();
-    log('[FlightTrackingService] All data cleared');
+    log('[FlightTrackingService] All data cleared for user: $_currentUserId');
   }
+  
+  /// Clear all pending tracklogs for current user
+  /// Call this to remove all tracked flights without deleting individual ones
+  Future<void> clearAllPendingTracklogs() async {
+    _trackedFlights.clear();
+    await _saveTrackedFlights();
+    notifyListeners();
+    log('[FlightTrackingService] All pending tracklogs cleared for user: $_currentUserId');
+  }
+  
+  /// Clear orphaned tracklogs from old non-user-specific cache
+  /// Call this ONCE after updating to the new user-specific cache system
+  /// This removes tracklogs that were stored before user isolation was implemented
+  static Future<void> clearOrphanedTracklogs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Remove old format keys (without user ID suffix)
+      await prefs.remove(_trackedFlightsCacheKeyBase);
+      await prefs.remove(_currentFlightCacheKeyBase);
+      log('[FlightTrackingService] Cleared orphaned tracklogs from old cache format');
+    } catch (e) {
+      log('[FlightTrackingService] Error clearing orphaned tracklogs: $e');
+    }
+  }
+  
+  /// Get the count of pending tracklogs (for display)
+  int get pendingTracklogCount => _trackedFlights.length;
 
   /// Reset service state
   void resetService() {

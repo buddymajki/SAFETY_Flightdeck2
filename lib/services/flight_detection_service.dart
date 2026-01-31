@@ -1,43 +1,130 @@
 // File: lib/services/flight_detection_service.dart
+//
+// FLIGHT DETECTION ALGORITHM
+// ==========================
+// This service implements variometer-style takeoff and landing detection.
+// It uses GPS data (position, altitude, speed) and optionally IMU sensors
+// (accelerometer, gyroscope) for enhanced accuracy.
+//
+// TUNING PARAMETERS are documented below and can be adjusted based on:
+// - Aircraft type (paraglider, hang glider, sailplane)
+// - Local conditions (thermic vs coastal)
+// - User preferences
+//
+// The algorithm follows these principles from variometer manufacturers:
+// 1. Takeoff requires SUSTAINED conditions (not just instantaneous)
+// 2. Both altitude change AND movement must be detected
+// 3. Landing requires PROLONGED stationary conditions
+// 4. IMU data helps filter GPS noise and false positives
 
 import 'dart:collection';
+import 'dart:developer' as developer;
 import 'dart:math';
 
 import '../models/tracked_flight.dart';
 
 /// Service for detecting takeoff and landing based on sensor and GPS data
-/// Implements algorithms inspired by OpenVario and XCTrack
+/// Implements algorithms inspired by variometer manufacturers (Skytraxx, XCTracer, Flytec)
 class FlightDetectionService {
   // ============================================
-  // DETECTION THRESHOLDS (Configurable)
+  // TAKEOFF DETECTION THRESHOLDS
+  // ============================================
+  // TUNING: Adjust these for different aircraft types
+  // Paragliders: use lower speeds, moderate altitude gain
+  // Hang gliders: slightly higher speeds
+  // Sailplanes: much higher speeds, winch/tow considerations
   // ============================================
 
-  /// Minimum vertical speed for takeoff detection (m/s)
+  /// Minimum vertical speed to START considering takeoff (m/s)
+  /// TUNING: 0.3 m/s = 1.08 km/h vertical - catches slow thermal climbs
+  /// Typical paraglider sink rate is -1.0 to -1.5 m/s, climb +1 to +4 m/s
+  /// Minimum vertical speed (absolute) to START considering takeoff (m/s)
+  /// TUNING: 0.5 m/s = detecting climb OR descent after leaving ground
+  /// Paragliders: sink rate -1.0 to -1.5 m/s, climb +1 to +4 m/s
+  /// This catches both thermal climbs AND sled rides (descending flights)
   static const double takeoffVerticalSpeedThreshold = 0.5;
 
   /// Minimum horizontal speed for takeoff detection (m/s)
-  static const double takeoffHorizontalSpeedThreshold = 2.0;
+  /// TUNING: 5.0 m/s = 18 km/h - filters out walking (5 km/h) and slow jogging
+  /// Paraglider launch run: 10-20 km/h, in-flight: 25-50 km/h
+  /// With headwind, ground speed could be lower, so this is conservative
+  /// NOTE: This is the PRIMARY indicator - paragliders always move forward
+  static const double takeoffHorizontalSpeedThreshold = 5.0;
+
+  /// Minimum altitude CHANGE (up OR down) required to confirm takeoff (m)
+  /// TUNING: 5m allows for GPS noise (±10-15m) while detecting real flight
+  /// Slope launches: pilot often descends 20-50m before finding lift
+  /// This is ABSOLUTE change - works for climbs AND sled rides
+  static const double minAltitudeChangeForTakeoff = 5.0;
+
+  /// Minimum duration of takeoff conditions before confirming (seconds)
+  /// TUNING: 5 seconds filters out brief GPS glitches and car speed bumps
+  /// Real takeoff: sustained flight for 10+ seconds typically
+  static const int takeoffConfirmationSeconds = 5;
+
+  /// Maximum ground speed that's considered "on ground" for takeoff reference (m/s)
+  /// TUNING: 1.5 m/s = 5.4 km/h - about fast walking speed
+  /// Used to establish ground altitude reference before takeoff
+  static const double groundSpeedThreshold = 1.5;
+
+  // ============================================
+  // LANDING DETECTION THRESHOLDS
+  // ============================================
+  // TUNING: Landing detection is conservative to avoid false landings
+  // during low-altitude scratching or slow glides
+  // ============================================
 
   /// Maximum horizontal speed for landing detection (m/s)
-  static const double landingSpeedThreshold = 1.0;
+  /// TUNING: 2.0 m/s = 7.2 km/h - slower than walking pace
+  /// Paragliders on final approach: 25-35 km/h, flare to ~10-15 km/h
+  /// Post-landing: 0-5 km/h (gathering wing)
+  static const double landingSpeedThreshold = 2.0;
 
-  /// Maximum vertical speed for landing (descent) detection (m/s)
-  static const double landingDescentThreshold = 2.0;
+  /// Maximum absolute vertical speed for landing detection (m/s)
+  /// TUNING: 0.5 m/s filters out active flying (sink rate typically 1-2 m/s)
+  /// On ground: ±0.3 m/s from GPS noise
+  static const double landingVerticalThreshold = 0.5;
 
-  /// Minimum time at low speed to confirm landing (seconds)
-  static const int landingConfirmationSeconds = 5;
+  /// Minimum time at low speed/vertical to confirm landing (seconds)
+  /// TUNING: 10 seconds prevents false landings during slow scratching
+  /// Real landing: pilot is on ground gathering wing for 30+ seconds
+  static const int landingConfirmationSeconds = 10;
 
-  /// Window size for moving average calculations
+  // ============================================
+  // MOVING AVERAGE & FILTERING
+  // ============================================
+
+  /// Window size for moving average calculations (number of GPS points)
+  /// TUNING: 5 points at 1Hz = 5 second window for smoothing
+  /// Larger windows = more stable but slower response
   static const int movingAverageWindowSize = 5;
 
-  /// Minimum altitude gain to confirm takeoff (m)
-  static const double minAltitudeGainForTakeoff = 2.0;
+  /// Minimum track points needed before detection can occur
+  /// TUNING: Need enough history to calculate reliable averages
+  static const int minTrackPointsForDetection = 3;
 
-  /// Accelerometer threshold for movement detection (m/s²)
-  static const double accelerometerMovementThreshold = 1.5;
+  // ============================================
+  // IMU (ACCELEROMETER/GYROSCOPE) THRESHOLDS
+  // ============================================
+  // TUNING: IMU data helps distinguish flight from ground movement
+  // In flight: smooth accelerations, gradual attitude changes
+  // On ground: vibrations, sudden stops, irregular movements
+  // ============================================
 
-  /// Gyroscope threshold for rotation detection (rad/s)
-  static const double gyroscopeRotationThreshold = 0.5;
+  /// Accelerometer threshold for detecting "smooth flight" conditions (m/s²)
+  /// TUNING: Gravity is ~9.8 m/s². In smooth flight, total accel ≈ 9.8 ± 2
+  /// Ground handling: jerky movements, spikes > 15 m/s²
+  /// This measures deviation from gravity: sqrt(ax²+ay²+az²) - 9.8
+  static const double accelerometerFlightThreshold = 3.0;
+
+  /// Gyroscope threshold for flight rotation detection (rad/s)
+  /// TUNING: In flight, turns are smooth (< 0.5 rad/s = 30°/s)
+  /// Ground handling: rapid movements, spikes > 1.0 rad/s
+  static const double gyroscopeFlightThreshold = 1.0;
+
+  /// Accelerometer threshold indicating ground vibrations/handling (m/s²)
+  /// TUNING: Walking/ground: high-frequency vibrations, total accel variance high
+  static const double accelerometerGroundThreshold = 2.0;
 
   // ============================================
   // INTERNAL STATE
@@ -45,19 +132,23 @@ class FlightDetectionService {
 
   final Queue<TrackPoint> _recentTrackPoints = Queue();
   final Queue<SensorData> _recentSensorData = Queue();
-  DateTime? _potentialTakeoffTime;
   double? _groundAltitude;
   DateTime? _lowSpeedStartTime;
   bool _isInFlight = false;
+  
+  // Takeoff confirmation state
+  DateTime? _takeoffConditionsStartTime;
+  double? _takeoffConditionsStartAltitude;
 
   /// Reset the detection state
   void reset() {
     _recentTrackPoints.clear();
     _recentSensorData.clear();
-    _potentialTakeoffTime = null;
     _groundAltitude = null;
     _lowSpeedStartTime = null;
     _isInFlight = false;
+    _takeoffConditionsStartTime = null;
+    _takeoffConditionsStartAltitude = null;
   }
 
   /// Get current flight status
@@ -70,6 +161,11 @@ class FlightDetectionService {
     // Keep only recent points for analysis
     while (_recentTrackPoints.length > movingAverageWindowSize * 3) {
       _recentTrackPoints.removeFirst();
+    }
+
+    // Need minimum points before detection
+    if (_recentTrackPoints.length < minTrackPointsForDetection) {
+      return null;
     }
 
     if (!_isInFlight) {
@@ -89,7 +185,17 @@ class FlightDetectionService {
     }
   }
 
-  /// Check for takeoff conditions
+  /// Check for takeoff conditions using variometer-style detection
+  /// 
+  /// Takeoff is confirmed when ALL of these conditions are met for [takeoffConfirmationSeconds]:
+  /// 1. Horizontal speed > [takeoffHorizontalSpeedThreshold] (18 km/h)
+  /// 2. Either: |vertical speed| > threshold OR |altitude change| > threshold
+  ///    This handles BOTH climbing (thermal) AND descending (sled ride) flights
+  /// 3. IMU data (if available) indicates smooth flight, not ground handling
+  /// 
+  /// The key insight: paragliders ALWAYS move forward at 20-50 km/h airspeed.
+  /// Even with strong headwind, ground speed should exceed walking speed.
+  /// Combined with altitude change (up OR down), this reliably detects takeoff.
   FlightEvent? _checkForTakeoff(TrackPoint currentPoint) {
     if (_recentTrackPoints.length < movingAverageWindowSize) {
       return null;
@@ -97,42 +203,114 @@ class FlightDetectionService {
 
     // Calculate current speeds
     final horizontalSpeed = _calculateHorizontalSpeed();
+    final verticalSpeed = _calculateVerticalSpeed();
+    
+    // DEBUG: Log detection values
+    developer.log('[FlightDetection] h_speed=${horizontalSpeed.toStringAsFixed(1)}m/s (need>$takeoffHorizontalSpeedThreshold), '
+          'v_speed=${verticalSpeed.toStringAsFixed(2)}m/s, alt=${currentPoint.altitude.toStringAsFixed(0)}m, '
+          'ground=${_groundAltitude?.toStringAsFixed(0) ?? "?"}m', name: 'FlightDetection');
 
-    // Check if horizontal speed exceeds takeoff threshold (only check horizontal speed)
-    final speedIndicatesTakeoff = horizontalSpeed >= takeoffHorizontalSpeedThreshold;
-
-    // Determine ground altitude if not set
-    _groundAltitude ??= currentPoint.altitude;
-
-    // Takeoff detected when horizontal speed threshold is met
-    if (speedIndicatesTakeoff) {
-      _isInFlight = true;
-      _potentialTakeoffTime = null;
-
-      // Find the actual takeoff point
-      final takeoffPoint = _findTakeoffPoint() ?? currentPoint;
-      final verticalSpeed = _calculateVerticalSpeed();
-
-      return FlightEvent(
-        type: FlightEventType.takeoff,
-        timestamp: takeoffPoint.timestamp,
-        latitude: takeoffPoint.latitude,
-        longitude: takeoffPoint.longitude,
-        altitude: takeoffPoint.altitude,
-        speed: horizontalSpeed,
-        verticalSpeed: verticalSpeed,
-      );
+    // Update ground altitude reference when stationary
+    if (horizontalSpeed < groundSpeedThreshold && verticalSpeed.abs() < 0.5) {
+      _groundAltitude = currentPoint.altitude;
     }
 
-    // Mark potential takeoff time for later reference
-    if (speedIndicatesTakeoff && _potentialTakeoffTime == null) {
-      _potentialTakeoffTime = currentPoint.timestamp;
+    // Use initial altitude as ground reference if not set
+    _groundAltitude ??= currentPoint.altitude;
+
+    // Calculate altitude CHANGE from ground (absolute - works for climb OR descent)
+    final altitudeChange = (currentPoint.altitude - _groundAltitude!).abs();
+
+    // Check IMU conditions (if sensor data available)
+    final imuIndicatesFlight = _checkImuForFlight();
+    final imuIndicatesGround = _checkImuForGround();
+
+    // PRIMARY TAKEOFF CONDITION:
+    // 1. Horizontal speed must exceed threshold (paragliders always move forward)
+    // 2. PLUS either significant vertical movement OR altitude change
+    //    - Vertical speed uses ABSOLUTE value (climb OR descent)
+    //    - Altitude change uses ABSOLUTE value (gain OR loss from ground)
+    final speedIndicatesTakeoff = horizontalSpeed >= takeoffHorizontalSpeedThreshold;
+    final verticalIndicatesTakeoff = verticalSpeed.abs() > takeoffVerticalSpeedThreshold || 
+                                     altitudeChange >= minAltitudeChangeForTakeoff;
+    
+    // DEBUG: Log condition status
+    if (speedIndicatesTakeoff || verticalIndicatesTakeoff) {
+      developer.log('[FlightDetection] CONDITIONS: speed=${speedIndicatesTakeoff ? "✓" : "✗"}, '
+            'vertical=${verticalIndicatesTakeoff ? "✓" : "✗"} (altChange=${altitudeChange.toStringAsFixed(1)}m), '
+            'imuFlight=${imuIndicatesFlight ? "✓" : "-"}, imuGround=${imuIndicatesGround ? "✗" : "-"}', name: 'FlightDetection');
+    }
+
+    // If IMU strongly indicates ground (walking, driving), reject takeoff
+    if (imuIndicatesGround && !imuIndicatesFlight) {
+      _takeoffConditionsStartTime = null;
+      _takeoffConditionsStartAltitude = null;
+      return null;
+    }
+
+    // Check if basic takeoff conditions are met
+    final takeoffConditionsMet = speedIndicatesTakeoff && verticalIndicatesTakeoff;
+
+    if (takeoffConditionsMet) {
+      // Start tracking takeoff conditions
+      if (_takeoffConditionsStartTime == null) {
+        _takeoffConditionsStartTime = currentPoint.timestamp;
+        _takeoffConditionsStartAltitude = currentPoint.altitude;
+        developer.log('[FlightDetection] 🛫 TAKEOFF CONDITIONS STARTED at alt=${currentPoint.altitude.toStringAsFixed(0)}m', name: 'FlightDetection');
+      }
+
+      // Check if conditions sustained for required duration
+      final conditionsDuration = currentPoint.timestamp
+          .difference(_takeoffConditionsStartTime!)
+          .inSeconds;
+
+      // Verify altitude CHANGE during the confirmation period (absolute - up or down)
+      // This handles both climbing (thermal) and descending (sled ride) flights
+      final altitudeChangeDuringConfirmation = 
+          (currentPoint.altitude - (_takeoffConditionsStartAltitude ?? currentPoint.altitude)).abs();
+
+      developer.log('[FlightDetection] ⏱️ Confirmation: ${conditionsDuration}s/${takeoffConfirmationSeconds}s needed, '
+            'altChange=${altitudeChangeDuringConfirmation.toStringAsFixed(1)}m', name: 'FlightDetection');
+
+      // CONFIRM TAKEOFF: conditions held + meaningful altitude change (up OR down)
+      // Use a smaller threshold here since we already had initial conditions met
+      if (conditionsDuration >= takeoffConfirmationSeconds && 
+          altitudeChangeDuringConfirmation >= minAltitudeChangeForTakeoff / 2) {
+        _isInFlight = true;
+        _takeoffConditionsStartTime = null;
+        _takeoffConditionsStartAltitude = null;
+        
+        developer.log('[FlightDetection] ✅ TAKEOFF CONFIRMED!', name: 'FlightDetection');
+
+        // Find the actual takeoff point (lowest altitude in recent history for climb,
+        // or highest for descent - the point where flight began)
+        final takeoffPoint = _findTakeoffPoint() ?? currentPoint;
+
+        return FlightEvent(
+          type: FlightEventType.takeoff,
+          timestamp: takeoffPoint.timestamp,
+          latitude: takeoffPoint.latitude,
+          longitude: takeoffPoint.longitude,
+          altitude: takeoffPoint.altitude,
+          speed: horizontalSpeed,
+          verticalSpeed: verticalSpeed,
+        );
+      }
+    } else {
+      // Reset confirmation timer if conditions not met
+      _takeoffConditionsStartTime = null;
+      _takeoffConditionsStartAltitude = null;
     }
 
     return null;
   }
 
-  /// Check for landing conditions
+  /// Check for landing conditions using variometer-style detection
+  /// 
+  /// Landing is confirmed when ALL of these conditions are met for [landingConfirmationSeconds]:
+  /// 1. Horizontal speed < [landingSpeedThreshold]
+  /// 2. Vertical speed magnitude < [landingVerticalThreshold]
+  /// 3. IMU data (if available) indicates ground conditions
   FlightEvent? _checkForLanding(TrackPoint currentPoint) {
     if (_recentTrackPoints.length < movingAverageWindowSize) {
       return null;
@@ -141,11 +319,13 @@ class FlightDetectionService {
     final verticalSpeed = _calculateVerticalSpeed();
     final horizontalSpeed = _calculateHorizontalSpeed();
 
-    // Landing detection: low horizontal speed AND moderate descent or very low vertical speed
-    // More lenient: allow for slow gliding descent with some forward speed
+    // Check IMU for additional confidence
+    final imuIndicatesGround = _checkImuForGround();
+
+    // Landing conditions: both speeds very low
     final speedsIndicateLanding = 
         horizontalSpeed < landingSpeedThreshold && 
-        verticalSpeed.abs() < landingDescentThreshold;
+        verticalSpeed.abs() < landingVerticalThreshold;
 
     if (speedsIndicateLanding) {
       // Start or continue landing confirmation timer
@@ -155,14 +335,20 @@ class FlightDetectionService {
           currentPoint.timestamp.difference(_lowSpeedStartTime!).inSeconds;
 
       // Confirm landing after sustained low speed
-      if (lowSpeedDuration >= landingConfirmationSeconds) {
+      // Shorter confirmation if IMU confirms ground conditions
+      final requiredDuration = imuIndicatesGround 
+          ? landingConfirmationSeconds ~/ 2 
+          : landingConfirmationSeconds;
+
+      if (lowSpeedDuration >= requiredDuration) {
         _isInFlight = false;
         _groundAltitude = currentPoint.altitude;
+        final landingTime = _lowSpeedStartTime ?? currentPoint.timestamp;
         _lowSpeedStartTime = null;
 
         return FlightEvent(
           type: FlightEventType.landing,
-          timestamp: _lowSpeedStartTime ?? currentPoint.timestamp,
+          timestamp: landingTime,
           latitude: currentPoint.latitude,
           longitude: currentPoint.longitude,
           altitude: currentPoint.altitude,
@@ -176,6 +362,68 @@ class FlightDetectionService {
     }
 
     return null;
+  }
+
+  /// Check if IMU data indicates smooth flight conditions
+  bool _checkImuForFlight() {
+    if (_recentSensorData.isEmpty) return true; // No data = don't block
+
+    // Get recent sensor readings
+    final recentData = _recentSensorData.toList();
+    if (recentData.length < 3) return true;
+
+    // Calculate average acceleration deviation from gravity (9.8 m/s²)
+    double totalAccelDeviation = 0;
+    double totalRotation = 0;
+    int count = 0;
+
+    for (final data in recentData.skip(max(0, recentData.length - 5))) {
+      if (data.accelerometerX != null) {
+        final accelMag = sqrt(data.accelerationMagnitude);
+        final deviation = (accelMag - 9.8).abs();
+        totalAccelDeviation += deviation;
+        count++;
+      }
+      if (data.gyroscopeX != null) {
+        totalRotation += sqrt(data.rotationMagnitude);
+      }
+    }
+
+    if (count == 0) return true;
+
+    final avgAccelDeviation = totalAccelDeviation / count;
+    final avgRotation = totalRotation / count;
+
+    // Flight conditions: smooth accelerations, gentle rotations
+    return avgAccelDeviation < accelerometerFlightThreshold && 
+           avgRotation < gyroscopeFlightThreshold;
+  }
+
+  /// Check if IMU data indicates ground/walking/driving conditions
+  bool _checkImuForGround() {
+    if (_recentSensorData.isEmpty) return false; // No data = can't confirm ground
+
+    // Get recent sensor readings
+    final recentData = _recentSensorData.toList();
+    if (recentData.length < 3) return false;
+
+    // Calculate acceleration variance (high variance = ground movement)
+    final accels = <double>[];
+    for (final data in recentData.skip(max(0, recentData.length - 10))) {
+      if (data.accelerometerX != null) {
+        accels.add(sqrt(data.accelerationMagnitude));
+      }
+    }
+
+    if (accels.length < 3) return false;
+
+    // Calculate variance
+    final mean = accels.reduce((a, b) => a + b) / accels.length;
+    final variance = accels.map((a) => pow(a - mean, 2)).reduce((a, b) => a + b) / accels.length;
+
+    // High variance indicates jerky ground movement (walking, driving on rough road)
+    // Low variance indicates smooth flight or stationary
+    return variance > accelerometerGroundThreshold;
   }
 
   /// Calculate vertical speed from recent track points (m/s)
@@ -267,26 +515,67 @@ class FlightDetectionService {
 
   double _toRadians(double degrees) => degrees * pi / 180;
 
-  /// Check sensor data for takeoff indicators
-  /// Find the approximate takeoff point by analyzing altitude history
+  /// Find the approximate takeoff point by analyzing altitude and speed history
+  /// 
+  /// For ascending flights (thermals): finds the lowest point before climb
+  /// For descending flights (sled rides): finds the point where speed first exceeded threshold
+  /// 
+  /// The takeoff point is where the pilot left the ground, which is typically:
+  /// - The last point with low horizontal speed before sustained fast movement
+  /// - OR the point with the most extreme altitude before the change
   TrackPoint? _findTakeoffPoint() {
     if (_recentTrackPoints.length < movingAverageWindowSize) {
       return _recentTrackPoints.firstOrNull;
     }
 
     final points = _recentTrackPoints.toList();
-    double minAltitude = double.infinity;
-    int minIndex = 0;
-
-    // Find the lowest point in recent history (likely ground level)
-    for (int i = 0; i < points.length - movingAverageWindowSize; i++) {
-      if (points[i].altitude < minAltitude) {
-        minAltitude = points[i].altitude;
-        minIndex = i;
+    
+    // Find the first point where horizontal speed consistently exceeded threshold
+    // This is likely where the pilot became airborne
+    int takeoffIndex = 0;
+    int consecutiveFastPoints = 0;
+    
+    for (int i = 1; i < points.length; i++) {
+      final timeDiff = points[i].timestamp.difference(points[i-1].timestamp).inMilliseconds / 1000.0;
+      if (timeDiff <= 0) continue;
+      
+      final distance = _haversineDistance(
+        points[i-1].latitude, points[i-1].longitude,
+        points[i].latitude, points[i].longitude,
+      );
+      final speed = distance / timeDiff;
+      
+      if (speed >= takeoffHorizontalSpeedThreshold) {
+        consecutiveFastPoints++;
+        if (consecutiveFastPoints >= 3 && takeoffIndex == 0) {
+          // Found sustained fast movement - takeoff was just before this
+          takeoffIndex = max(0, i - 3);
+        }
+      } else {
+        consecutiveFastPoints = 0;
       }
     }
+    
+    // If we found a takeoff point based on speed, use it
+    if (takeoffIndex > 0) {
+      return points[takeoffIndex];
+    }
+    
+    // Fallback: find point closest to ground reference altitude
+    if (_groundAltitude != null) {
+      double minAltDiff = double.infinity;
+      int bestIndex = 0;
+      for (int i = 0; i < points.length ~/ 2; i++) {
+        final diff = (points[i].altitude - _groundAltitude!).abs();
+        if (diff < minAltDiff) {
+          minAltDiff = diff;
+          bestIndex = i;
+        }
+      }
+      return points[bestIndex];
+    }
 
-    return points[minIndex];
+    return points.first;
   }
 
   /// Analyze historical tracklog for flight detection (for testing)

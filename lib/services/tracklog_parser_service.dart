@@ -407,6 +407,13 @@ class TracklogParserService {
   static double _toRadians(double degrees) => degrees * pi / 180;
 
   /// Generate sample tracklog for testing
+  /// Generate a realistic paraglider tracklog for testing
+  /// 
+  /// Physics-based simulation:
+  /// - Sink rate: -1.0 to -1.3 m/s (typical paraglider)
+  /// - Horizontal speed: 20-38 km/h (5.5-10.5 m/s)
+  /// - Flight time calculated from altitude drop and sink rate
+  /// - Creates a scenic route (figure-8 pattern) to achieve realistic speeds
   static List<TrackPoint> generateTestTracklog({
     required double startLat,
     required double startLon,
@@ -418,57 +425,99 @@ class TracklogParserService {
     int pointsPerMinute = 6, // 10-second intervals
   }) {
     final points = <TrackPoint>[];
-    final startTime = DateTime.now().subtract(flightDuration);
-    final totalPoints = (flightDuration.inMinutes * pointsPerMinute).toInt();
-
-    // Simulate a realistic flight path
-    // 1. Ground phase (first 5%)
-    // 2. Takeoff climb (5-15%)
-    // 3. Cruise/thermal (15-85%)
-    // 4. Descent (85-95%)
-    // 5. Landing approach (95-100%)
-
+    
+    // Physics constants for paraglider
+    const double sinkRate = 1.2; // m/s (positive value, will be applied as descent)
+    const double horizontalSpeed = 8.0; // m/s (~29 km/h - typical cruise speed)
+    
+    // Calculate realistic flight duration based on altitude drop
+    final altitudeDrop = startAlt - endAlt;
+    final calculatedFlightSeconds = (altitudeDrop / sinkRate).abs();
+    
+    // Use the longer of: provided duration or physics-calculated duration
+    // Add 20 seconds for ground phases (before takeoff + after landing)
+    final actualFlightSeconds = max(
+      flightDuration.inSeconds.toDouble(),
+      calculatedFlightSeconds + 20,
+    );
+    
+    // Calculate total horizontal distance needed for realistic speed
+    final totalHorizontalDistance = horizontalSpeed * (actualFlightSeconds - 20);
+    
+    // Direct distance between start and end
+    final directDistance = _haversineDistance(startLat, startLon, endLat, endLon);
+    
+    // If direct distance is too short, create a scenic route (figure-8 or loops)
+    // This makes the pilot fly around before landing at the target
+    final loopRadius = (totalHorizontalDistance - directDistance) / (2 * 3.14159);
+    final needsScenic = loopRadius > 50; // Need scenic route if > 50m radius needed
+    
+    final startTime = DateTime.now().subtract(Duration(seconds: actualFlightSeconds.toInt()));
+    final totalPoints = max(24, (actualFlightSeconds / 10).toInt()); // At least 24 points, ~10s intervals
+    
+    // Calculate center point for scenic loops (offset from direct line)
+    final midLat = (startLat + endLat) / 2;
+    final midLon = (startLon + endLon) / 2;
+    
     for (int i = 0; i < totalPoints; i++) {
-      final progress = i / totalPoints;
+      final progress = i / (totalPoints - 1);
       final timestamp = startTime.add(Duration(
-        seconds: (flightDuration.inSeconds * progress).toInt(),
+        seconds: (actualFlightSeconds * progress).toInt(),
       ));
 
       double lat, lon, alt;
 
       if (progress < 0.05) {
-        // Ground phase - minimal movement
-        lat = startLat + (endLat - startLat) * 0.01 * (progress / 0.05);
-        lon = startLon + (endLon - startLon) * 0.01 * (progress / 0.05);
-        alt = startAlt + 2 * (progress / 0.05); // Very slight altitude change
-      } else if (progress < 0.15) {
-        // Takeoff climb
-        final phase = (progress - 0.05) / 0.10;
-        lat = startLat + (endLat - startLat) * 0.05 * phase;
-        lon = startLon + (endLon - startLon) * 0.05 * phase;
-        alt = startAlt + (endAlt - startAlt) * 0.3 * phase + 50; // Climb
+        // Ground phase before takeoff - stationary
+        lat = startLat;
+        lon = startLon;
+        alt = startAlt;
+      } else if (progress < 0.10) {
+        // Takeoff run - accelerating
+        final phase = (progress - 0.05) / 0.05;
+        lat = startLat + (endLat - startLat) * 0.02 * phase;
+        lon = startLon + (endLon - startLon) * 0.02 * phase;
+        alt = startAlt - altitudeDrop * 0.02 * phase; // Slight descent during launch
       } else if (progress < 0.85) {
-        // Cruise/thermal phase
-        final phase = (progress - 0.15) / 0.70;
-        lat = startLat + (endLat - startLat) * (0.05 + 0.85 * phase);
-        lon = startLon + (endLon - startLon) * (0.05 + 0.85 * phase);
-        // Add some altitude variation (thermals)
-        alt = startAlt +
-            (endAlt - startAlt) * 0.3 +
-            200 +
-            50 * _simulateThermal(phase);
+        // Main flight phase
+        final flightPhase = (progress - 0.10) / 0.75;
+        
+        // Linear descent at sink rate
+        alt = startAlt - altitudeDrop * (0.02 + 0.88 * flightPhase);
+        
+        if (needsScenic && loopRadius > 100) {
+          // Create figure-8 pattern for longer flights
+          // This adds distance while keeping start/end points fixed
+          final loopAngle = flightPhase * 4 * 3.14159; // Two complete loops
+          final loopOffsetLat = (loopRadius / 111000) * (loopAngle).sin() * (1 - flightPhase);
+          final loopOffsetLon = (loopRadius / 85000) * (loopAngle * 0.5).sin() * (1 - flightPhase);
+          
+          // Progress along direct line + scenic offset
+          lat = startLat + (endLat - startLat) * (0.02 + 0.88 * flightPhase) + loopOffsetLat;
+          lon = startLon + (endLon - startLon) * (0.02 + 0.88 * flightPhase) + loopOffsetLon;
+        } else {
+          // Direct flight for short distances
+          lat = startLat + (endLat - startLat) * (0.02 + 0.88 * flightPhase);
+          lon = startLon + (endLon - startLon) * (0.02 + 0.88 * flightPhase);
+        }
+      } else if (progress < 0.92) {
+        // Final approach - converging to landing
+        final approachPhase = (progress - 0.85) / 0.07;
+        lat = startLat + (endLat - startLat) * (0.90 + 0.08 * approachPhase);
+        lon = startLon + (endLon - startLon) * (0.90 + 0.08 * approachPhase);
+        alt = endAlt + (startAlt - endAlt) * 0.10 * (1 - approachPhase) + 5;
       } else if (progress < 0.95) {
-        // Descent
-        final phase = (progress - 0.85) / 0.10;
-        lat = startLat + (endLat - startLat) * (0.90 + 0.08 * phase);
-        lon = startLon + (endLon - startLon) * (0.90 + 0.08 * phase);
-        alt = endAlt + 150 * (1 - phase); // Descend
+        // Flare and touchdown
+        final flarePhase = (progress - 0.92) / 0.03;
+        lat = startLat + (endLat - startLat) * (0.98 + 0.02 * flarePhase);
+        lon = startLon + (endLon - startLon) * (0.98 + 0.02 * flarePhase);
+        alt = endAlt + 5 * (1 - flarePhase);
       } else {
-        // Landing approach
-        final phase = (progress - 0.95) / 0.05;
-        lat = startLat + (endLat - startLat) * (0.98 + 0.02 * phase);
-        lon = startLon + (endLon - startLon) * (0.98 + 0.02 * phase);
-        alt = endAlt + 20 * (1 - phase); // Final approach
+        // STATIONARY ON GROUND - essential for landing detection
+        // ~5% of flight = sufficient for 10-second landing confirmation
+        lat = endLat;
+        lon = endLon;
+        alt = endAlt;
       }
 
       points.add(TrackPoint(

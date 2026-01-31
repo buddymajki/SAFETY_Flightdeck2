@@ -937,12 +937,31 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(
-            _t('Recent_Flights', lang),
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _t('Recent_Flights', lang),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              // Show "Clear All" button when there are flights
+              if (flights.isNotEmpty)
+                TextButton.icon(
+                  onPressed: () => _confirmClearAllTracklogs(context, service, lang),
+                  icon: const Icon(Icons.delete_sweep, size: 18),
+                  label: Text(
+                    lang == 'de' ? 'Alle löschen' : 'Clear All',
+                    style: TextStyle(color: Colors.red.shade400),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red.shade400,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                ),
+            ],
           ),
         ),
         if (flights.isEmpty)
@@ -1469,6 +1488,55 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
             },
             child: Text(
               _t('Yes', lang),
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmClearAllTracklogs(
+    BuildContext context,
+    FlightTrackingService service,
+    String lang,
+  ) {
+    final count = service.trackedFlights.length;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(lang == 'de' ? 'Alle löschen?' : 'Clear All?'),
+        content: Text(
+          lang == 'de' 
+              ? 'Möchtest du alle $count ausstehenden Trackprotokolle löschen? Diese Aktion kann nicht rückgängig gemacht werden.'
+              : 'Delete all $count pending tracklogs? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(_t('No', lang)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await service.clearAllPendingTracklogs();
+              // Also clear any orphaned tracklogs from old cache format
+              await FlightTrackingService.clearOrphanedTracklogs();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      lang == 'de' 
+                          ? 'Alle Trackprotokolle gelöscht'
+                          : 'All tracklogs cleared',
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            },
+            child: Text(
+              lang == 'de' ? 'Alle löschen' : 'Clear All',
               style: const TextStyle(color: Colors.red),
             ),
           ),

@@ -1,8 +1,12 @@
 // File: lib/models/tracked_flight.dart
 
 /// Model for GPS-tracked flights detected automatically
+/// 
+/// Each flight is associated with a specific user via [userId] to ensure
+/// data isolation when switching accounts on the same device.
 class TrackedFlight {
   final String id;
+  final String? userId; // User who recorded this flight
   final DateTime takeoffTime;
   final DateTime? landingTime;
   final String? takeoffSiteId;
@@ -22,6 +26,7 @@ class TrackedFlight {
 
   TrackedFlight({
     required this.id,
+    this.userId,
     required this.takeoffTime,
     this.landingTime,
     this.takeoffSiteId,
@@ -57,6 +62,7 @@ class TrackedFlight {
   /// Create a copy with updated fields
   TrackedFlight copyWith({
     String? id,
+    String? userId,
     DateTime? takeoffTime,
     DateTime? landingTime,
     String? takeoffSiteId,
@@ -76,6 +82,7 @@ class TrackedFlight {
   }) {
     return TrackedFlight(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       takeoffTime: takeoffTime ?? this.takeoffTime,
       landingTime: landingTime ?? this.landingTime,
       takeoffSiteId: takeoffSiteId ?? this.takeoffSiteId,
@@ -99,6 +106,7 @@ class TrackedFlight {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'userId': userId,
       'takeoffTime': takeoffTime.toIso8601String(),
       'landingTime': landingTime?.toIso8601String(),
       'takeoffSiteId': takeoffSiteId,
@@ -122,6 +130,7 @@ class TrackedFlight {
   factory TrackedFlight.fromJson(Map<String, dynamic> json) {
     return TrackedFlight(
       id: json['id'] as String,
+      userId: json['userId'] as String?,
       takeoffTime: DateTime.parse(json['takeoffTime'] as String),
       landingTime: json['landingTime'] != null
           ? DateTime.parse(json['landingTime'] as String)

@@ -145,12 +145,19 @@ class MyApp extends StatelessWidget {
             return service;
           },
         ),
-        // FlightTrackingService lifecycle: depends on GlobalDataService, AppConfigService, and LiveTrackingService
-        ChangeNotifierProxyProvider3<GlobalDataService, AppConfigService, LiveTrackingService,
+        // FlightTrackingService lifecycle: depends on GlobalDataService, AppConfigService, LiveTrackingService, and AuthService
+        // NOTE: Also needs AuthService to handle user-specific cache isolation
+        ChangeNotifierProxyProvider4<GlobalDataService, AppConfigService, LiveTrackingService, AuthService,
             FlightTrackingService>(
           create: (_) => FlightTrackingService(),
-          update: (_, globalDataService, appConfigService, liveTrackingService, trackingService) {
+          update: (_, globalDataService, appConfigService, liveTrackingService, authService, trackingService) {
             final service = trackingService ?? FlightTrackingService();
+            
+            // CRITICAL: Set current user for cache isolation
+            // This ensures pending tracklogs are user-specific
+            final uid = authService.currentUser?.uid;
+            service.setCurrentUser(uid);
+            
             if (globalDataService.globalLocations != null) {
               service.initialize(
                 globalDataService.globalLocations!,

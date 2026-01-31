@@ -277,11 +277,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final availableYears = statsService.getAvailableYearsFromFlights();
     debugPrint('[Dashboard] Year selector - Available years: $availableYears, Selected: $_selectedYear');
     
+    // If _selectedYear is not in available years and not null, reset to null
+    final safeSelectedYear = (_selectedYear == null || availableYears.contains(_selectedYear))
+        ? _selectedYear
+        : null;
+    
+    // If the safe value differs from current, schedule a reset
+    if (safeSelectedYear != _selectedYear) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _selectedYear = safeSelectedYear;
+          });
+        }
+      });
+    }
+    
     return Row(
       children: [
         Expanded(
           child: DropdownButtonFormField<int?>(
-            value: _selectedYear,
+            value: safeSelectedYear,
             decoration: InputDecoration(
               labelText: _t('Select_Year', lang),
               border: OutlineInputBorder(
@@ -292,20 +308,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             items: [
               DropdownMenuItem<int?>(
                 value: null,
-                child: Text(_t('All_Years', lang)),
+                child: Text(availableYears.isEmpty 
+                    ? '(${_t('No_Data', lang)})' 
+                    : _t('All_Years', lang)),
               ),
-              if (availableYears.isEmpty)
-                DropdownMenuItem<int?>(
-                  value: null,
-                  child: Text('(${_t('No_Data', lang)})'),
-                )
-              else
-                ...availableYears.map(
-                  (year) => DropdownMenuItem<int?>(
-                    value: year,
-                    child: Text(year.toString()),
-                  ),
+              ...availableYears.map(
+                (year) => DropdownMenuItem<int?>(
+                  value: year,
+                  child: Text(year.toString()),
                 ),
+              ),
             ],
             onChanged: (value) {
               debugPrint('[Dashboard] Year changed: $_selectedYear -> $value');

@@ -597,4 +597,251 @@ B120000470000N0100000EA001000012340000
       expect(data.rotationMagnitude, equals(0.0));
     });
   });
+
+  group('Real Flight Data Tests', () {
+    test('should detect takeoff in real sled ride flight', () {
+      // Real flight data from TEST.igc - a descending sled ride
+      // Starting at 1103m, ending at 548m
+      final flightPoints = [
+        // Takeoff phase - starting at ~1100m, descending (sled ride)
+        {'lat': 46.88103, 'lon': 8.36563, 'alt': 1103.0, 'time': 0},
+        {'lat': 46.88118, 'lon': 8.36590, 'alt': 1095.0, 'time': 5},
+        {'lat': 46.88143, 'lon': 8.36637, 'alt': 1090.0, 'time': 10},
+        {'lat': 46.88167, 'lon': 8.36672, 'alt': 1086.0, 'time': 15},
+        {'lat': 46.88200, 'lon': 8.36692, 'alt': 1083.0, 'time': 20},
+        {'lat': 46.88222, 'lon': 8.36708, 'alt': 1078.0, 'time': 25},
+        {'lat': 46.88223, 'lon': 8.36733, 'alt': 1072.0, 'time': 30},
+        {'lat': 46.88207, 'lon': 8.36755, 'alt': 1069.0, 'time': 35},
+        {'lat': 46.88217, 'lon': 8.36803, 'alt': 1062.0, 'time': 40},
+        {'lat': 46.88207, 'lon': 8.36837, 'alt': 1058.0, 'time': 45},
+        {'lat': 46.88193, 'lon': 8.36883, 'alt': 1049.0, 'time': 50},
+        {'lat': 46.88208, 'lon': 8.36922, 'alt': 1046.0, 'time': 55},
+        {'lat': 46.88225, 'lon': 8.36968, 'alt': 1038.0, 'time': 60},
+        {'lat': 46.88257, 'lon': 8.36997, 'alt': 1035.0, 'time': 65},
+        {'lat': 46.88292, 'lon': 8.36998, 'alt': 1027.0, 'time': 70},
+        {'lat': 46.88307, 'lon': 8.37028, 'alt': 1020.0, 'time': 75},
+        {'lat': 46.88280, 'lon': 8.37082, 'alt': 1016.0, 'time': 80},
+        {'lat': 46.88250, 'lon': 8.37122, 'alt': 1010.0, 'time': 85},
+        {'lat': 46.88245, 'lon': 8.37173, 'alt': 1003.0, 'time': 90},
+        {'lat': 46.88240, 'lon': 8.37247, 'alt': 998.0, 'time': 95},
+      ];
+
+      final service = FlightDetectionService();
+      final baseTime = DateTime.now();
+      FlightEvent? takeoffEvent;
+
+      print('\n=== REAL FLIGHT SIMULATION ===');
+      for (final p in flightPoints) {
+        final point = TrackPoint(
+          timestamp: baseTime.add(Duration(seconds: p['time'] as int)),
+          latitude: p['lat'] as double,
+          longitude: p['lon'] as double,
+          altitude: p['alt'] as double,
+        );
+
+        final event = service.processTrackPoint(point);
+        print('t=${p['time']}s: alt=${p['alt']}m, isInFlight=${service.isInFlight}, event=${event?.type}');
+        
+        if (event != null && event.type == FlightEventType.takeoff) {
+          takeoffEvent = event;
+          print('*** TAKEOFF DETECTED at t=${p['time']}s ***');
+        }
+      }
+
+      print('\n=== RESULTS ===');
+      print('Takeoff detected: ${takeoffEvent != null}');
+      print('Is in flight: ${service.isInFlight}');
+      
+      expect(takeoffEvent, isNotNull, reason: 'Takeoff should be detected for this real sled ride');
+      expect(service.isInFlight, isTrue);
+    });
+
+    test('should NOT detect takeoff when stationary on ground', () {
+      // Stationary GPS data (minor GPS jitter)
+      final stationaryPoints = [
+        {'lat': 46.88103, 'lon': 8.36563, 'alt': 1103.0, 'time': 0},
+        {'lat': 46.88103, 'lon': 8.36564, 'alt': 1103.0, 'time': 5},
+        {'lat': 46.88102, 'lon': 8.36563, 'alt': 1104.0, 'time': 10},
+        {'lat': 46.88104, 'lon': 8.36562, 'alt': 1102.0, 'time': 15},
+        {'lat': 46.88103, 'lon': 8.36563, 'alt': 1103.0, 'time': 20},
+        {'lat': 46.88102, 'lon': 8.36564, 'alt': 1104.0, 'time': 25},
+        {'lat': 46.88104, 'lon': 8.36563, 'alt': 1102.0, 'time': 30},
+        {'lat': 46.88103, 'lon': 8.36562, 'alt': 1103.0, 'time': 35},
+        {'lat': 46.88102, 'lon': 8.36564, 'alt': 1104.0, 'time': 40},
+        {'lat': 46.88104, 'lon': 8.36563, 'alt': 1102.0, 'time': 45},
+      ];
+
+      final service = FlightDetectionService();
+      final baseTime = DateTime.now();
+      FlightEvent? takeoffEvent;
+
+      for (final p in stationaryPoints) {
+        final point = TrackPoint(
+          timestamp: baseTime.add(Duration(seconds: p['time'] as int)),
+          latitude: p['lat'] as double,
+          longitude: p['lon'] as double,
+          altitude: p['alt'] as double,
+        );
+
+        final event = service.processTrackPoint(point);
+        if (event != null && event.type == FlightEventType.takeoff) {
+          takeoffEvent = event;
+        }
+      }
+
+      expect(takeoffEvent, isNull, reason: 'No takeoff should be detected for stationary GPS data');
+      expect(service.isInFlight, isFalse);
+    });
+
+    test('should detect takeoff with 1-second GPS intervals (real-time GPS)', () {
+      // Same flight path but with 1-second GPS intervals
+      // This simulates modern GPS that updates every second
+      // Positions are interpolated to 1-second intervals
+      final flightPoints = [
+        // Takeoff phase - 1-second intervals, same movement rate as 5s version
+        {'lat': 46.88103, 'lon': 8.36563, 'alt': 1103.0, 'time': 0},
+        {'lat': 46.88106, 'lon': 8.36568, 'alt': 1101.4, 'time': 1},
+        {'lat': 46.88109, 'lon': 8.36574, 'alt': 1099.8, 'time': 2},
+        {'lat': 46.88112, 'lon': 8.36579, 'alt': 1098.2, 'time': 3},
+        {'lat': 46.88115, 'lon': 8.36585, 'alt': 1096.6, 'time': 4},
+        {'lat': 46.88118, 'lon': 8.36590, 'alt': 1095.0, 'time': 5},
+        {'lat': 46.88123, 'lon': 8.36599, 'alt': 1094.0, 'time': 6},
+        {'lat': 46.88128, 'lon': 8.36609, 'alt': 1093.0, 'time': 7},
+        {'lat': 46.88133, 'lon': 8.36618, 'alt': 1092.0, 'time': 8},
+        {'lat': 46.88138, 'lon': 8.36628, 'alt': 1091.0, 'time': 9},
+        {'lat': 46.88143, 'lon': 8.36637, 'alt': 1090.0, 'time': 10},
+        {'lat': 46.88148, 'lon': 8.36644, 'alt': 1089.2, 'time': 11},
+        {'lat': 46.88153, 'lon': 8.36651, 'alt': 1088.4, 'time': 12},
+        {'lat': 46.88158, 'lon': 8.36658, 'alt': 1087.6, 'time': 13},
+        {'lat': 46.88163, 'lon': 8.36665, 'alt': 1086.8, 'time': 14},
+        {'lat': 46.88167, 'lon': 8.36672, 'alt': 1086.0, 'time': 15},
+        {'lat': 46.88174, 'lon': 8.36676, 'alt': 1085.4, 'time': 16},
+        {'lat': 46.88180, 'lon': 8.36680, 'alt': 1084.8, 'time': 17},
+        {'lat': 46.88187, 'lon': 8.36684, 'alt': 1084.2, 'time': 18},
+        {'lat': 46.88193, 'lon': 8.36688, 'alt': 1083.6, 'time': 19},
+        {'lat': 46.88200, 'lon': 8.36692, 'alt': 1083.0, 'time': 20},
+        {'lat': 46.88204, 'lon': 8.36695, 'alt': 1082.0, 'time': 21},
+        {'lat': 46.88209, 'lon': 8.36699, 'alt': 1081.0, 'time': 22},
+        {'lat': 46.88213, 'lon': 8.36702, 'alt': 1080.0, 'time': 23},
+        {'lat': 46.88218, 'lon': 8.36705, 'alt': 1079.0, 'time': 24},
+        {'lat': 46.88222, 'lon': 8.36708, 'alt': 1078.0, 'time': 25},
+      ];
+
+      final service = FlightDetectionService();
+      final baseTime = DateTime.now();
+      FlightEvent? takeoffEvent;
+
+      print('\n=== 1-SECOND GPS INTERVAL TEST ===');
+      for (final p in flightPoints) {
+        final point = TrackPoint(
+          timestamp: baseTime.add(Duration(seconds: p['time'] as int)),
+          latitude: p['lat'] as double,
+          longitude: p['lon'] as double,
+          altitude: p['alt'] as double,
+        );
+
+        final event = service.processTrackPoint(point);
+        if (event != null && event.type == FlightEventType.takeoff) {
+          takeoffEvent = event;
+          print('*** TAKEOFF DETECTED at t=${p['time']}s ***');
+        }
+      }
+
+      print('Takeoff detected: ${takeoffEvent != null}');
+      print('Is in flight: ${service.isInFlight}');
+      
+      expect(takeoffEvent, isNotNull, reason: 'Takeoff should be detected with 1-second GPS intervals');
+      expect(service.isInFlight, isTrue);
+    });
+
+    test('should detect landing after flight with sustained low speed', () {
+      // Complete flight from takeoff to landing using real data pattern
+      // Takeoff from Büelen (1103m) -> Land at Neufallenbach (548m)
+      final flightPoints = [
+        // Ground phase before takeoff
+        {'lat': 46.88103, 'lon': 8.36563, 'alt': 1103.0, 'time': 0},
+        {'lat': 46.88103, 'lon': 8.36563, 'alt': 1103.0, 'time': 1},
+        {'lat': 46.88103, 'lon': 8.36563, 'alt': 1103.0, 'time': 2},
+        {'lat': 46.88103, 'lon': 8.36563, 'alt': 1103.0, 'time': 3},
+        {'lat': 46.88103, 'lon': 8.36563, 'alt': 1103.0, 'time': 4},
+        
+        // Takeoff - gaining speed and altitude loss (sled ride)
+        {'lat': 46.88118, 'lon': 8.36590, 'alt': 1095.0, 'time': 5},
+        {'lat': 46.88143, 'lon': 8.36637, 'alt': 1090.0, 'time': 6},
+        {'lat': 46.88167, 'lon': 8.36672, 'alt': 1086.0, 'time': 7},
+        {'lat': 46.88200, 'lon': 8.36692, 'alt': 1083.0, 'time': 8},
+        {'lat': 46.88222, 'lon': 8.36708, 'alt': 1078.0, 'time': 9},
+        {'lat': 46.88240, 'lon': 8.36732, 'alt': 1065.0, 'time': 10},
+        {'lat': 46.88257, 'lon': 8.36760, 'alt': 1050.0, 'time': 11},
+        {'lat': 46.88270, 'lon': 8.36792, 'alt': 1030.0, 'time': 12},
+        
+        // Mid-flight descent
+        {'lat': 46.88290, 'lon': 8.36850, 'alt': 1000.0, 'time': 15},
+        {'lat': 46.88300, 'lon': 8.36910, 'alt': 950.0, 'time': 20},
+        {'lat': 46.88305, 'lon': 8.36970, 'alt': 900.0, 'time': 25},
+        {'lat': 46.88298, 'lon': 8.37050, 'alt': 850.0, 'time': 30},
+        {'lat': 46.88295, 'lon': 8.37150, 'alt': 780.0, 'time': 35},
+        {'lat': 46.88298, 'lon': 8.37280, 'alt': 700.0, 'time': 40},
+        {'lat': 46.88300, 'lon': 8.37420, 'alt': 620.0, 'time': 45},
+        {'lat': 46.88298, 'lon': 8.37560, 'alt': 565.0, 'time': 50},
+        
+        // Final approach - slowing down
+        {'lat': 46.88298, 'lon': 8.37640, 'alt': 555.0, 'time': 55},
+        {'lat': 46.88298, 'lon': 8.37670, 'alt': 550.0, 'time': 60},
+        
+        // Landing - stationary at landing zone for 15+ seconds
+        // Landing detection requires 10 seconds of sustained low speed
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 65},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 66},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 67},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 68},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 69},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 70},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 71},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 72},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 73},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 74},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 75},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 76},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 77},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 78},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 79},
+        {'lat': 46.88298, 'lon': 8.37682, 'alt': 548.0, 'time': 80},
+      ];
+
+      final service = FlightDetectionService();
+      final baseTime = DateTime.now();
+      FlightEvent? takeoffEvent;
+      FlightEvent? landingEvent;
+
+      print('\n=== COMPLETE FLIGHT WITH LANDING TEST ===');
+      for (final p in flightPoints) {
+        final point = TrackPoint(
+          timestamp: baseTime.add(Duration(seconds: p['time'] as int)),
+          latitude: p['lat'] as double,
+          longitude: p['lon'] as double,
+          altitude: p['alt'] as double,
+        );
+
+        final event = service.processTrackPoint(point);
+        if (event != null) {
+          if (event.type == FlightEventType.takeoff) {
+            takeoffEvent = event;
+            print('*** TAKEOFF DETECTED at t=${p['time']}s ***');
+          } else if (event.type == FlightEventType.landing) {
+            landingEvent = event;
+            print('*** LANDING DETECTED at t=${p['time']}s ***');
+          }
+        }
+      }
+
+      print('Takeoff detected: ${takeoffEvent != null}');
+      print('Landing detected: ${landingEvent != null}');
+      print('Is in flight: ${service.isInFlight}');
+      
+      expect(takeoffEvent, isNotNull, reason: 'Takeoff should be detected');
+      expect(landingEvent, isNotNull, reason: 'Landing should be detected after 10+ seconds of stationary data');
+      expect(service.isInFlight, isFalse, reason: 'Flight should be over after landing');
+    });
+  });
 }
