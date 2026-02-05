@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:just_audio/just_audio.dart';
+
 import '../models/tracked_flight.dart';
 import 'flight_detection_service.dart';
 import 'live_tracking_service.dart';
@@ -19,6 +21,9 @@ import 'tracklog_parser_service.dart';
 /// 
 /// IMPORTANT: Cache keys are USER-SPECIFIC to prevent data leakage between accounts
 class FlightTrackingService extends ChangeNotifier {
+    // Audio player for event sounds
+    final AudioPlayer _audioPlayer = AudioPlayer();
+
   // Base cache keys - actual keys include user ID suffix
   static const String _trackedFlightsCacheKeyBase = 'gps_tracked_flights';
   static const String _currentFlightCacheKeyBase = 'gps_current_flight';
@@ -360,6 +365,13 @@ class FlightTrackingService extends ChangeNotifier {
 
   /// Handle takeoff detection
   Future<void> _handleTakeoff(FlightEvent event, TrackPoint position) async {
+        // Play takeoff sound
+        try {
+          await _audioPlayer.setAsset('assets/sounds/takeoff.mp3');
+          _audioPlayer.play();
+        } catch (e) {
+          log('[FlightTrackingService] Failed to play takeoff sound: $e');
+        }
     // Find nearest takeoff site within 500m radius
     // Use the current position (position parameter) which is the fresh GPS reading,
     // not the event coordinates which may be from the detection algorithm
@@ -432,6 +444,13 @@ class FlightTrackingService extends ChangeNotifier {
 
   /// Handle landing detection
   Future<void> _handleLanding(FlightEvent event, TrackPoint position) async {
+        // Play landing sound
+        try {
+          await _audioPlayer.setAsset('assets/sounds/landing.mp3');
+          _audioPlayer.play();
+        } catch (e) {
+          log('[FlightTrackingService] Failed to play landing sound: $e');
+        }
     debugPrint('🛬🛬🛬 [FlightTracking] ========================================');
     debugPrint('🛬 [FlightTracking] _handleLanding CALLED!');
     debugPrint('🛬 [FlightTracking] Current flight: ${_currentFlight?.id ?? "NULL"}');

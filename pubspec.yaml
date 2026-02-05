@@ -42,6 +42,7 @@ dependencies:
   
   # UI
   cupertino_icons: ^1.0.6 
+  just_audio: ^0.9.36
   # -------------------------------------
 
 dev_dependencies:
@@ -59,6 +60,8 @@ flutter:
   assets:
     - assets/images/logo_512.png
     - assets/airspace/swiss_airspace.json
+    - assets/sounds/takeoff.mp3
+    - assets/sounds/landing.mp3
 
 flutter_launcher_icons:
   android: true
