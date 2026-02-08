@@ -3,9 +3,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// FIX: Removed unnecessary import - services.dart is already included via material.dart
 import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../models/tracked_flight.dart';
@@ -87,13 +85,15 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeService();
-    _setupGpsCallbacks();
+    // NOTE: GPS callbacks (onPositionUpdate → processPosition) are now
+    // wired globally in StatsUpdateWatcher, not here.
+    // This screen is purely for display/monitoring.
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _cleanupGpsCallbacks();
+    // NOTE: No callback cleanup needed - callbacks are managed globally
     super.dispose();
   }
 
@@ -104,51 +104,10 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
   }
 
-  void _setupGpsCallbacks() {
-    if (kIsWeb) return; // No GPS on web
-    
-    final gpsSensorService = context.read<GpsSensorService>();
-    final trackingService = context.read<FlightTrackingService>();
-
-    // Connect GPS position updates to flight tracking service
-    gpsSensorService.onPositionUpdate = (position) {
-      trackingService.processPosition(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        altitude: position.altitude,
-        speed: position.speed,
-        heading: position.heading,
-        timestamp: position.timestamp,
-      );
-    };
-
-    // Connect accelerometer updates
-    gpsSensorService.onAccelerometerUpdate = (event) {
-      trackingService.processSensorData(
-        accelerometerX: event.x,
-        accelerometerY: event.y,
-        accelerometerZ: event.z,
-      );
-    };
-
-    // Connect gyroscope updates
-    gpsSensorService.onGyroscopeUpdate = (event) {
-      trackingService.processSensorData(
-        gyroscopeX: event.x,
-        gyroscopeY: event.y,
-        gyroscopeZ: event.z,
-      );
-    };
-  }
-
-  void _cleanupGpsCallbacks() {
-    if (kIsWeb) return;
-    
-    final gpsSensorService = context.read<GpsSensorService>();
-    gpsSensorService.onPositionUpdate = null;
-    gpsSensorService.onAccelerometerUpdate = null;
-    gpsSensorService.onGyroscopeUpdate = null;
-  }
+  // GPS callbacks (_setupGpsCallbacks / _cleanupGpsCallbacks) have been
+  // moved to StatsUpdateWatcher in main.dart for global lifecycle management.
+  // Position updates now reach FlightTrackingService regardless of which screen
+  // the user is on.
 
   Future<void> _initializeService() async {
     final globalData = context.read<GlobalDataService>();
@@ -189,7 +148,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
             children: [
               // Show web warning if on web platform
               if (kIsWeb) _buildWebWarning(context, lang),
-              _buildTrackingToggle(context, trackingService, gpsSensorService, lang),
+              _buildGpsStatusCard(context, trackingService, gpsSensorService, lang),
               // Show permission card if needed (only on mobile)
               if (!kIsWeb && !gpsSensorService.hasLocationPermission && gpsSensorService.errorMessage != null)
                 _buildPermissionCard(context, gpsSensorService, lang),
@@ -323,89 +282,96 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildTrackingToggle(
+  Widget _buildGpsStatusCard(
     BuildContext context,
     FlightTrackingService service,
     GpsSensorService gpsSensorService,
     String lang,
   ) {
     final theme = Theme.of(context);
-    final isEnabled = service.isTrackingEnabled;
     final isWebPlatform = kIsWeb;
-
+    
+    // Check actual position signal and tracking status
+    final hasGpsSignal = gpsSensorService.lastPosition != null;
+    final isTracking = gpsSensorService.isTracking;
+    
+    // Determine status color and message
+    Color statusColor = Colors.red;
+    String statusText = 'Android GPS Disabled';
+    
+    if (isTracking) {
+      if (hasGpsSignal) {
+        statusColor = Colors.green;
+        statusText = 'GPS Signal OK';
+      } else {
+        statusColor = Colors.orange;
+        statusText = 'Searching for GPS signal...';
+      }
+    }
+    
     return Card(
       margin: const EdgeInsets.all(12),
+      color: statusColor.withOpacity(0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              isEnabled ? Icons.gps_fixed : Icons.gps_off,
-              color: isWebPlatform 
-                  ? Colors.grey.shade600
-                  : (isEnabled ? Colors.green : Colors.grey),
-              size: 32,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _t('GPS_Tracking', lang),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isWebPlatform ? Colors.grey : null,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    isWebPlatform
-                        ? _t('Web_Not_Supported', lang)
-                        : (isEnabled
-                            ? _t('Tracking_Active', lang)
-                            : _t('Tracking_Disabled', lang)),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isWebPlatform 
-                          ? Colors.grey
-                          : (isEnabled ? Colors.green : Colors.grey),
-                    ),
-                  ),
-                  // Show background permission hint
-                  if (!isWebPlatform && !gpsSensorService.hasBackgroundPermission && isEnabled) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      _t('Background_Permission', lang),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.orange,
-                        fontSize: 11,
+            Row(
+              children: [
+                Icon(
+                  hasGpsSignal ? Icons.gps_fixed : Icons.gps_off,
+                  color: statusColor,
+                  size: 32,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _t('GPS_Tracking', lang),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
-                ],
-              ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isWebPlatform ? _t('Web_Not_Supported', lang) : statusText,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Switch(
-              value: isEnabled,
-              onChanged: isWebPlatform
-                  ? null // Disabled on web
-                  : (value) async {
-                      if (value) {
-                        // Request permissions before enabling
-                        final status = await gpsSensorService.checkAndRequestPermissions();
-                        if (status.isGranted) {
-                          await service.toggleTracking();
-                          // Start GPS tracking
-                          await gpsSensorService.startTracking();
-                          // Request battery optimization exemption
-                          await gpsSensorService.requestBatteryOptimizationExemption();
-                        }
-                      } else {
-                        await service.toggleTracking();
-                        await gpsSensorService.stopTracking();
-                      }
-                    },
-              activeColor: Colors.green,
+            if (!isWebPlatform && !gpsSensorService.hasBackgroundPermission && isTracking) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  _t('Background_Permission', lang),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.orange,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              '💡 GPS runs automatically when Android GPS is enabled',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),

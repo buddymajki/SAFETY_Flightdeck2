@@ -114,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 32),
             const Text(
-              'FlightDeck v2.02',
+              'FlightDeck v2.05',
               style: TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.bold,

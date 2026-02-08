@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'firebase_options.dart';
 import 'config/app_theme.dart';
@@ -24,9 +25,15 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation.dart';
 
+import 'package:flutter/services.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Hide all system UI - we'll use a custom status bar widget instead
+  // This is the most reliable way to ensure consistent UI across all Android devices
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   // Ensure offline persistence is enabled where supported.
   try {
@@ -69,8 +76,14 @@ class _AppRestartWrapperState extends State<AppRestartWrapper> {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
@@ -206,6 +219,8 @@ class MyApp extends StatelessWidget {
 }
 
 /// Widget that connects flight and checklist services to stats updates
+/// AND handles GPS initialization + callback wiring.
+/// This widget lives INSIDE the MultiProvider tree so it has access to all providers.
 class StatsUpdateWatcher extends StatefulWidget {
   final Widget child;
 
@@ -215,7 +230,23 @@ class StatsUpdateWatcher extends StatefulWidget {
   State<StatsUpdateWatcher> createState() => _StatsUpdateWatcherState();
 }
 
-class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> {
+class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBindingObserver {
+  bool _gpsInitialized = false;
+  bool _callbacksWired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _cleanupGpsCallbacks();
+    super.dispose();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -232,6 +263,152 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> {
     userDataService.onChecklistDataChanged = () {
       statsService.updateStats();
     };
+
+    // Wire up GPS callbacks globally (not just on GPS screen)
+    _wireGpsCallbacks();
+
+    // Initialize GPS tracking on first build
+    if (!_gpsInitialized) {
+      _gpsInitialized = true;
+      // Use addPostFrameCallback to ensure context is fully ready
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initializeGpsTracking();
+      });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('[AppLifecycle] App resumed - checking GPS');
+      _initializeGpsTracking();
+    }
+  }
+
+  /// Wire GPS position/sensor callbacks to FlightTrackingService
+  /// This ensures positions reach flight detection even if user never visits GPS screen
+  void _wireGpsCallbacks() {
+    if (_callbacksWired) return;
+    _callbacksWired = true;
+
+    try {
+      final gpsSensorService = context.read<GpsSensorService>();
+      final trackingService = context.read<FlightTrackingService>();
+
+      // Connect GPS position updates to flight tracking service
+      gpsSensorService.onPositionUpdate = (position) {
+        trackingService.processPosition(
+          latitude: position.latitude,
+          longitude: position.longitude,
+          altitude: position.altitude,
+          speed: position.speed,
+          heading: position.heading,
+          timestamp: position.timestamp,
+        );
+      };
+
+      // Connect accelerometer updates
+      gpsSensorService.onAccelerometerUpdate = (event) {
+        trackingService.processSensorData(
+          accelerometerX: event.x,
+          accelerometerY: event.y,
+          accelerometerZ: event.z,
+        );
+      };
+
+      // Connect gyroscope updates
+      gpsSensorService.onGyroscopeUpdate = (event) {
+        trackingService.processSensorData(
+          gyroscopeX: event.x,
+          gyroscopeY: event.y,
+          gyroscopeZ: event.z,
+        );
+      };
+
+      debugPrint('[GpsInit] GPS callbacks wired globally');
+    } catch (e) {
+      debugPrint('[GpsInit] Error wiring GPS callbacks: $e');
+      _callbacksWired = false; // Retry on next didChangeDependencies
+    }
+  }
+
+  void _cleanupGpsCallbacks() {
+    try {
+      final gpsSensorService = context.read<GpsSensorService>();
+      gpsSensorService.onPositionUpdate = null;
+      gpsSensorService.onAccelerometerUpdate = null;
+      gpsSensorService.onGyroscopeUpdate = null;
+    } catch (_) {}
+  }
+
+  Future<void> _initializeGpsTracking() async {
+    try {
+      if (!mounted) return;
+      
+      final gpsSensorService = context.read<GpsSensorService>();
+      final trackingService = context.read<FlightTrackingService>();
+      
+      // Already tracking? Nothing to do.
+      if (gpsSensorService.isTracking) return;
+      
+      // Check if Android GPS is enabled
+      final isGpsEnabled = await Geolocator.isLocationServiceEnabled();
+      
+      if (!isGpsEnabled) {
+        debugPrint('[GpsInit] Android GPS is disabled - prompting user');
+        if (mounted) {
+          _showGpsDisabledDialog();
+        }
+        return;
+      }
+      
+      // GPS is enabled, start tracking
+      final success = await gpsSensorService.autoStartTracking();
+      if (success) {
+        await trackingService.enableTracking();
+        debugPrint('[GpsInit] GPS tracking auto-started successfully');
+      } else {
+        debugPrint('[GpsInit] GPS tracking failed to start (permission issue?)');
+      }
+    } catch (e) {
+      debugPrint('[GpsInit] Error initializing GPS: $e');
+    }
+  }
+
+  void _showGpsDisabledDialog() {
+    // Avoid showing dialog if Navigator isn't ready yet (e.g., still on splash screen)
+    final navigator = Navigator.maybeOf(context);
+    if (navigator == null) {
+      debugPrint('[GpsInit] Navigator not ready, will retry on next lifecycle event');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('GPS Required'),
+        content: const Text(
+          'Flight tracking requires GPS to be enabled. '
+          'Please enable GPS in your device settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Later'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Geolocator.openLocationSettings();
+            },
+            child: const Text('Enable GPS'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

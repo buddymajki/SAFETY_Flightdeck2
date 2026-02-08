@@ -11,6 +11,7 @@ import 'gps_screen.dart';
 import 'tests_screen.dart';
 import '../services/app_config_service.dart';
 import '../widgets/responsive_layout.dart';
+import '../widgets/custom_status_bar.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -167,43 +168,63 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       builder: (context, cfg, _) {
         final code = cfg.displayLanguageCode.toUpperCase();
         return Scaffold(
-          appBar: AppBar(
-            title: Text(
-              _currentTitle,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            centerTitle: true,
-            actions: [
-              PopupMenuButton<String>(
-                tooltip: 'Language',
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Center(
-                    child: Text(
-                      code,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+          appBar: null, // Removed - using CustomStatusBar instead
+          body: Column(
+            children: [
+              // Custom status bar at the top (replaces native Android status bar)
+              const CustomStatusBar(),
+              // App header with title and language selector
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                color: theme.appBarTheme.backgroundColor ?? Colors.black87,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _currentTitle,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18.0,
+                        color: Colors.white,
+                      ),
                     ),
+                    PopupMenuButton<String>(
+                      tooltip: 'Language',
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Text(
+                          code,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      onSelected: (value) {
+                        context.read<AppConfigService>().setLanguage(value);
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem<String>(value: 'en', child: Text('EN')),
+                        const PopupMenuItem<String>(value: 'de', child: Text('DE')),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Main content area
+              Expanded(
+                child: ResponsiveContainer(
+                  maxWidth: 1200,
+                  padding: EdgeInsets.zero,
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    onPageChanged: _onPageChanged,
+                    children: _widgetOptions,
                   ),
                 ),
-                onSelected: (value) {
-                  context.read<AppConfigService>().setLanguage(value);
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem<String>(value: 'en', child: Text('EN')),
-                  const PopupMenuItem<String>(value: 'de', child: Text('DE')),
-                ],
               ),
             ],
-          ),
-          body: ResponsiveContainer(
-            maxWidth: 1200,
-            padding: EdgeInsets.zero,
-            child: PageView(
-              controller: _pageController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              onPageChanged: _onPageChanged,
-              children: _widgetOptions,
-            ),
           ),
           bottomNavigationBar: Container(
             color: navBarColor,

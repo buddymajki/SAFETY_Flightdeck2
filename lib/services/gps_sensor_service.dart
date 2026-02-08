@@ -5,7 +5,10 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' 
+    hide ServiceStatus; // Hide permission_handler's ServiceStatus if imported via permission_handler
+import 'package:geolocator/geolocator.dart' as geolocator
+    show ServiceStatus; // Explicitly import geolocator's ServiceStatus
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
@@ -17,6 +20,8 @@ class GpsSensorService extends ChangeNotifier {
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
   StreamSubscription<GyroscopeEvent>? _gyroscopeSubscription;
+  StreamSubscription<geolocator.ServiceStatus>? _locationServiceSubscription;
+  Timer? _positionTimeoutTimer;
 
   // Current state
   bool _isTracking = false;
@@ -148,6 +153,48 @@ class GpsSensorService extends ChangeNotifier {
     return await Geolocator.openLocationSettings();
   }
 
+  /// Auto-start GPS tracking silently
+  /// Returns: true if tracking started successfully, false otherwise
+  /// Does NOT throw errors - just logs and continues
+  Future<bool> autoStartTracking() async {
+    if (!platformSupported) {
+      log('[GpsSensorService] AutoStart: Platform not supported');
+      return false;
+    }
+
+    // Always ensure the location service monitor is running
+    // This watches for GPS being toggled on/off in system settings
+    _ensureLocationServiceMonitor();
+
+    if (_isTracking) {
+      log('[GpsSensorService] AutoStart: Already tracking');
+      return true;
+    }
+
+    try {
+      // Silently check if location services are enabled
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        log('[GpsSensorService] AutoStart: Location services disabled');
+        return false;
+      }
+
+      // Attempt to start tracking
+      // If permissions are not granted, startTracking() will handle it gracefully
+      final success = await startTracking();
+      if (success) {
+        log('[GpsSensorService] AutoStart: GPS tracking started successfully');
+        return true;
+      } else {
+        log('[GpsSensorService] AutoStart: GPS tracking failed (permissions or other issue)');
+        return false;
+      }
+    } catch (e) {
+      log('[GpsSensorService] AutoStart error: $e');
+      return false; // Silently fail - don't crash the app
+    }
+  }
+
   /// Start GPS and sensor tracking
   /// 
   /// Parameters:
@@ -219,14 +266,28 @@ class GpsSensorService extends ChangeNotifier {
         (Position position) {
           _lastPosition = position;
           onPositionUpdate?.call(position);
+          
+          // Reset timeout timer on each position update
+          _positionTimeoutTimer?.cancel();
+          _startPositionTimeout();
+          
           notifyListeners();
         },
         onError: (error) {
+          log('[GpsSensorService] Position stream error: $error');
           _errorMessage = 'GPS error: $error';
           onError?.call(_errorMessage!);
-          log('[GpsSensorService] Position stream error: $error');
+          
+          // Don't kill tracking on transient errors - let the timeout handle it
+          // The stream may recover on its own
+          notifyListeners();
         },
+        cancelOnError: false, // Keep stream alive through transient errors
       );
+      
+      // Ensure location service monitor is running
+      // This handles the case where user disables GPS in system settings
+      _ensureLocationServiceMonitor();
 
       // Start accelerometer stream
       _accelerometerSubscription = accelerometerEventStream(
@@ -274,15 +335,91 @@ class GpsSensorService extends ChangeNotifier {
     await _positionSubscription?.cancel();
     await _accelerometerSubscription?.cancel();
     await _gyroscopeSubscription?.cancel();
+    await _locationServiceSubscription?.cancel();
+    _positionTimeoutTimer?.cancel();
 
     _positionSubscription = null;
     _accelerometerSubscription = null;
     _gyroscopeSubscription = null;
+    _locationServiceSubscription = null;
+    _positionTimeoutTimer = null;
 
     _isTracking = false;
+    _lastPosition = null; // Clear so status bar reflects reality
     notifyListeners();
 
     log('[GpsSensorService] Tracking stopped');
+  }
+
+  /// Internal method to stop tracking streams and notify UI
+  /// Called when location service is disabled or unrecoverable error.
+  /// IMPORTANT: Does NOT cancel _locationServiceSubscription — that monitor
+  /// must stay alive so we can detect when GPS is re-enabled.
+  void _stopTrackingInternal() {
+    _positionTimeoutTimer?.cancel();
+    _positionSubscription?.cancel();
+    _accelerometerSubscription?.cancel();
+    _gyroscopeSubscription?.cancel();
+
+    _positionSubscription = null;
+    _positionTimeoutTimer = null;
+    _accelerometerSubscription = null;
+    _gyroscopeSubscription = null;
+    // NOTE: _locationServiceSubscription is intentionally kept alive
+
+    if (_isTracking) {
+      _isTracking = false;
+      _lastPosition = null; // Clear so status bar shows red (no GPS)
+      notifyListeners();
+      log('[GpsSensorService] Tracking stopped due to error or service disabled');
+    }
+  }
+
+  /// Monitor if we consistently receive position updates
+  /// If no update for 30 seconds, assume GPS connection is lost
+  /// (30s is generous - allows for tunnels, indoor brief moments, etc.)
+  void _startPositionTimeout() {
+    _positionTimeoutTimer?.cancel();
+    _positionTimeoutTimer = Timer(const Duration(seconds: 30), () {
+      log('[GpsSensorService] Position timeout - no update for 30 seconds');
+      _lastPosition = null; // Signal that we lost GPS fix
+      notifyListeners();
+      // Don't stop tracking entirely - stream may recover
+      // Just clear the position so UI shows "searching" state
+    });
+  }
+
+  /// Ensure the location service monitor is running (idempotent).
+  /// Watches for GPS being toggled on/off in Android system settings.
+  /// When user disables GPS → stop tracking.
+  /// When user re-enables GPS → auto-restart tracking.
+  /// This monitor stays alive even when tracking is stopped.
+  void _ensureLocationServiceMonitor() {
+    // Already running? Don't start a duplicate.
+    if (_locationServiceSubscription != null) return;
+
+    log('[GpsSensorService] Starting location service monitor');
+    _locationServiceSubscription = 
+        Geolocator.getServiceStatusStream().listen(
+      (geolocator.ServiceStatus status) {
+        log('[GpsSensorService] Location service status changed: $status');
+        
+        if (status == geolocator.ServiceStatus.disabled) {
+          // User disabled GPS in system settings
+          log('[GpsSensorService] Location service disabled by user');
+          _stopTrackingInternal();
+        } else if (status == geolocator.ServiceStatus.enabled) {
+          // User re-enabled GPS - auto-restart tracking
+          log('[GpsSensorService] Location service re-enabled - auto-restarting');
+          if (!_isTracking) {
+            autoStartTracking();
+          }
+        }
+      },
+      onError: (error) {
+        log('[GpsSensorService] Location service monitor error: $error');
+      },
+    );
   }
 
   /// Get current position once

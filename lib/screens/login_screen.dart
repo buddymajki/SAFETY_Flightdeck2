@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   const Text(
-                    'FlightDeck v2.02',
+                    'FlightDeck v2.05',
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
