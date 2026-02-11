@@ -13,19 +13,35 @@ void main() async {
 
     final pubspecContent = pubspecFile.readAsStringSync();
     
-    // Parse version using regex: version: X.Y.Z+N
-    final versionRegex = RegExp(r'version:\s*([\d.]+)\+(\d+)');
-    final match = versionRegex.firstMatch(pubspecContent);
-
-    if (match == null) {
-      print('❌ Error: Could not parse version from pubspec.yaml');
-      print('   Expected format: version: X.Y.Z+N');
-      print('   Example: version: 1.0.3+4');
-      exit(1);
+    // Parse version - supports both formats:
+    // version: X.Y.Z+N (with build number)
+    // version: X.Y.Z    (without build number)
+    final versionWithBuildRegex = RegExp(r'version:\s*([\d.]+)\+(\d+)');
+    final versionOnlyRegex = RegExp(r'version:\s*([\d.]+)');
+    
+    String appVersion;
+    String buildNumber;
+    
+    final matchWithBuild = versionWithBuildRegex.firstMatch(pubspecContent);
+    if (matchWithBuild != null) {
+      appVersion = matchWithBuild.group(1)!;
+      buildNumber = matchWithBuild.group(2)!;
+    } else {
+      final matchOnly = versionOnlyRegex.firstMatch(pubspecContent);
+      if (matchOnly == null) {
+        print('❌ Error: Could not parse version from pubspec.yaml');
+        print('   Expected format: version: X.Y.Z or version: X.Y.Z+N');
+        print('   Example: version: 1.0.13');
+        exit(1);
+      }
+      appVersion = matchOnly.group(1)!;
+      // Auto-generate build number from version parts
+      final parts = appVersion.split('.');
+      final major = int.tryParse(parts[0]) ?? 0;
+      final minor = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
+      final patch = int.tryParse(parts.length > 2 ? parts[2] : '0') ?? 0;
+      buildNumber = '${major * 10000 + minor * 100 + patch}';
     }
-
-    final appVersion = match.group(1)!;
-    final buildNumber = match.group(2)!;
 
     print('📦 Found version: $appVersion (build $buildNumber)');
 
@@ -104,7 +120,10 @@ class AppVersionService {
     print('');
     print('✨ Ready to build!');
     print('Run: flutter build apk --release');
-    print('Then: git add . && git commit -m "Release v$appVersion" && git push');
+    print('Then:');
+    print('  git add . && git commit -m "Release v$appVersion" && git push');
+    print('  git tag v$appVersion && git push origin --tags');
+    print('  gh release upload v$appVersion build/app/outputs/flutter-apk/app-release.apk --clobber');
   } catch (e) {
     print('❌ Error: \$e');
     exit(1);
