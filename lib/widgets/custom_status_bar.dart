@@ -44,7 +44,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> with TickerProviderSt
   
   String _currentTime = '00:00';
   int _batteryLevel = 100;
-  bool _isCharging = false;
+  final bool _isCharging = false;
   bool _isInFlight = false;
   List<ConnectivityResult> _connectivity = [ConnectivityResult.none];
 
@@ -291,7 +291,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> with TickerProviderSt
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8.0),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.3),
+                color: Colors.red.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(4.0),
               ),
               child: Row(
@@ -372,3 +372,4 @@ class _CustomStatusBarState extends State<CustomStatusBar> with TickerProviderSt
     );
   }
 }
+

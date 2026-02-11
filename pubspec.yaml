@@ -2,7 +2,7 @@ name: flightdeck_firebase
 description: "A new Flutter project."
 publish_to: 'none' 
 
-version: 1.0.0+1
+version: 1.0.6+1
 
 environment:
   # Széles tartomány a Dart 3-as verziónál, ami a modern Flutterrel kompatibilis
@@ -30,6 +30,8 @@ dependencies:
   intl: ^0.20.2
   url_launcher: ^6.2.4
   http: ^1.1.0
+  dio: ^5.3.0              # HTTP client for APK download
+  path_provider: ^2.1.1    # Access app cache directory
   
   # GPS & Sensors for flight tracking
   geolocator: ^13.0.2          # GPS location services

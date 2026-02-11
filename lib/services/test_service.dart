@@ -165,7 +165,7 @@ class TestService extends ChangeNotifier {
           .set(submission.toFirestore(), SetOptions(merge: true));
 
       debugPrint(
-          '[TestService] Test submitted successfully (status: ' + status + ')');
+          '[TestService] Test submitted successfully (status: $status)');
     } catch (e) {
       debugPrint('[TestService] Error submitting test: $e');
       rethrow;

@@ -93,7 +93,7 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
+                  color: Colors.blue.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -409,7 +409,7 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -626,7 +626,7 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
         color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -1039,3 +1039,4 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
     }
   }
 }
+

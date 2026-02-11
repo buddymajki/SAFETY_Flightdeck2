@@ -1,10 +1,10 @@
 // File: test/flight_detection_test.dart
 
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/services/flight_detection_service.dart';
-import '../lib/services/location_service.dart';
-import '../lib/services/tracklog_parser_service.dart';
-import '../lib/models/tracked_flight.dart';
+import 'package:flightdeck_firebase/services/flight_detection_service.dart';
+import 'package:flightdeck_firebase/services/location_service.dart';
+import 'package:flightdeck_firebase/services/tracklog_parser_service.dart';
+import 'package:flightdeck_firebase/models/tracked_flight.dart';
 
 void main() {
   group('LocationService', () {
@@ -628,9 +628,7 @@ B120000470000N0100000EA001000012340000
 
       final service = FlightDetectionService();
       final baseTime = DateTime.now();
-      FlightEvent? takeoffEvent;
-
-      print('\n=== REAL FLIGHT SIMULATION ===');
+      FlightEvent? takeoffEvent;
       for (final p in flightPoints) {
         final point = TrackPoint(
           timestamp: baseTime.add(Duration(seconds: p['time'] as int)),
@@ -639,18 +637,12 @@ B120000470000N0100000EA001000012340000
           altitude: p['alt'] as double,
         );
 
-        final event = service.processTrackPoint(point);
-        print('t=${p['time']}s: alt=${p['alt']}m, isInFlight=${service.isInFlight}, event=${event?.type}');
+        final event = service.processTrackPoint(point);
         
         if (event != null && event.type == FlightEventType.takeoff) {
-          takeoffEvent = event;
-          print('*** TAKEOFF DETECTED at t=${p['time']}s ***');
+          takeoffEvent = event;
         }
-      }
-
-      print('\n=== RESULTS ===');
-      print('Takeoff detected: ${takeoffEvent != null}');
-      print('Is in flight: ${service.isInFlight}');
+      }
       
       expect(takeoffEvent, isNotNull, reason: 'Takeoff should be detected for this real sled ride');
       expect(service.isInFlight, isTrue);
@@ -729,9 +721,7 @@ B120000470000N0100000EA001000012340000
 
       final service = FlightDetectionService();
       final baseTime = DateTime.now();
-      FlightEvent? takeoffEvent;
-
-      print('\n=== 1-SECOND GPS INTERVAL TEST ===');
+      FlightEvent? takeoffEvent;
       for (final p in flightPoints) {
         final point = TrackPoint(
           timestamp: baseTime.add(Duration(seconds: p['time'] as int)),
@@ -742,13 +732,9 @@ B120000470000N0100000EA001000012340000
 
         final event = service.processTrackPoint(point);
         if (event != null && event.type == FlightEventType.takeoff) {
-          takeoffEvent = event;
-          print('*** TAKEOFF DETECTED at t=${p['time']}s ***');
+          takeoffEvent = event;
         }
-      }
-
-      print('Takeoff detected: ${takeoffEvent != null}');
-      print('Is in flight: ${service.isInFlight}');
+      }
       
       expect(takeoffEvent, isNotNull, reason: 'Takeoff should be detected with 1-second GPS intervals');
       expect(service.isInFlight, isTrue);
@@ -812,9 +798,7 @@ B120000470000N0100000EA001000012340000
       final service = FlightDetectionService();
       final baseTime = DateTime.now();
       FlightEvent? takeoffEvent;
-      FlightEvent? landingEvent;
-
-      print('\n=== COMPLETE FLIGHT WITH LANDING TEST ===');
+      FlightEvent? landingEvent;
       for (final p in flightPoints) {
         final point = TrackPoint(
           timestamp: baseTime.add(Duration(seconds: p['time'] as int)),
@@ -826,18 +810,12 @@ B120000470000N0100000EA001000012340000
         final event = service.processTrackPoint(point);
         if (event != null) {
           if (event.type == FlightEventType.takeoff) {
-            takeoffEvent = event;
-            print('*** TAKEOFF DETECTED at t=${p['time']}s ***');
+            takeoffEvent = event;
           } else if (event.type == FlightEventType.landing) {
-            landingEvent = event;
-            print('*** LANDING DETECTED at t=${p['time']}s ***');
+            landingEvent = event;
           }
         }
-      }
-
-      print('Takeoff detected: ${takeoffEvent != null}');
-      print('Landing detected: ${landingEvent != null}');
-      print('Is in flight: ${service.isInFlight}');
+      }
       
       expect(takeoffEvent, isNotNull, reason: 'Takeoff should be detected');
       expect(landingEvent, isNotNull, reason: 'Landing should be detected after 10+ seconds of stationary data');
@@ -845,3 +823,5 @@ B120000470000N0100000EA001000012340000
     });
   });
 }
+
+

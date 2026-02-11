@@ -10,6 +10,7 @@ import '../services/stats_service.dart';
 import '../services/user_data_service.dart';
 import '../services/profile_service.dart';
 import '../services/dashboard_config_service.dart';
+import '../services/app_version_service.dart';
 import 'login_screen.dart';
 import 'main_navigation.dart';
 
@@ -24,6 +25,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    // Pre-load app version
+    AppVersionService.getAppVersion();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _preloadData();
     });
@@ -113,13 +116,19 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            const Text(
-              'FlightDeck v2.05',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 245, 245, 245),
-              ),
+            FutureBuilder<String>(
+              future: AppVersionService.getFullVersion(),
+              builder: (context, snapshot) {
+                final versionText = snapshot.data ?? 'Loading...';
+                return Text(
+                  'FlightDeck $versionText',
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 245, 245, 245),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 32),
             const CircularProgressIndicator(),

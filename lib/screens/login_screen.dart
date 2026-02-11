@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
+import '../services/app_version_service.dart';
 import '../widgets/responsive_layout.dart';
 import 'splash_screen.dart';
 
@@ -74,13 +75,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  const Text(
-                    'FlightDeck v2.05',
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 245, 245, 245),
-                    ),
+                  FutureBuilder<String>(
+                    future: AppVersionService.getFullVersion(),
+                    builder: (context, snapshot) {
+                      final versionText = snapshot.data ?? 'v1.0.3';
+                      return Text(
+                        'FlightDeck $versionText',
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 245, 245, 245),
+                        ),
+                      );
+                    },
                   ),   
                   const SizedBox(height: 32),               
                   TextFormField(

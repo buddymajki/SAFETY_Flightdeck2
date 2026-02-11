@@ -27,9 +27,7 @@ void main() {
       expect(json.containsKey('features'), true);
       
       final features = json['features'] as List<dynamic>;
-      expect(features.isNotEmpty, true, reason: 'Should have airspace features');
-      
-      print('Total airspace features: ${features.length}');
+      expect(features.isNotEmpty, true, reason: 'Should have airspace features');
       
       // Count by type
       final typeCounts = <String, int>{};
@@ -37,9 +35,7 @@ void main() {
         final props = feature['properties'] as Map<String, dynamic>;
         final type = props['ASType'] as String? ?? 'Unknown';
         typeCounts[type] = (typeCounts[type] ?? 0) + 1;
-      }
-      
-      print('Airspace types:');
+      }
       typeCounts.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value))
         ..forEach((e) => print('  ${e.key}: ${e.value}'));
@@ -57,13 +53,7 @@ void main() {
         orElse: () => features.first,
       );
       
-      final props = tmaFeature['properties'] as Map<String, dynamic>;
-      print('\nSample TMA Zone:');
-      print('  Name: ${props['Name']}');
-      print('  Type: ${props['ASType']}');
-      print('  Class: ${props['ASClass']}');
-      print('  HX: ${props['HX']}');
-      print('  DABS: ${props['DABS']}');
+      final props = tmaFeature['properties'] as Map<String, dynamic>;
       
       // Parse altitudes
       final lower = props['Lower'] as Map<String, dynamic>?;
@@ -72,25 +62,21 @@ void main() {
       if (lower != null) {
         final metric = lower['Metric'] as Map<String, dynamic>?;
         if (metric != null) {
-          final alt = metric['Alt'] as Map<String, dynamic>?;
-          print('  Lower Alt: ${alt?['Altitude']} ${alt?['Type']}');
+          final alt = metric['Alt'] as Map<String, dynamic>?;
         }
       }
       
       if (upper != null) {
         final metric = upper['Metric'] as Map<String, dynamic>?;
         if (metric != null) {
-          final alt = metric['Alt'] as Map<String, dynamic>?;
-          print('  Upper Alt: ${alt?['Altitude']} ${alt?['Type']}');
+          final alt = metric['Alt'] as Map<String, dynamic>?;
         }
       }
       
       // Parse geometry
       final geometry = tmaFeature['geometry'] as Map<String, dynamic>;
       final coords = geometry['coordinates'] as List<dynamic>;
-      final ring = coords[0] as List<dynamic>;
-      print('  Polygon vertices: ${ring.length}');
-      print('  First vertex: [${ring[0][0]}, ${ring[0][1]}]'); // [lng, lat]
+      final ring = coords[0] as List<dynamic>; // [lng, lat]
     });
     
     test('Point-in-polygon algorithm', () {
@@ -110,9 +96,7 @@ void main() {
       expect(_pointInPolygon(15, 5, polygon), false, reason: '(15,5) should be outside');
       
       // Point on edge: (0, 5) - edge case, may vary
-      // Point at corner: (0, 0) - edge case, may vary
-      
-      print('Point-in-polygon test passed');
+      // Point at corner: (0, 0) - edge case, may vary
     });
     
     test('Find specific airspace by coordinates', () async {
@@ -184,9 +168,7 @@ void main() {
           foundCount++;
           print('  Found: ${props['Name']} (${props['ASType']}) - Alt: $minAlt-$maxAlt m');
         }
-      }
-      
-      print('Total airspaces found at this position: $foundCount');
+      }
       expect(foundCount >= 0, true); // May or may not be in airspace
     });
   });
@@ -210,3 +192,5 @@ bool _pointInPolygon(double lat, double lng, List<GeoPoint> polygon) {
   }
   return isInside;
 }
+
+

@@ -1,0 +1,8 @@
+{
+  "version": "1.0.4",
+  "buildNumber": "5",
+  "downloadUrl": "https://drive.google.com/uc?id=REPLACE_WITH_APK_FILE_ID&export=download",
+  "changelog": "✨ FlightDeck v1.0.4\n\n🆕 New Features:\n- Feature 1\n- Feature 2\n\n🐛 Bug Fixes:\n- Fixed issue 1\n- Fixed issue 2\n\n⚡ Improvements:\n- Performance optimization\n- Better UX",
+  "isForce": false,
+  "minimumVersion": "1.0.0"
+}

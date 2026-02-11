@@ -353,9 +353,7 @@ class TracklogParserService {
         
         if (timeDiff > 0) {
           // Calculate vertical speed if not already set
-          if (verticalSpeed == null) {
-            verticalSpeed = (point.altitude - prev.altitude) / timeDiff;
-          }
+          verticalSpeed ??= (point.altitude - prev.altitude) / timeDiff;
           
           // Calculate horizontal speed if not already set (from coordinate distance)
           if (speed == null) {
@@ -455,10 +453,6 @@ class TracklogParserService {
     final startTime = DateTime.now().subtract(Duration(seconds: actualFlightSeconds.toInt()));
     final totalPoints = max(24, (actualFlightSeconds / 10).toInt()); // At least 24 points, ~10s intervals
     
-    // Calculate center point for scenic loops (offset from direct line)
-    final midLat = (startLat + endLat) / 2;
-    final midLon = (startLon + endLon) / 2;
-    
     for (int i = 0; i < totalPoints; i++) {
       final progress = i / (totalPoints - 1);
       final timestamp = startTime.add(Duration(
@@ -531,11 +525,6 @@ class TracklogParserService {
     return _calculateVerticalSpeeds(points);
   }
 
-  /// Simulate thermal activity for test data
-  static double _simulateThermal(double phase) {
-    // Simple sine wave to simulate thermal climbing
-    return (phase * 10 * 3.14159).sin();
-  }
 }
 
 /// Supported tracklog formats

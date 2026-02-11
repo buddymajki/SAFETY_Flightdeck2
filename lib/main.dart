@@ -20,10 +20,12 @@ import 'services/stats_service.dart';
 import 'services/gtc_service.dart';
 import 'services/test_service.dart';
 import 'services/connectivity_service.dart';
+import 'services/update_service.dart';
 import 'auth/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation.dart';
+import 'widgets/update_dialog.dart';
 
 import 'package:flutter/services.dart';
 
@@ -95,6 +97,7 @@ class _MyAppState extends State<MyApp> {
           service.initialize();
           return service;
         }),
+        ChangeNotifierProvider(create: (_) => UpdateService()),
         ChangeNotifierProvider(create: (_) => GlobalDataService()),
         ChangeNotifierProvider(create: (_) => AppConfigService()),
         ChangeNotifierProvider(create: (_) => GTCService()),
@@ -250,6 +253,9 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBin
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
+    // Check for app updates (moved to MainNavigationScreen to avoid splash screen race condition)
+    // _checkForUpdates();
 
     // Wire up stats update callbacks
     final statsService = context.read<StatsService>();
@@ -409,6 +415,34 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBin
         ],
       ),
     );
+  }
+
+  /// Check for app updates and show dialog if update is available
+  Future<void> _checkForUpdates() async {
+    try {
+      final updateService = context.read<UpdateService>();
+      
+      // Check for updates in background
+      final hasUpdate = await updateService.checkForUpdates();
+      
+      if (hasUpdate && mounted) {
+        // Show update dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) => UpdateDialog(
+            onSkip: () {
+              debugPrint('[Update] User skipped update');
+            },
+            onUpdate: () {
+              debugPrint('[Update] Update installed successfully');
+            },
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('[Update] Error checking for updates: $e');
+    }
   }
 
   @override

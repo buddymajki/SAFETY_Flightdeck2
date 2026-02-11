@@ -10,8 +10,11 @@ import 'flightbook_screen.dart';
 import 'gps_screen.dart';
 import 'tests_screen.dart';
 import '../services/app_config_service.dart';
+import '../services/app_version_service.dart';
+import '../services/update_service.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/custom_status_bar.dart';
+import '../widgets/update_dialog.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -82,6 +85,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    
+    // Check for app updates - now screen is fully loaded and ready to show dialog
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdates();
+    });
   }
 
   @override
@@ -152,10 +160,72 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 _handleLogout(context);
               },
             ),
+            const Divider(color: Colors.grey),
+            // App version info
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'App Version',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  FutureBuilder<String>(
+                    future: AppVersionService.getFullVersion(),
+                    builder: (context, snapshot) {
+                      return Text(
+                        snapshot.data ?? 'Loading...',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// Check for app updates and show dialog if update is available
+  Future<void> _checkForUpdates() async {
+    try {
+      final updateService = context.read<UpdateService>();
+      
+      // Check for updates from GitHub metadata.json (raw content)
+      // This URL is constant - metadata.json is auto-updated on each release
+      const metadataUrl = 'https://raw.githubusercontent.com/buddymajki/SAFETY_Flightdeck2/master/metadata.json';
+      
+      final hasUpdate = await updateService.checkForUpdatesFromGoogleDrive(metadataUrl);
+      
+      if (hasUpdate && mounted) {
+        // Show update dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) => UpdateDialog(
+            onSkip: () {
+              debugPrint('[Update] User skipped update');
+            },
+            onUpdate: () {
+              debugPrint('[Update] Update installed successfully');
+            },
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('[Update] Error checking for updates: $e');
+    }
   }
 
   @override

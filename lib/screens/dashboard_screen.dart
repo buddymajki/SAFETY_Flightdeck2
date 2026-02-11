@@ -297,7 +297,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Expanded(
           child: DropdownButtonFormField<int?>(
-            value: safeSelectedYear,
+            initialValue: safeSelectedYear,
             decoration: InputDecoration(
               labelText: _t('Select_Year', lang),
               border: OutlineInputBorder(

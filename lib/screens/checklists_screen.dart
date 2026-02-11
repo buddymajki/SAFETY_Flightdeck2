@@ -185,7 +185,7 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                   padding: EdgeInsets.zero,
                   labelPadding: const EdgeInsets.symmetric(horizontal: 8),
                   labelColor: theme.colorScheme.onSurface,
-                  unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.3),
+                  unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                   labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
                   unselectedLabelStyle: theme.textTheme.labelMedium,
                   indicatorColor: theme.colorScheme.primary,
@@ -209,10 +209,10 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                         height: 32,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
-                          color: theme.colorScheme.primary.withOpacity(0.8),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.8),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 3,
                               offset: const Offset(0, 1),
                             ),
@@ -221,7 +221,7 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                         child: Icon(
                           Icons.chevron_left,
                           size: 18,
-                          color: Colors.white.withOpacity(1.0),
+                          color: Colors.white.withValues(alpha: 1.0),
                         ),
                       ),
                     ),
@@ -241,10 +241,10 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                         height: 32,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
-                          color: theme.colorScheme.primary.withOpacity(0.8),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.8),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 3,
                               offset: const Offset(0, 1),
                             ),
@@ -253,7 +253,7 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                         child: Icon(
                           Icons.chevron_right,
                           size: 18,
-                          color: Colors.white.withOpacity(1.0),
+                          color: Colors.white.withValues(alpha: 1.0),
                         ),
                       ),
                     ),
@@ -385,7 +385,7 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                 Text(
                   '$completedCount/$total',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -426,13 +426,13 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isCompleted
-              ? theme.colorScheme.primary.withOpacity(0.3)
-              : theme.dividerColor.withOpacity(0.2),
+              ? theme.colorScheme.primary.withValues(alpha: 0.3)
+              : theme.dividerColor.withValues(alpha: 0.2),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -486,7 +486,7 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                         style: theme.textTheme.titleSmall?.copyWith(
                           decoration: isCompleted ? TextDecoration.lineThrough : null,
                           color: isCompleted
-                              ? theme.textTheme.bodySmall?.color?.withOpacity(0.6)
+                              ? theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6)
                               : null,
                           fontWeight: FontWeight.w600,
                         ),
@@ -496,7 +496,7 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                         Text(
                           description,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,

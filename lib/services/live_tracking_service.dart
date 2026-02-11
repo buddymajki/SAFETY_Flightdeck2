@@ -737,34 +737,6 @@ class LiveTrackingService extends ChangeNotifier {
     }
   }
   
-  /// Queue a position update for later sync
-  /// NOTE: This is now only used for landing marker, not regular positions
-  void _queuePositionUpdate(TrackPoint position, bool isInRestrictedAirspace) {
-    final update = _PendingPositionUpdate(
-      position: position,
-      queuedAt: DateTime.now(),
-      additionalData: {
-        'type': 'position',
-        'airspaceViolation': isInRestrictedAirspace,
-        'alertId': _alertService.currentFlightAlertId,
-        'uid': _uid,
-        'shvNumber': _shvNumber,
-        'displayName': _displayName,
-        'membershipValid': _membershipValid,
-        'insuranceValid': _insuranceValid,
-        'licenseType': _licenseType,
-        'glider': _glider,
-        'takeoffSite': _takeoffSiteName,
-        'flightStartTime': _flightStartTime?.toIso8601String(),
-      },
-    );
-    
-    _pendingPositions.add(update);
-    _savePendingPositions();
-    
-    debugPrint('📥 [LiveTracking] Queued update (landing marker) - total pending: ${_pendingPositions.length}');
-  }
-  
   /// Sync pending landing markers to Firestore
   /// NOTE: Regular positions are not queued - only landing markers are synced
   Future<void> _syncPendingPositions() async {

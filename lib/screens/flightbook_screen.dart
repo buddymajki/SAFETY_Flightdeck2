@@ -478,7 +478,7 @@ class AddEditFlightForm extends StatefulWidget {
   final bool isNewFromGps; // whether this is a new flight created from GPS (has pre-filled data but is not an edit)
   final VoidCallback onSaved;
 
-  const AddEditFlightForm({
+  const AddEditFlightForm({super.key, 
     required this.flightService,
     required this.profileService,
     required this.flight,

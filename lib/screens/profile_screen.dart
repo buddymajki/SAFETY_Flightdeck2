@@ -679,7 +679,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: InputDecoration(
         labelText: label,
         filled: true,
-        fillColor: readOnly ? theme.disabledColor.withOpacity(0.08) : theme.cardColor,
+        fillColor: readOnly ? theme.disabledColor.withValues(alpha: 0.08) : theme.cardColor,
       ),
     );
   }
@@ -1138,7 +1138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                     ],
                                   ),
-                                )).toList(),
+                                )),
                               ],
                               // After list text
                               if (afterList.isNotEmpty) ...[
@@ -1171,7 +1171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),
@@ -1253,3 +1253,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return 'unknown date';
   }
 }
+

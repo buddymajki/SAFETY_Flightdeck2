@@ -311,7 +311,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     
     return Card(
       margin: const EdgeInsets.all(12),
-      color: statusColor.withOpacity(0.1),
+      color: statusColor.withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -353,7 +353,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.2),
+                  color: Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -518,7 +518,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
               _buildDataRow(
                 context,
                 Icons.height,
-                '${_t('Altitude', lang)}',
+                _t('Altitude', lang),
                 '${position.altitude.toStringAsFixed(0)} m',
                 true,
               ),
@@ -526,7 +526,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
               _buildDataRow(
                 context,
                 Icons.speed,
-                '${_t('Speed', lang)}',
+                _t('Speed', lang),
                 '${((position.speed ?? 0.0) * 3.6).toStringAsFixed(1)} km/h',
                 true,
               ),
@@ -536,7 +536,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
                 (position.verticalSpeed ?? 0.0) >= 0
                     ? Icons.arrow_upward
                     : Icons.arrow_downward,
-                '${_t('Vertical_Speed', lang)}',
+                _t('Vertical_Speed', lang),
                 '${(position.verticalSpeed ?? 0.0).toStringAsFixed(2)} m/s',
                 true,
               ),
@@ -561,7 +561,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.5),
+            color: theme.cardColor.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -1001,7 +1001,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.2),
+                    color: statusColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -1512,3 +1512,4 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
   }
 
 }
+

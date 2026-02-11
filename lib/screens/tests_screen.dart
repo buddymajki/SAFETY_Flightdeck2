@@ -671,7 +671,7 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
             color: Theme.of(context).colorScheme.surface,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, -2),
               ),
@@ -1007,7 +1007,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: const Color.fromARGB(255, 12, 67, 99).withOpacity(0.2),
+                      color: const Color.fromARGB(255, 12, 67, 99).withValues(alpha: 0.2),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -1064,7 +1064,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: const Color.fromARGB(255, 12, 67, 99).withOpacity(0.2),
+                      color: const Color.fromARGB(255, 12, 67, 99).withValues(alpha: 0.2),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -1112,7 +1112,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
             boxShadow: selectedValue == true
                 ? [
                     BoxShadow(
-                      color: const Color.fromARGB(255, 12, 67, 99).withOpacity(0.2),
+                      color: const Color.fromARGB(255, 12, 67, 99).withValues(alpha: 0.2),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -1145,7 +1145,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
             boxShadow: selectedValue == false
                 ? [
                     BoxShadow(
-                      color: const Color.fromARGB(255, 12, 67, 99).withOpacity(0.2),
+                      color: const Color.fromARGB(255, 12, 67, 99).withValues(alpha: 0.2),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -1264,7 +1264,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                         borderSide: BorderSide(
                           color: current != null
                               ? const Color.fromARGB(255, 105, 167, 225)
-                              : Colors.white.withOpacity(0.5),
+                              : Colors.white.withValues(alpha: 0.5),
                           width: 2,
                         ),
                       ),
@@ -1273,7 +1273,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                         borderSide: BorderSide(
                           color: current != null
                               ? const Color.fromARGB(255, 105, 167, 225)
-                              : Colors.white.withOpacity(0.5),
+                              : Colors.white.withValues(alpha: 0.5),
                           width: 2,
                         ),
                       ),
@@ -1287,14 +1287,14 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                       filled: true,
                       fillColor: current != null
-                          ? const Color.fromARGB(255, 105, 167, 225).withOpacity(0.15)
+                          ? const Color.fromARGB(255, 105, 167, 225).withValues(alpha: 0.15)
                           : Colors.transparent,
                     ),
                     isExpanded: true,
                     hint: Text(
                       'Select',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
                     initialValue: current,
@@ -1338,7 +1338,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         );
-                      }).toList(),
+                      }),
                     ],
                     dropdownColor: const Color.fromARGB(255, 40, 60, 90),
                     isDense: true,
@@ -1361,7 +1361,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
               ),
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -1471,4 +1471,5 @@ class _DisclaimerDialogState extends State<_DisclaimerDialog> {
     );
   }
 }
+
 
