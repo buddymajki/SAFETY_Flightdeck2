@@ -43,7 +43,7 @@ flutter build apk --release
 ### Step 4: Push to GitHub
 ```bash
 git add .
-git commit -m "Release v1.0.5"
+git commit -m "new Release v1.0.7"
 git push origin master
 ```
 
