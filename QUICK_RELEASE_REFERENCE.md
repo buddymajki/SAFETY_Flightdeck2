@@ -4,9 +4,11 @@
 
 ```bash
 # 1. Edit pubspec.yaml
-#    IMPORTANT: Always INCREASE the build number! (the +X part)
-#    Example: 1.0.5+2 → 1.0.6+3 (or any higher number)
-#    Change: version: 1.0.6+3
+#    CRITICAL: Change BOTH version AND build number!
+#    Version: 1.0.X → 1.0.Y (must change for new git tag!)
+#    Build: +X → +Y (must always increase!)
+#    Example: 1.0.9+9 → 1.0.10+10
+#    Change: version: 1.0.10+10
 
 # 2. Sync + Build
 dart bin/update_version.dart
@@ -14,11 +16,11 @@ flutter build apk --release
 
 # 3. Push to GitHub
 git add .
-git commit -m "Release v1.0.6"
+git commit -m "Release v1.0.10"
 git push origin master
 
 # 4. Create Tag (triggers GitHub Actions)
-git tag v1.0.6
+git tag v1.0.10
 git push origin --tags
 
 # 🤖 GitHub Actions takes over automatically!
@@ -26,24 +28,43 @@ git push origin --tags
 
 ---
 
+## ⚠️ CRITICAL: VERSION NUMBER MUST CHANGE FOR EACH TAG!
+
+**Git tags are unique!** You cannot create multiple tags with the same name (e.g., `v1.0.9`).
+
+**WRONG** ❌:
+```
+version: 1.0.9+9  → git tag v1.0.9 ✅
+version: 1.0.9+10 → git tag v1.0.9 ❌ ERROR: tag already exists!
+```
+
+**CORRECT** ✅:
+```
+version: 1.0.9+9  → git tag v1.0.9  ✅
+version: 1.0.10+10 → git tag v1.0.10 ✅
+```
+
+**Rule:** Every new release MUST have a new version number (1.0.X), not just a new build number (+X).
+
+---
+
 ## ⚠️ IMPORTANT: BUILD NUMBER MUST ALWAYS INCREASE!
 
-The build number (the `+X` in `version: 1.0.6+3`) **must always increase** with every release.
+The build number (the `+X` in `version: 1.0.10+10`) **must always increase** with every release.
 
 **Why?** Android's versionCode must be strictly increasing. If you use the same or lower build number, Android will refuse to install the update with the error "App not installed".
 
-**Version number vs Build number:**
-- **Version number** (1.0.X): You can increase or keep it the same (for hotfixes)
-- **Build number** (+X): **MUST always increase**, no exceptions!
-
 **Examples:**
-- ✅ CORRECT: `1.0.5+2` → `1.0.6+3` (both version and build increased)
-- ✅ CORRECT: `1.0.5+2` → `1.0.5+3` (only build increased, e.g., hotfix)
-- ✅ CORRECT: `1.0.6+5` → `1.0.6+6` (same version, build increased)
-- ❌ WRONG: `1.0.5+2` → `1.0.6+2` (build number stayed same!)
-- ❌ WRONG: `1.0.5+3` → `1.0.6+2` (build number decreased!)
+- ✅ CORRECT: `1.0.9+9` → `1.0.10+10` (version AND build increased for new release)
+- ✅ CORRECT: `1.0.10+10` → `1.0.11+11` (version AND build increased)
+- ✅ CORRECT: `1.0.9+9` → `1.1.0+10` (minor version bump, build increased)
+- ❌ WRONG: `1.0.9+9` → `1.0.9+10` (same version = cannot create new git tag!)
+- ❌ WRONG: `1.0.9+9` → `1.0.10+9` (build number stayed same = Android install fails!)
+- ❌ WRONG: `1.0.10+10` → `1.0.11+9` (build number decreased = Android install fails!)
 
-**Quick rule:** Always increment the build number (+X) by at least 1 with each release, regardless of version number changes.
+**Quick rules:**
+1. **Version number (1.0.X)**: Must change for every new git tag/release
+2. **Build number (+X)**: Must always increase with each release, no exceptions!
 
 ---
 
