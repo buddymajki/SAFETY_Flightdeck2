@@ -72,12 +72,5 @@ That's why we upload the local APK with `gh release upload`.
 Replace X.X.X with your new version number:
 
 ```powershell
-dart bin/update_version.dart
-flutter build apk --release
-git add .
-git commit -m "Release vX.X.X"
-git push origin master
-git tag vX.X.X
-git push origin --tags
-gh release upload vX.X.X build\app\outputs\flutter-apk\app-release.apk --clobber
+dart bin/update_version.dart; flutter build apk --release; git add .; git commit -m "Release vX.X.X"; git push origin master; git tag vX.X.X; git push origin --tags; Start-Sleep -Seconds 30; gh release view v1.0.19; gh release upload vX.X.X build\app\outputs\flutter-apk\app-release.apk --clobber
 ```
