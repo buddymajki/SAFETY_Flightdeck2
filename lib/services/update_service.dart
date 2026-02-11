@@ -218,8 +218,14 @@ class UpdateService extends ChangeNotifier {
       _lastError = '';
       return true;
     } on DioException catch (e) {
-      _lastError = 'DIO_ERROR_${e.type}_${e.response?.statusCode}';
-      debugPrint('[Update] DioException: ${e.type} - ${e.response?.statusCode} - ${e.message}');
+      // Check if it's a 404 error (APK not ready yet on GitHub)
+      if (e.response?.statusCode == 404) {
+        _lastError = 'APK_NOT_READY_404';
+        debugPrint('[Update] APK not ready yet (404). GitHub release is still building.');
+      } else {
+        _lastError = 'DIO_ERROR_${e.type}_${e.response?.statusCode}';
+        debugPrint('[Update] DioException: ${e.type} - ${e.response?.statusCode} - ${e.message}');
+      }
       return false;
     } catch (e) {
       _lastError = 'ERROR_${e.toString()}';

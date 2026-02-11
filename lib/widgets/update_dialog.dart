@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/update_service.dart';
+import '../services/app_config_service.dart';
 
 class UpdateDialog extends StatefulWidget {
   final VoidCallback onSkip;
@@ -20,25 +21,48 @@ class _UpdateDialogState extends State<UpdateDialog> {
   bool _isDownloading = false;
   bool _isInstalling = false;
 
+  // Localization texts
+  static const Map<String, Map<String, String>> _texts = {
+    'new_version_available': {'en': 'New Version Available', 'de': 'Neue Version verfügbar'},
+    'current_version': {'en': 'Current version:', 'de': 'Aktuelle Version:'},
+    'available_version': {'en': 'Available version:', 'de': 'Verfügbare Version:'},
+    'whats_new': {'en': 'What\'s new:', 'de': 'Neuigkeiten:'},
+    'downloading': {'en': 'Downloading...', 'de': 'Wird heruntergeladen...'},
+    'installing': {'en': 'Installing...', 'de': 'Wird installiert...'},
+    'error': {'en': 'Error:', 'de': 'Fehler:'},
+    'later': {'en': 'Later', 'de': 'Später'},
+    'install': {'en': 'Install', 'de': 'Installieren'},
+    'install_failed': {'en': 'Installation failed.\nError:', 'de': 'Installation fehlgeschlagen.\nFehler:'},
+    'download_failed': {'en': 'Download failed.', 'de': 'Download fehlgeschlagen.'},
+    'apk_not_ready': {'en': 'This version will be released in the next 30 minutes. Click Update in the version menu (hamburger menu).', 'de': 'Diese Version wird in den nächsten 30 Minuten veröffentlicht. Klicken Sie auf Update im Versionsmenü (Hamburger-Menü).'},
+  };
+
+  String _getText(String key, String lang) {
+    return _texts[key]?[lang] ?? _texts[key]?['en'] ?? key;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final appConfig = Provider.of<AppConfigService>(context, listen: false);
+    final lang = appConfig.currentLanguageCode;
+
     return Consumer<UpdateService>(
       builder: (context, updateService, _) {
         final updateInfo = updateService.updateInfo;
         if (updateInfo == null) return const SizedBox.shrink();
 
         return AlertDialog(
-          title: const Text('Új verzió elérhető'),
+          title: Text(_getText('new_version_available', lang)),
           content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('A jelenlegi verzió: ${updateService.appVersion}'),
+                Text('${_getText('current_version', lang)} ${updateService.appVersion}'),
                 const SizedBox(height: 8),
-                Text('Elérhető verzió: ${updateInfo.version}'),
+                Text('${_getText('available_version', lang)} ${updateInfo.version}'),
                 const SizedBox(height: 16),
-                const Text('Újdonságok:'),
+                Text(_getText('whats_new', lang)),
                 const SizedBox(height: 8),
                 Text(
                   updateInfo.changelog,
@@ -49,7 +73,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Letöltés folyamatban...'),
+                      Text(_getText('downloading', lang)),
                       const SizedBox(height: 8),
                       LinearProgressIndicator(
                         value: updateService.downloadProgress,
@@ -61,9 +85,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     ],
                   ),
                 if (_isInstalling)
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text('Telepítés folyamatban...'),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(_getText('installing', lang)),
                   ),
                 if (updateService.lastError.isNotEmpty)
                   Padding(
@@ -78,9 +102,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Hiba:',
-                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                          Text(
+                            _getText('error', lang),
+                            style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -101,12 +125,12 @@ class _UpdateDialogState extends State<UpdateDialog> {
                   widget.onSkip();
                   Navigator.of(context).pop();
                 },
-                child: const Text('Később'),
+                child: Text(_getText('later', lang)),
               ),
             if (!_isDownloading && !_isInstalling)
               ElevatedButton.icon(
                 icon: const Icon(Icons.download),
-                label: const Text('Telepítés'),
+                label: Text(_getText('install', lang)),
                 onPressed: () async {
                   setState(() => _isDownloading = true);
 
@@ -135,7 +159,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'A telepítés sikertelen volt.\nHiba: ${updateService.lastError}',
+                              '${_getText('install_failed', lang)} ${updateService.lastError}',
                             ),
                             duration: const Duration(seconds: 5),
                           ),
@@ -145,9 +169,17 @@ class _UpdateDialogState extends State<UpdateDialog> {
                   } else {
                     setState(() => _isDownloading = false);
                     if (context.mounted) {
+                      // Check if APK is not ready yet (404 error)
+                      final isApkNotReady = updateService.lastError.contains('404') || 
+                                           updateService.lastError.contains('APK_NOT_READY');
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('A letöltés sikertelen volt.'),
+                        SnackBar(
+                          content: Text(
+                            isApkNotReady 
+                              ? _getText('apk_not_ready', lang)
+                              : _getText('download_failed', lang),
+                          ),
+                          duration: Duration(seconds: isApkNotReady ? 8 : 3),
                         ),
                       );
                     }

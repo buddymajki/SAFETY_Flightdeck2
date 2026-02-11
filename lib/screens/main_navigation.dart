@@ -50,6 +50,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       'profile': 'Profile',
       'menu': 'Menu',
       'logout': 'Logout',
+      'check_updates': 'Check for Updates',
+      'checking_updates': 'Checking for updates...',
+      'no_updates': 'You are using the latest version',
+      'update_available': 'Update Available!',
     },
     'de': {
       'dashboard': 'Übersicht',
@@ -61,6 +65,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       'profile': 'Profil',
       'menu': 'Menü',
       'logout': 'Abmelden',
+      'check_updates': 'Nach Updates suchen',
+      'checking_updates': 'Suche nach Updates...',
+      'no_updates': 'Sie verwenden die neueste Version',
+      'update_available': 'Update verfügbar!',
     },
   };
 
@@ -153,6 +161,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
             const Divider(color: Colors.grey),
             ListTile(
+              leading: const Icon(Icons.system_update_alt, color: Colors.blue),
+              title: Text(_getLabel(context, 'check_updates')),
+              onTap: () {
+                Navigator.pop(context);
+                _manualCheckForUpdates();
+              },
+            ),
+            const Divider(color: Colors.grey),
+            ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: Text(_getLabel(context, 'logout'), style: const TextStyle(color: Colors.red)),
               onTap: () {
@@ -225,6 +242,75 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       }
     } catch (e) {
       debugPrint('[Update] Error checking for updates: $e');
+    }
+  }
+
+  /// Manual check for updates (triggered by user from drawer menu)
+  Future<void> _manualCheckForUpdates() async {
+    if (!mounted) return;
+    
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_getLabel(context, 'checking_updates')),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      final updateService = context.read<UpdateService>();
+      const metadataUrl = 'https://raw.githubusercontent.com/buddymajki/SAFETY_Flightdeck2/master/metadata.json';
+      
+      final hasUpdate = await updateService.checkForUpdatesFromGoogleDrive(metadataUrl);
+      
+      if (!mounted) return;
+      
+      if (hasUpdate) {
+        // Show update available message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_getLabel(context, 'update_available')),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+        
+        // Show update dialog
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext dialogContext) => UpdateDialog(
+              onSkip: () {
+                debugPrint('[Update] User skipped update');
+              },
+              onUpdate: () {
+                debugPrint('[Update] Update installed successfully');
+              },
+            ),
+          );
+        }
+      } else {
+        // No updates available
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_getLabel(context, 'no_updates')),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('[Update] Error checking for updates: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error checking for updates'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 

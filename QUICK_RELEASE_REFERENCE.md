@@ -4,7 +4,9 @@
 
 ```bash
 # 1. Edit pubspec.yaml
-#    Change: version: 1.0.5+2
+#    IMPORTANT: Always INCREASE the build number! (the +X part)
+#    Example: 1.0.5+2 → 1.0.6+3 (or any higher number)
+#    Change: version: 1.0.6+3
 
 # 2. Sync + Build
 dart bin/update_version.dart
@@ -12,15 +14,36 @@ flutter build apk --release
 
 # 3. Push to GitHub
 git add .
-git commit -m "Release v1.0.5"
+git commit -m "Release v1.0.6"
 git push origin master
 
 # 4. Create Tag (triggers GitHub Actions)
-git tag v1.0.5
+git tag v1.0.6
 git push origin --tags
 
 # 🤖 GitHub Actions takes over automatically!
 ```
+
+---
+
+## ⚠️ IMPORTANT: BUILD NUMBER MUST ALWAYS INCREASE!
+
+The build number (the `+X` in `version: 1.0.6+3`) **must always increase** with every release.
+
+**Why?** Android's versionCode must be strictly increasing. If you use the same or lower build number, Android will refuse to install the update with the error "App not installed".
+
+**Version number vs Build number:**
+- **Version number** (1.0.X): You can increase or keep it the same (for hotfixes)
+- **Build number** (+X): **MUST always increase**, no exceptions!
+
+**Examples:**
+- ✅ CORRECT: `1.0.5+2` → `1.0.6+3` (both version and build increased)
+- ✅ CORRECT: `1.0.5+2` → `1.0.5+3` (only build increased, e.g., hotfix)
+- ✅ CORRECT: `1.0.6+5` → `1.0.6+6` (same version, build increased)
+- ❌ WRONG: `1.0.5+2` → `1.0.6+2` (build number stayed same!)
+- ❌ WRONG: `1.0.5+3` → `1.0.6+2` (build number decreased!)
+
+**Quick rule:** Always increment the build number (+X) by at least 1 with each release, regardless of version number changes.
 
 ---
 
