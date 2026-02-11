@@ -4,11 +4,14 @@
 
 ```bash
 # 1. Edit pubspec.yaml
-#    CRITICAL: Change BOTH version AND build number!
-#    Version: 1.0.X → 1.0.Y (must change for new git tag!)
-#    Build: +X → +Y (must always increase!)
-#    Example: 1.0.9+9 → 1.0.10+10
-#    Change: version: 1.0.10+10
+#    🔴 CRITICAL RULE: ALWAYS INCREASE BOTH NUMBERS!
+#    Version: 1.0.X → 1.0.(X+1)  [must change for git tag]
+#    Build:   +(Y) → +(Y+1)       [MUST increase or Android install fails!]
+#    
+#    SIMPLE RULE: Use matching numbers!
+#    Example: 1.0.10+10 → 1.0.11+11 → 1.0.12+12
+#    
+#    Change to: version: 1.0.11+11
 
 # 2. Sync + Build
 dart bin/update_version.dart
@@ -16,11 +19,11 @@ flutter build apk --release
 
 # 3. Push to GitHub
 git add .
-git commit -m "Release v1.0.10"
+git commit -m "Release v1.0.11"
 git push origin master
 
 # 4. Create Tag (triggers GitHub Actions)
-git tag v1.0.10
+git tag v1.0.11
 git push origin --tags
 
 # 🤖 GitHub Actions takes over automatically!
@@ -28,43 +31,31 @@ git push origin --tags
 
 ---
 
-## ⚠️ CRITICAL: VERSION NUMBER MUST CHANGE FOR EACH TAG!
+## 🔴 CRITICAL: BOTH VERSION AND BUILD NUMBER MUST INCREASE!
 
-**Git tags are unique!** You cannot create multiple tags with the same name (e.g., `v1.0.9`).
+**Android ONLY checks the build number (+X)!** If it's the same or lower, you get "APP NOT INSTALLED" error.
 
-**WRONG** ❌:
+**FOOL-PROOF RULE:** 
+**Make both numbers the same and increase by 1 each time:**
 ```
-version: 1.0.9+9  → git tag v1.0.9 ✅
-version: 1.0.9+10 → git tag v1.0.9 ❌ ERROR: tag already exists!
-```
-
-**CORRECT** ✅:
-```
-version: 1.0.9+9  → git tag v1.0.9  ✅
-version: 1.0.10+10 → git tag v1.0.10 ✅
+1.0.9+9   → 1.0.10+10 → 1.0.11+11 → 1.0.12+12
 ```
 
-**Rule:** Every new release MUST have a new version number (1.0.X), not just a new build number (+X).
+**WHY THIS WORKS:**
+- Version number increases → new git tag can be created ✅
+- Build number increases → Android accepts the update ✅
+- Both matching → easy to remember ✅
 
----
+**COMMON MISTAKES:**
+- ❌ `1.0.9+9` → `1.0.10+9` (build stayed same → "APP NOT INSTALLED" error!)
+- ❌ `1.0.9+9` → `1.0.9+10` (version same → "tag already exists" error!)
+- ❌ `1.0.9+10` → `1.0.10+10` (build same → "APP NOT INSTALLED" error!)
+- ✅ `1.0.9+9` → `1.0.10+10` (both increased → works perfectly!)
 
-## ⚠️ IMPORTANT: BUILD NUMBER MUST ALWAYS INCREASE!
-
-The build number (the `+X` in `version: 1.0.10+10`) **must always increase** with every release.
-
-**Why?** Android's versionCode must be strictly increasing. If you use the same or lower build number, Android will refuse to install the update with the error "App not installed".
-
-**Examples:**
-- ✅ CORRECT: `1.0.9+9` → `1.0.10+10` (version AND build increased for new release)
-- ✅ CORRECT: `1.0.10+10` → `1.0.11+11` (version AND build increased)
-- ✅ CORRECT: `1.0.9+9` → `1.1.0+10` (minor version bump, build increased)
-- ❌ WRONG: `1.0.9+9` → `1.0.9+10` (same version = cannot create new git tag!)
-- ❌ WRONG: `1.0.9+9` → `1.0.10+9` (build number stayed same = Android install fails!)
-- ❌ WRONG: `1.0.10+10` → `1.0.11+9` (build number decreased = Android install fails!)
-
-**Quick rules:**
-1. **Version number (1.0.X)**: Must change for every new git tag/release
-2. **Build number (+X)**: Must always increase with each release, no exceptions!
+**REMEMBER:**
+- Android ONLY checks **build number (+X)**, not version string!
+- If build number doesn't increase, Android refuses to install!
+- Keep it simple: match the numbers (1.0.X+X)
 
 ---
 
@@ -159,7 +150,41 @@ $ git push origin master
 
 ---
 
-## 🔐 SAFETY CHECKS
+## �️ TROUBLESHOOTING
+
+### ❌ "APP NOT INSTALLED" Error on Device
+**Cause:** Build number (+X) didn't increase from previous install
+**Example:** Device has 1.0.9+10, trying to install 1.0.10+10 (same +10!)
+**Fix:** 
+```bash
+# Increase BOTH numbers in pubspec.yaml
+version: 1.0.11+11  # Both must be higher!
+
+# Then rebuild and release:
+dart bin/update_version.dart
+flutter build apk --release
+git add . && git commit -m "Release v1.0.11"
+git push origin master
+git tag v1.0.11
+git push origin --tags
+```
+
+### ❌ "Tag already exists" Error
+**Cause:** Tried to use same version number twice (e.g., v1.0.9)
+**Fix:** Increase version number and create new tag
+```bash
+# In pubspec.yaml: 1.0.9+X → 1.0.10+Y
+git tag v1.0.10
+git push origin --tags
+```
+
+### ⏳ Update doesn't appear in app
+**Cause:** GitHub Actions still building (takes ~2-5 minutes after tag push)
+**Fix:** Wait 3-5 minutes, then use "Check for Updates" in hamburger menu
+
+---
+
+## �🔐 SAFETY CHECKS
 
 If something goes wrong:
 - ✅ Metadata.json wrong format? → Script validates

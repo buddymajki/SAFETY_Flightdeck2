@@ -52,176 +52,198 @@ class _UpdateDialogState extends State<UpdateDialog> {
         final updateInfo = updateService.updateInfo;
         if (updateInfo == null) return const SizedBox.shrink();
 
-        return AlertDialog(
-          title: Text(_getText('new_version_available', lang)),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('${_getText('current_version', lang)} ${updateService.appVersion}'),
-                const SizedBox(height: 8),
-                Text('${_getText('available_version', lang)} ${updateInfo.version}'),
-                const SizedBox(height: 16),
-                Text(_getText('whats_new', lang)),
-                const SizedBox(height: 8),
-                Text(
-                  updateInfo.changelog,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                const SizedBox(height: 16),
-                if (_isDownloading)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(_getText('downloading', lang)),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: updateService.downloadProgress,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${(updateService.downloadProgress * 100).toStringAsFixed(1)}%',
-                      ),
-                    ],
-                  ),
-                if (_isInstalling)
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+          backgroundColor: Theme.of(context).dialogBackgroundColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.of(context).maybePop(),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(_getText('installing', lang)),
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                    child: Text(_getText('new_version_available', lang), style: Theme.of(context).textTheme.titleLarge),
                   ),
-                if (updateService.lastError.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade100,
-                        border: Border.all(color: Colors.red),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _getText('error', lang),
-                            style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${_getText('current_version', lang)} ${updateService.appVersion}'),
+                        const SizedBox(height: 8),
+                        Text('${_getText('available_version', lang)} ${updateInfo.version}'),
+                        const SizedBox(height: 16),
+                        Text(_getText('whats_new', lang)),
+                        const SizedBox(height: 8),
+                        Text(updateInfo.changelog, style: const TextStyle(fontSize: 12)),
+                        const SizedBox(height: 16),
+                        if (_isDownloading)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_getText('downloading', lang)),
+                              const SizedBox(height: 8),
+                              LinearProgressIndicator(value: updateService.downloadProgress),
+                              const SizedBox(height: 8),
+                              Text('${(updateService.downloadProgress * 100).toStringAsFixed(1)}%'),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            updateService.lastError,
-                            style: const TextStyle(color: Colors.red, fontSize: 12),
+                        if (_isInstalling)
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(_getText('installing', lang)),
                           ),
-                        ],
-                      ),
+                        if (updateService.lastError.isNotEmpty)
+                          Builder(
+                            builder: (context) {
+                              final isApkNotReady = updateService.lastError.contains('404') || updateService.lastError.contains('APK_NOT_READY');
+                              if (isApkNotReady) {
+                                return Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8.0),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade100,
+                                      border: Border.all(color: Colors.red),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      _getText('apk_not_ready', lang),
+                                      style: const TextStyle(color: Colors.red, fontSize: 13),
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8.0),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade100,
+                                      border: Border.all(color: Colors.red),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(_getText('error', lang), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                        const SizedBox(height: 4),
+                                        Text(updateService.lastError, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                      ],
                     ),
                   ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (!_isDownloading && !_isInstalling)
+                          TextButton(
+                            onPressed: () {
+                              widget.onSkip();
+                              Navigator.of(context).pop();
+                            },
+                            child: Text(_getText('later', lang)),
+                          ),
+                        if (!_isDownloading && !_isInstalling)
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.download),
+                            label: Text(_getText('install', lang)),
+                            onPressed: () async {
+                              setState(() => _isDownloading = true);
+                              final success = await updateService.downloadUpdate((progress) { setState(() {}); });
+                              if (success) {
+                                setState(() {
+                                  _isDownloading = false;
+                                  _isInstalling = true;
+                                });
+                                final installed = await updateService.installUpdate();
+                                if (installed) {
+                                  widget.onUpdate();
+                                  if (context.mounted) {
+                                    Navigator.of(context).pop();
+                                  }
+                                } else {
+                                  setState(() => _isInstalling = false);
+                                  if (context.mounted) {
+                                    final needsPermission = updateService.lastError.isEmpty || updateService.lastError.contains('PERMISSION');
+                                    if (needsPermission) {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Icon(Icons.warning_amber, size: 48, color: Colors.orange),
+                                          content: Text(_getText('permission_needed', lang)),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.of(context).pop(),
+                                              child: const Text('OK'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('${_getText('install_failed', lang)} ${updateService.lastError}'),
+                                          duration: const Duration(seconds: 5),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }
+                              } else {
+                                setState(() => _isDownloading = false);
+                                if (context.mounted) {
+                                  final isApkNotReady = updateService.lastError.contains('404') || updateService.lastError.contains('APK_NOT_READY');
+                                  if (isApkNotReady) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(_getText('apk_not_ready', lang)),
+                                        duration: const Duration(seconds: 8),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(_getText('download_failed', lang)),
+                                        duration: const Duration(seconds: 3),
+                                      ),
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                          ),
+                        if (_isDownloading || _isInstalling)
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                value: _isDownloading ? null : 1.0,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          actions: [
-            if (!_isDownloading && !_isInstalling)
-              TextButton(
-                onPressed: () {
-                  widget.onSkip();
-                  Navigator.of(context).pop();
-                },
-                child: Text(_getText('later', lang)),
-              ),
-            if (!_isDownloading && !_isInstalling)
-              ElevatedButton.icon(
-                icon: const Icon(Icons.download),
-                label: Text(_getText('install', lang)),
-                onPressed: () async {
-                  setState(() => _isDownloading = true);
-
-                  final success = await updateService.downloadUpdate(
-                    (progress) {
-                      setState(() {});
-                    },
-                  );
-
-                  if (success) {
-                    setState(() {
-                      _isDownloading = false;
-                      _isInstalling = true;
-                    });
-
-                    final installed = await updateService.installUpdate();
-
-                    if (installed) {
-                      widget.onUpdate();
-                      if (context.mounted) {
-                        Navigator.of(context).pop();
-                      }
-                    } else {
-                      setState(() => _isInstalling = false);
-                      if (context.mounted) {
-                        // Check if permission is needed (install returned false without error)
-                        final needsPermission = updateService.lastError.isEmpty || 
-                                               updateService.lastError.contains('PERMISSION');
-                        
-                        if (needsPermission) {
-                          // Show permission dialog
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Icon(Icons.warning_amber, size: 48, color: Colors.orange),
-                              content: Text(_getText('permission_needed', lang)),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  child: const Text('OK'),
-                                ),
-                              ],
-                            ),
-                          );
-                        } else {
-                          // Show error snackbar
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${_getText('install_failed', lang)} ${updateService.lastError}',
-                              ),
-                              duration: const Duration(seconds: 5),
-                            ),
-                          );
-                        }
-                      }
-                    }
-                  } else {
-                    setState(() => _isDownloading = false);
-                    if (context.mounted) {
-                      // Check if APK is not ready yet (404 error)
-                      final isApkNotReady = updateService.lastError.contains('404') || 
-                                           updateService.lastError.contains('APK_NOT_READY');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isApkNotReady 
-                              ? _getText('apk_not_ready', lang)
-                              : _getText('download_failed', lang),
-                          ),
-                          duration: Duration(seconds: isApkNotReady ? 8 : 3),
-                        ),
-                      );
-                    }
-                  }
-                },
-              ),
-            if (_isDownloading || _isInstalling)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    value: _isDownloading ? null : 1.0,
-                  ),
-                ),
-              ),
-          ],
         );
       },
     );
