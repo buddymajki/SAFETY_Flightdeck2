@@ -6,6 +6,7 @@ import io.flutter.plugin.common.MethodChannel
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.core.content.FileProvider
 import java.io.File
 
@@ -33,6 +34,19 @@ class MainActivity : FlutterActivity() {
 
     private fun installAPK(apkPath: String): Boolean {
         return try {
+            // Check if app has permission to install unknown apps (Android 8.0+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (!packageManager.canRequestPackageInstalls()) {
+                    android.util.Log.w("MainActivity", "Permission to install packages not granted. Requesting permission...")
+                    // Open settings to allow installing from this source
+                    val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                        data = Uri.parse("package:$packageName")
+                    }
+                    startActivity(intent)
+                    return false // User needs to grant permission manually
+                }
+            }
+
             val file = File(apkPath)
             if (!file.exists()) {
                 android.util.Log.e("MainActivity", "APK file does not exist: $apkPath")

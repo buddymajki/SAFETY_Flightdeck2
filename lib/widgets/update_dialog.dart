@@ -35,6 +35,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
     'install_failed': {'en': 'Installation failed.\nError:', 'de': 'Installation fehlgeschlagen.\nFehler:'},
     'download_failed': {'en': 'Download failed.', 'de': 'Download fehlgeschlagen.'},
     'apk_not_ready': {'en': 'This version will be released in the next 30 minutes. Click Update in the version menu (hamburger menu).', 'de': 'Diese Version wird in den nächsten 30 Minuten veröffentlicht. Klicken Sie auf Update im Versionsmenü (Hamburger-Menü).'},
+    'permission_needed': {'en': 'Permission required!\n\nTo install updates, you need to allow FlightDeck to install apps from unknown sources.\n\nPlease enable this permission in the settings that will open now, then try updating again.', 'de': 'Berechtigung erforderlich!\n\nUm Updates zu installieren, müssen Sie FlightDeck erlauben, Apps aus unbekannten Quellen zu installieren.\n\nBitte aktivieren Sie diese Berechtigung in den Einstellungen, die jetzt geöffnet werden, und versuchen Sie dann erneut zu aktualisieren.'},
   };
 
   String _getText(String key, String lang) {
@@ -156,14 +157,36 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     } else {
                       setState(() => _isInstalling = false);
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '${_getText('install_failed', lang)} ${updateService.lastError}',
+                        // Check if permission is needed (install returned false without error)
+                        final needsPermission = updateService.lastError.isEmpty || 
+                                               updateService.lastError.contains('PERMISSION');
+                        
+                        if (needsPermission) {
+                          // Show permission dialog
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Icon(Icons.warning_amber, size: 48, color: Colors.orange),
+                              content: Text(_getText('permission_needed', lang)),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text('OK'),
+                                ),
+                              ],
                             ),
-                            duration: const Duration(seconds: 5),
-                          ),
-                        );
+                          );
+                        } else {
+                          // Show error snackbar
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${_getText('install_failed', lang)} ${updateService.lastError}',
+                              ),
+                              duration: const Duration(seconds: 5),
+                            ),
+                          );
+                        }
                       }
                     }
                   } else {
