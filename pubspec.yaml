@@ -2,7 +2,7 @@ name: flightdeck_firebase
 description: "A new Flutter project."
 publish_to: 'none' 
 
-version: 1.0.14
+version: 1.0.15
 
 environment:
   # Széles tartomány a Dart 3-as verziónál, ami a modern Flutterrel kompatibilis
