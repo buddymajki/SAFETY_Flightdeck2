@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/test_model.dart';
 import '../services/test_service.dart';
 import '../services/app_config_service.dart';
+import '../services/gtc_service.dart';
+import '../services/profile_service.dart';
 import '../auth/auth_service.dart';
 import 'test_review_screen.dart';
 
@@ -15,6 +19,27 @@ class TestsScreen extends StatefulWidget {
 }
 
 class _TestsScreenState extends State<TestsScreen> {
+  final Map<String, Map<String, bool>> _gtcCheckboxStatesBySchool = {};
+  final Map<String, bool> _gtcExpandedBySchool = {};
+  String? _lastActiveSchoolId;
+  String? _lastAcceptanceUid;
+  String? _lastSubmissionsUid;
+  List<TestSubmission> _userSubmissions = [];
+  Set<String> _loadedSignedGtcSchools = {};
+
+  static const Map<String, Map<String, String>> _gtcTexts = {
+    'GTC_Title': {'en': 'General Terms & Conditions', 'de': 'Allgemeine Geschaeftsbedingungen'},
+    'GTC_Error_Message': {'en': 'Please accept every section and sign', 'de': 'Bitte akzeptieren Sie alle Abschnitte und unterschreiben'},
+    'Accepted_On': {'en': 'Accepted on', 'de': 'Akzeptiert am'},
+    'View_Terms': {'en': 'View Terms', 'de': 'Bedingungen anzeigen'},
+    'Collapse': {'en': 'Collapse', 'de': 'Einklappen'},
+    'Accept_And_Sign': {'en': 'Accept & Sign', 'de': 'Akzeptieren & unterschreiben'},
+    'Signed_GTC': {'en': 'Signed Terms & Conditions', 'de': 'Unterzeichnete Bedingungen'},
+    'School': {'en': 'School', 'de': 'Schule'},
+    'I_Accept': {'en': 'I accept', 'de': 'Ich akzeptiere'},
+    'GTC_Not_Available': {'en': 'Terms not available', 'de': 'Bedingungen nicht verfuegbar'},
+  };
+
   @override
   void initState() {
     super.initState();
@@ -22,6 +47,68 @@ class _TestsScreenState extends State<TestsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TestService>(context, listen: false).loadAvailableTests();
     });
+  }
+
+  void _ensureSignedGtcsLoaded(List<String> schoolIds, GTCService gtcService) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final schoolId in schoolIds) {
+        if (!_loadedSignedGtcSchools.contains(schoolId) && gtcService.getGTCForSchool(schoolId) == null) {
+          _loadedSignedGtcSchools.add(schoolId);
+          gtcService.loadGTC(schoolId);
+        }
+      }
+    });
+  }
+
+  String _t(String key, String lang) => _gtcTexts[key]?[lang] ?? key;
+
+  void _ensureUserAcceptancesLoaded(String uid) {
+    if (_lastAcceptanceUid == uid) return;
+    _lastAcceptanceUid = uid;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<GTCService>().loadUserAcceptances(uid);
+    });
+  }
+
+  void _ensureCurrentSchoolGtcLoaded(String uid, String schoolId) {
+    if (_lastActiveSchoolId == schoolId) return;
+    // DEBUG LOG: School selection changed, trigger GTC load (could be removed for release)
+    debugPrint('[TestsScreen] School selection changed: $schoolId (prev: $_lastActiveSchoolId), user: $uid');
+    _lastActiveSchoolId = schoolId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final gtcService = context.read<GTCService>();
+      debugPrint('[TestsScreen] Calling gtcService.loadGTC($schoolId) and checkGTCAcceptance($uid, $schoolId)');
+      gtcService.loadGTC(schoolId);
+      gtcService.checkGTCAcceptance(uid, schoolId);
+    });
+  }
+
+  void _ensureUserSubmissionsLoaded(String uid) {
+    if (_lastSubmissionsUid == uid) return;
+    _lastSubmissionsUid = uid;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<TestService>().loadUserSubmissions(uid).then((submissions) {
+        if (mounted) {
+          setState(() => _userSubmissions = submissions);
+        }
+      }).catchError((e) {
+        debugPrint('[TestsScreen] Error loading submissions: $e');
+      });
+    });
+  }
+
+  void _showSnack(String message, {Color? backgroundColor}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+      ),
+    );
   }
 
   @override
@@ -33,7 +120,7 @@ class _TestsScreenState extends State<TestsScreen> {
   }
 
   Widget _buildBody() {
-    final testService = Provider.of<TestService>(context);
+    final testService = context.watch<TestService>();
 
     if (testService.isLoading) {
       return const Center(
@@ -83,13 +170,7 @@ class _TestsScreenState extends State<TestsScreen> {
       );
     }
 
-    if (testService.availableTests.isEmpty) {
-      return const Center(
-        child: Text('No tests available yet'),
-      );
-    }
-
-    final auth = Provider.of<AuthService>(context, listen: false);
+    final auth = context.read<AuthService>();
     final user = auth.currentUser;
 
     if (user == null) {
@@ -98,19 +179,129 @@ class _TestsScreenState extends State<TestsScreen> {
       );
     }
 
+    final profileService = context.watch<ProfileService>();
+    final profile = profileService.userProfile;
+    final gtcService = context.watch<GTCService>();
+    final lang = context.watch<AppConfigService>().currentLanguageCode;
+
+    final currentSchoolId = profile?.mainSchoolId;
+    final isStudent = (profile?.license ?? '').toLowerCase() == 'student';
+
+    _ensureUserAcceptancesLoaded(user.uid);
+    _ensureUserSubmissionsLoaded(user.uid);
+    if (isStudent && currentSchoolId != null) {
+      _ensureCurrentSchoolGtcLoaded(user.uid, currentSchoolId);
+    }
+
+    // Separate available and completed tests
+    final submittedTestIds = _userSubmissions.map((s) => s.testId).toSet();
+    final availableTests = testService.availableTests
+        .where((test) => !submittedTestIds.contains(test.id))
+        .toList();
+    final completedTests = testService.availableTests
+        .where((test) => submittedTestIds.contains(test.id))
+        .toList();
+
+    // Build GTC widget for current school (only if student and NOT yet accepted)
+    final currentGtcWidget = <Widget>[];
+    final isCurrentSchoolGtcAccepted = isStudent && currentSchoolId != null && gtcService.isGTCAcceptedForSchool(currentSchoolId);
+    
+    if (isStudent && currentSchoolId != null && !isCurrentSchoolGtcAccepted) {
+      currentGtcWidget.add(
+        _buildGtcCardForSchool(
+          lang: lang,
+          uid: user.uid,
+          schoolId: currentSchoolId,
+          profileService: profileService,
+          gtcService: gtcService,
+          allowSigning: true,
+        ),
+      );
+    }
+
+    // Build signed GTC section (include current school if already accepted)
+    final acceptedSchoolIds = gtcService.acceptedSchoolIds;
+    final signedSchoolIds = acceptedSchoolIds.toList(); // Include all accepted, including current school
+    
+    // Ensure all signed GTCs are loaded
+    _ensureSignedGtcsLoaded(signedSchoolIds, gtcService);
+
+    final signedGtcWidgets = <Widget>[];
+    if (signedSchoolIds.isNotEmpty) {
+      signedGtcWidgets.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 16, bottom: 8),
+          child: Text(
+            _t('Signed_GTC', lang),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+      );
+      for (final schoolId in signedSchoolIds) {
+        signedGtcWidgets.add(
+          _buildGtcCardForSchool(
+            lang: lang,
+            uid: user.uid,
+            schoolId: schoolId,
+            profileService: profileService,
+            gtcService: gtcService,
+            allowSigning: false,
+          ),
+        );
+      }
+    }
+
     return RefreshIndicator(
       onRefresh: () => testService.loadAvailableTests(),
-      child: ListView.builder(
+      child: ListView(
         padding: const EdgeInsets.all(16),
-        itemCount: testService.availableTests.length,
-        itemBuilder: (context, index) {
-          final test = testService.availableTests[index];
-          return _TestCard(
-            test: test,
-            userId: user.uid,
-            onTap: () => _openTest(context, test, user.uid),
-          );
-        },
+        children: [
+          // Current GTC section (if student)
+          ...currentGtcWidget,
+
+          // Available Tests section
+          if (availableTests.isNotEmpty) ...[
+            if (currentGtcWidget.isNotEmpty) const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Available',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            ...availableTests.map((test) => _TestCard(
+              test: test,
+              userId: user.uid,
+              onTap: () => _openTest(context, test, user.uid),
+            )),
+          ] else if (currentGtcWidget.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: _buildEmptyTestsCard(),
+            )
+          else
+            _buildEmptyTestsCard(),
+
+          // Completed Tests section
+          if (completedTests.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Completed Tests',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            ...completedTests.map((test) => _TestCard(
+              test: test,
+              userId: user.uid,
+              onTap: () => _openTest(context, test, user.uid),
+            )),
+          ],
+
+          // Signed Terms & Conditions section
+          ...signedGtcWidgets,
+        ],
       ),
     );
   }
@@ -124,6 +315,435 @@ class _TestsScreenState extends State<TestsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildEmptyTestsCard() {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          'No tests available yet',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ),
+    );
+  }
+
+  String _schoolNameFor(
+    String schoolId,
+    ProfileService profileService,
+    Map<String, dynamic>? gtcData,
+  ) {
+    String? fromProfile;
+    for (final school in profileService.schools) {
+      if (school['id'] == schoolId) {
+        fromProfile = school['name'];
+        break;
+      }
+    }
+
+    if (fromProfile != null && fromProfile.isNotEmpty) return fromProfile;
+    final fromGtc = gtcData?['school_name'] as String?;
+    return fromGtc?.isNotEmpty == true ? fromGtc! : 'Unknown School';
+  }
+
+  Widget _buildGtcCardForSchool({
+    required String lang,
+    required String uid,
+    required String schoolId,
+    required ProfileService profileService,
+    required GTCService gtcService,
+    required bool allowSigning,
+  }) {
+    final gtcData = gtcService.getGTCForSchool(schoolId);
+    final acceptanceRecord = gtcService.getAcceptanceForSchool(schoolId);
+    final isAccepted = gtcService.isGTCAcceptedForSchool(schoolId);
+    final isLoading = gtcService.isLoadingForSchool(schoolId);
+    final isExpanded = _gtcExpandedBySchool[schoolId] ?? false;
+    final schoolName = _schoolNameFor(schoolId, profileService, gtcData);
+
+    if (gtcData == null && isLoading) {
+      return Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.primary,
+                  strokeWidth: 2,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '${_t('GTC_Title', lang)} - $schoolName',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (gtcData == null) {
+      if (acceptanceRecord != null) {
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _t('GTC_Title', lang),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_t('School', lang)}: $schoolName',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _t('GTC_Not_Available', lang),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      gtcService.loadGTC(schoolId);
+                      gtcService.checkGTCAcceptance(uid, schoolId);
+                      setState(() => _gtcExpandedBySchool[schoolId] = true);
+                    },
+                    child: Text(_t('View_Terms', lang)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+      return const SizedBox.shrink();
+    }
+
+    final gtcJsonData = gtcData['gtc_data'] as Map<String, dynamic>?;
+    if (gtcJsonData == null) {
+      return const SizedBox.shrink();
+    }
+
+    Map<String, dynamic>? langSections = gtcJsonData[lang] as Map<String, dynamic>?;
+    langSections ??= gtcJsonData['en'] as Map<String, dynamic>?;
+    if (langSections == null) {
+      for (final value in gtcJsonData.values) {
+        if (value is Map<String, dynamic>) {
+          langSections = value;
+          break;
+        }
+      }
+    }
+
+    if (langSections == null) {
+      return const SizedBox.shrink();
+    }
+
+    final gtcSections = (langSections['sections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    if (gtcSections.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final sectionStates = _gtcCheckboxStatesBySchool.putIfAbsent(schoolId, () => {});
+
+    if (isAccepted && !isExpanded && acceptanceRecord?['gtc_accepted_at'] != null) {
+      final acceptanceTime = _formatGTCAcceptanceTime(acceptanceRecord);
+      return Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _t('GTC_Title', lang),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_t('School', lang)}: $schoolName',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_t('Accepted_On', lang)} $acceptanceTime',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.expand_more),
+                onPressed: () {
+                  setState(() => _gtcExpandedBySchool[schoolId] = true);
+                  gtcService.loadGTC(schoolId);
+                  gtcService.checkGTCAcceptance(uid, schoolId);
+                },
+                tooltip: _t('View_Terms', lang),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _t('GTC_Title', lang),
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_t('School', lang)}: $schoolName',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isAccepted)
+                      IconButton(
+                        icon: const Icon(Icons.expand_less),
+                        onPressed: () => setState(() => _gtcExpandedBySchool[schoolId] = false),
+                        tooltip: _t('Collapse', lang),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (!isAccepted && allowSigning)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _t('GTC_Error_Message', lang),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                if (!isAccepted && allowSigning) const SizedBox(height: 12),
+                ...gtcSections.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final section = entry.value;
+                  final sectionId = 'section_$index';
+                  final title = section['title'] as String? ?? '';
+                  final text = section['text'] as String? ?? '';
+                  final list = (section['list'] as List?)?.cast<String>() ?? [];
+                  final afterList = section['afterList'] as String? ?? '';
+
+                  sectionStates.putIfAbsent(sectionId, () => false);
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                text,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              if (list.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                ...list.map((item) => Padding(
+                                      padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('• ', style: Theme.of(context).textTheme.bodySmall),
+                                          Expanded(
+                                            child: Text(
+                                              item,
+                                              style: Theme.of(context).textTheme.bodySmall,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )),
+                              ],
+                              if (afterList.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  afterList,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (allowSigning) ...[
+                          const SizedBox(height: 8),
+                          CheckboxListTile(
+                            value: isAccepted ? true : (sectionStates[sectionId] ?? false),
+                            onChanged: isAccepted
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      sectionStates[sectionId] = value ?? false;
+                                    });
+                                  },
+                            title: Text(
+                              _t('I_Accept', lang),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: isAccepted
+                                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                                        : null,
+                                  ),
+                            ),
+                            contentPadding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+          if (!isAccepted && allowSigning)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _allRequiredGTCAccepted(schoolId, gtcSections)
+                      ? () => _acceptGTC(gtcService, uid, schoolId, lang)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                  ),
+                  child: Text(_t('Accept_And_Sign', lang)),
+                ),
+              ),
+            )
+          else if (isAccepted && isExpanded)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${_t('Accepted_On', lang)} ${_formatGTCAcceptanceTime(acceptanceRecord)}',
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  bool _allRequiredGTCAccepted(
+    String schoolId,
+    List<Map<String, dynamic>> gtcSections,
+  ) {
+    final sectionStates = _gtcCheckboxStatesBySchool[schoolId] ?? {};
+    for (final entry in gtcSections.asMap().entries) {
+      final sectionId = 'section_${entry.key}';
+      if (!(sectionStates[sectionId] ?? false)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<void> _acceptGTC(
+    GTCService gtcService,
+    String uid,
+    String schoolId,
+    String lang,
+  ) async {
+    final success = await gtcService.acceptGTC(uid, schoolId);
+
+    if (success) {
+      _showSnack('Terms and conditions accepted!', backgroundColor: Colors.green);
+      setState(() {
+        _gtcExpandedBySchool[schoolId] = false;
+      });
+    } else {
+      _showSnack('Failed to accept terms and conditions. Please try again.');
+    }
+  }
+
+  String _formatGTCAcceptanceTime(Map<String, dynamic>? acceptance) {
+    if (acceptance == null) return 'unknown date';
+
+    final timestamp = acceptance['gtc_accepted_at'];
+    if (timestamp == null) return 'unknown date';
+
+    try {
+      if (timestamp is Timestamp) {
+        final date = timestamp.toDate();
+        return DateFormat('yyyy-MM-dd HH:mm').format(date);
+      } else if (timestamp is DateTime) {
+        return DateFormat('yyyy-MM-dd HH:mm').format(timestamp);
+      }
+    } catch (e) {
+      debugPrint('Error formatting GTC acceptance time: $e');
+    }
+    return 'unknown date';
   }
 }
 

@@ -15,6 +15,8 @@ import '../services/update_service.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/custom_status_bar.dart';
 import '../widgets/update_dialog.dart';
+import '../services/gtc_service.dart';
+import '../services/profile_service.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -37,7 +39,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const TestsScreen(),
     const ProfileScreen(),
   ];
-
 
   static const Map<String, Map<String, String>> _localizedLabels = {
     'en': {
@@ -320,6 +321,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final navBarColor = theme.appBarTheme.backgroundColor ?? Colors.black;
     final primaryColor = theme.primaryColor;
 
+    // GTC notification logic
+    final gtcService = context.watch<GTCService>();
+    final profileService = context.watch<ProfileService>();
+    final profile = profileService.userProfile;
+    final isStudent = (profile?.license ?? '').toLowerCase() == 'student';
+    final schoolId = profile?.mainSchoolId;
+    final hasUnacceptedGtc = isStudent && schoolId != null && gtcService.getGTCForSchool(schoolId) != null && !gtcService.isGTCAcceptedForSchool(schoolId);
+
     return Consumer<AppConfigService>(
       builder: (context, cfg, _) {
         final code = cfg.displayLanguageCode.toUpperCase();
@@ -429,6 +438,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   isSelected: _selectedIndex == 5,
                   onTap: () => _onItemTapped(5),
                   primaryColor: primaryColor,
+                  showBadge: hasUnacceptedGtc,
                 ),
                 InkWell(
                   onTap: () => _showBottomMenu(context),
@@ -466,26 +476,46 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     required bool isSelected,
     required VoidCallback onTap,
     required Color primaryColor,
+    bool showBadge = false,
   }) {
     return InkWell(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Icon(
-            icon,
-            size: 24,
-            color: isSelected ? primaryColor : Colors.grey.shade400,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 24,
+                color: isSelected ? primaryColor : Colors.grey.shade400,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isSelected ? primaryColor : Colors.grey.shade400,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: isSelected ? primaryColor : Colors.grey.shade400,
+          if (showBadge)
+            Positioned(
+              top: -6,
+              right: -6,
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );

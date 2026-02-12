@@ -354,8 +354,13 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBin
       final gpsSensorService = context.read<GpsSensorService>();
       final trackingService = context.read<FlightTrackingService>();
       
-      // Already tracking? Nothing to do.
-      if (gpsSensorService.isTracking) return;
+      // If GPS stream is already running, still ensure FlightTrackingService is enabled.
+      // Fixes emulator/demo case where GPS icon is green but Current Status doesn't update
+      // because processPosition short-circuits when tracking is disabled.
+      if (gpsSensorService.isTracking) {
+        await trackingService.enableTracking();
+        return;
+      }
       
       // Check if Android GPS is enabled
       final isGpsEnabled = await Geolocator.isLocationServiceEnabled();

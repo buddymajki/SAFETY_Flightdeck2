@@ -7,11 +7,10 @@ import 'package:flutter/services.dart';
 // FIX: Removed unnecessary import - foundation.dart is already included via material.dart
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../services/profile_service.dart';
-import '../services/app_config_service.dart';
 import '../services/gtc_service.dart';
+import '../services/app_config_service.dart';
 import '../widgets/responsive_layout.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -22,6 +21,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  String? _lastGtcSchoolId;
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
@@ -56,11 +56,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _lastSeenSyncTick = 0;
   bool _suppressAutoSave = false;
   
-  // GT&C state
-  // FIX: Use final since we only modify the map contents, not reassign the map itself
-  final Map<String, bool> _gtcCheckboxStates = {}; // Track checkbox states per GT&C section
-  String? _lastCheckedSchoolId;
-  bool _gtcExpanded = false; // Track if GT&C is expanded (for accepted state)
 
   // Top countries for quick access
   static const List<String> _topCountries = [
@@ -131,7 +126,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Synced_Cloud': {'en': 'Synced with cloud', 'de': 'Mit Cloud synchronisiert'},
     'Password_Error': {'en': 'Error changing password', 'de': 'Fehler beim Ändern des Passworts'},
     'Empty_Password_Fields': {'en': 'Both password fields are required', 'de': 'Beide Passwortfelder sind erforderlich'},
-    'GTC_Error_Message': {'en': 'Please accept every section and sign', 'de': 'Bitte akzeptieren Sie alle Abschnitte und unterschreiben'},
   };
 
   String _t(String key, String lang) {
@@ -221,6 +215,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.didChangeDependencies();
     final service = context.watch<ProfileService>();
     final profile = service.userProfile;
+
+    // GTC előtöltés: ha a user Student és van mainSchoolId, mindig töltsük le a GTC-t (could be removed for release)
+    final gtcService = context.read<GTCService>();
+    final schoolId = profile?.mainSchoolId;
+    final isStudent = (profile?.license ?? '').toLowerCase() == 'student';
+    if (isStudent && schoolId != null && schoolId != _lastGtcSchoolId) {
+      debugPrint('[ProfileScreen] Preloading GTC for school: $schoolId');
+      _lastGtcSchoolId = schoolId;
+      gtcService.loadGTC(schoolId);
+      gtcService.checkGTCAcceptance(profile!.uid!, schoolId);
+    }
 
     // Ha a service töltődik és még nincs profil, kivárjuk. 
     // Itt NEM térünk vissza feltétel nélkül, hogy a build() le tudja kezelni a loading állapotot
@@ -591,18 +596,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              // GT&C Section for Students with School selection
-              if (_selectedLicense == 'Student' && _selectedSchoolId != null && (profile.uid?.isNotEmpty ?? false)) ...[
-                Builder(builder: (context) {
-                  debugPrint('[ProfileScreen] Rendering GT&C section: license=$_selectedLicense, schoolId=$_selectedSchoolId, uid=${profile.uid}');
-                  return _buildGTCSection(lang, profile.uid ?? '', _selectedSchoolId!);
-                }),
-              ] else ...[
-                Builder(builder: (context) {
-                  debugPrint('[ProfileScreen] GT&C hidden: license=$_selectedLicense, schoolId=$_selectedSchoolId, uid=${profile.uid?.isNotEmpty}');
-                  return const SizedBox.shrink();
-                }),
-              ],
               _buildSection(
                 title: _t('Change_Password', lang),
                 children: [
@@ -890,7 +883,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (schoolNames.contains(value)) {
                 setState(() {
                   _selectedSchoolId = idByName[value];
-                  _gtcExpanded = false; // Reset expanded state when school changes
                 });
                 _autoSaveProfile();
               }
@@ -900,7 +892,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onSelected: (String selection) {
           setState(() {
             _selectedSchoolId = idByName[selection];
-            _gtcExpanded = false; // Reset expanded state when school changes
           });
           _autoSaveProfile();
         },
@@ -937,320 +928,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return null;
   }
 
-  Widget _buildGTCSection(String lang, String uid, String schoolId) {
-    final gtcService = context.watch<GTCService>();
-
-    // Load GTC when section builds
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_lastCheckedSchoolId != schoolId) {
-        debugPrint('[ProfileScreen] Loading GT&C for school: $schoolId');
-        gtcService.loadGTC(schoolId);
-        gtcService.checkGTCAcceptance(uid, schoolId);
-        _lastCheckedSchoolId = schoolId;
-      }
-    });
-
-    // FIX: Use camelCase naming convention for local variables
-    final gtcServiceData = gtcService.currentGTC;
-    final currentGTCVersion = gtcServiceData?['gtc_version'] as String?;
-    final isAccepted = gtcService.isGTCAccepted;
-    final acceptanceRecord = gtcService.currentAcceptance;
-
-    // Once accepted, always valid (no version re-check needed)
-    debugPrint('[ProfileScreen] GT&C section building: isLoading=${gtcService.isLoading}, hasData=${gtcServiceData != null}, isAccepted=$isAccepted, currentVersion=$currentGTCVersion');
-
-    if (gtcService.isLoading) {
-      return Card(
-        color: Theme.of(context).cardColor,
-        margin: const EdgeInsets.only(bottom: 12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
-        ),
-      );
-    }
-
-    if (gtcServiceData == null) {
-      debugPrint('[ProfileScreen] GT&C data is null, hiding section');
-      return const SizedBox.shrink();
-    }
-
-    // Get the language-specific sections from the fetched JSON
-    final gtcJsonData = gtcServiceData['gtc_data'] as Map<String, dynamic>?;
-    if (gtcJsonData == null) {
-      debugPrint('[ProfileScreen] GT&C JSON data is null');
-      return const SizedBox.shrink();
-    }
-
-    // Get sections for the current language
-    final langSections = gtcJsonData[lang] as Map<String, dynamic>?;
-    if (langSections == null) {
-      debugPrint('[ProfileScreen] No sections for language: $lang');
-      return const SizedBox.shrink();
-    }
-
-    final gtcSections = (langSections['sections'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    if (gtcSections.isEmpty) {
-      debugPrint('[ProfileScreen] No GT&C sections found');
-      return const SizedBox.shrink();
-    }
-
-    debugPrint('[ProfileScreen] Showing GT&C section with ${gtcSections.length} sections');
-
-    // Show collapsed view if accepted and not expanded (only if acceptance timestamp has loaded)
-    if (isAccepted && !_gtcExpanded && acceptanceRecord?['gtc_accepted_at'] != null) {
-      final acceptanceTime = _formatGTCAcceptanceTime(gtcService.currentAcceptance);
-      return Card(
-        color: Theme.of(context).cardColor,
-        margin: const EdgeInsets.only(bottom: 12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary, size: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'General Terms & Conditions',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Accepted on $acceptanceTime',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.expand_more),
-                onPressed: () => setState(() => _gtcExpanded = true),
-                tooltip: 'View Terms',
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Show expanded view (for unaccepted or when user clicks expand)
-    return Card(
-      color: Theme.of(context).cardColor,
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'General Terms & Conditions',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    if (isAccepted)
-                      IconButton(
-                        icon: const Icon(Icons.expand_less),
-                        onPressed: () => setState(() => _gtcExpanded = false),
-                        tooltip: 'Collapse',
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (!isAccepted)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _t('GTC_Error_Message', lang),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 12),
-                ...gtcSections.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final section = entry.value;
-                  final sectionId = 'section_$index';
-                  final title = section['title'] as String? ?? '';
-                  final text = section['text'] as String? ?? '';
-                  final list = (section['list'] as List?)?.cast<String>() ?? [];
-                  final afterList = section['afterList'] as String? ?? '';
-
-                  if (!_gtcCheckboxStates.containsKey(sectionId)) {
-                    _gtcCheckboxStates[sectionId] = false;
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Main text
-                              Text(
-                                text,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              // List items
-                              if (list.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                ...list.map((item) => Padding(
-                                  padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('• ', style: Theme.of(context).textTheme.bodySmall),
-                                      Expanded(
-                                        child: Text(
-                                          item,
-                                          style: Theme.of(context).textTheme.bodySmall,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )),
-                              ],
-                              // After list text
-                              if (afterList.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                Text(
-                                  afterList,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        CheckboxListTile(
-                          value: isAccepted ? true : (_gtcCheckboxStates[sectionId] ?? false),
-                          onChanged: isAccepted ? null : (value) {
-                            setState(() {
-                              _gtcCheckboxStates[sectionId] = value ?? false;
-                            });
-                          },
-                          title: Text(
-                            'I accept',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: isAccepted ? Theme.of(context).colorScheme.onSurfaceVariant : null,
-                            ),
-                          ),
-                          contentPadding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-          if (!isAccepted)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _allRequiredGTCAccepted(gtcSections)
-                      ? () => _acceptGTC(gtcService, uid, schoolId, lang)
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                  ),
-                  child: const Text('Accept & Sign'),
-                ),
-              ),
-            )
-          else if (_gtcExpanded)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Accepted on ${_formatGTCAcceptanceTime(gtcService.currentAcceptance)}',
-                    style: TextStyle(color: Theme.of(context).colorScheme.primary),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  bool _allRequiredGTCAccepted(List<Map<String, dynamic>> gtcSections) {
-    // All sections must be accepted (all are required in the new structure)
-    for (final entry in gtcSections.asMap().entries) {
-      final sectionId = 'section_${entry.key}';
-      if (!(_gtcCheckboxStates[sectionId] ?? false)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  Future<void> _acceptGTC(GTCService gtcService, String uid, String schoolId, String lang) async {
-    final success = await gtcService.acceptGTC(uid, schoolId);
-
-    if (success) {
-      _showSnack('Terms and conditions accepted!', backgroundColor: Colors.green);
-      setState(() {
-        // Refresh UI to show accepted state with timestamp
-      });
-    } else {
-      _showSnack('Failed to accept terms and conditions. Please try again.');
-    }
-  }
-
-  String _formatGTCAcceptanceTime(Map<String, dynamic>? acceptance) {
-    if (acceptance == null) return 'unknown date';
-
-    final timestamp = acceptance['gtc_accepted_at'];
-    if (timestamp == null) return 'unknown date';
-
-    try {
-      if (timestamp is Timestamp) {
-        final date = timestamp.toDate();
-        return DateFormat('yyyy-MM-dd HH:mm').format(date);
-      } else if (timestamp is DateTime) {
-        return DateFormat('yyyy-MM-dd HH:mm').format(timestamp);
-      }
-    } catch (e) {
-      debugPrint('Error formatting GTC acceptance time: $e');
-    }
-    return 'unknown date';
-  }
 }
 
