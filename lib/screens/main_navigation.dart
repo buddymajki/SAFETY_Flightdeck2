@@ -17,6 +17,9 @@ import '../widgets/custom_status_bar.dart';
 import '../widgets/update_dialog.dart';
 import '../services/gtc_service.dart';
 import '../services/profile_service.dart';
+import '../services/test_service.dart';
+import '../models/test_model.dart';
+import '../services/stats_service.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -321,13 +324,37 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final navBarColor = theme.appBarTheme.backgroundColor ?? Colors.black;
     final primaryColor = theme.primaryColor;
 
-    // GTC notification logic
+    // GTC notification logic - only show badge if UNACCEPTED (not signed/accepted)
     final gtcService = context.watch<GTCService>();
     final profileService = context.watch<ProfileService>();
     final profile = profileService.userProfile;
     final isStudent = (profile?.license ?? '').toLowerCase() == 'student';
     final schoolId = profile?.mainSchoolId;
     final hasUnacceptedGtc = isStudent && schoolId != null && gtcService.getGTCForSchool(schoolId) != null && !gtcService.isGTCAcceptedForSchool(schoolId);
+
+    // Test notification logic - show badge only if user has actionable tests available
+    // First, ensure submissions are loaded so we can check accurately
+    final testService = context.watch<TestService>();
+    if (profile != null && profile.uid != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Load submissions in background if not already loaded
+        testService.loadUserSubmissions(profile.uid!).catchError((e) {
+          debugPrint('[MainNavigation] Error loading submissions: $e');
+          return <TestSubmission>[];
+        });
+      });
+    }
+
+    bool showTestsBadge = hasUnacceptedGtc;
+    if (!showTestsBadge && profile != null && profile.uid != null) {
+      final statsService = context.watch<StatsService>();
+      final statsJson = statsService.stats.toJson();
+      // Use sync check with cached submissions
+      showTestsBadge = testService.hasAvailableTestsSync(
+        userId: profile.uid!,
+        statsJson: statsJson,
+      );
+    }
 
     return Consumer<AppConfigService>(
       builder: (context, cfg, _) {
@@ -438,7 +465,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   isSelected: _selectedIndex == 5,
                   onTap: () => _onItemTapped(5),
                   primaryColor: primaryColor,
-                  showBadge: hasUnacceptedGtc,
+                  showBadge: showTestsBadge,
                 ),
                 InkWell(
                   onTap: () => _showBottomMenu(context),

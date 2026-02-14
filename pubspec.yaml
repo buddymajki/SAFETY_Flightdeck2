@@ -2,7 +2,7 @@ name: flightdeck_firebase
 description: "A new Flutter project."
 publish_to: 'none' 
 
-version: 1.0.24
+version: 1.0.25
 
 environment:
   # Széles tartomány a Dart 3-as verziónál, ami a modern Flutterrel kompatibilis
@@ -65,6 +65,9 @@ flutter:
     - assets/airspace/swiss_airspace.json
     - assets/sounds/takeoff.mp3
     - assets/sounds/landing.mp3
+    - assets/tests/tests_config.json
+    - assets/tests/1/
+    - assets/tests/2/
 
 flutter_launcher_icons:
   android: true

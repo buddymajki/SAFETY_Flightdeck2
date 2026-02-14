@@ -1,0 +1,47 @@
+{
+  "tests": [
+    {
+      "id": "1",
+      "folder": "1",
+      "jsonFile": "1firsthf.json",
+      "name": {
+        "en": "First High Altitude Flight Test",
+        "de": "Erste Höhenflug Prüfung"
+      },
+      "passThreshold": 80,
+      "retryDelayDays": 10,
+      "triggers": [
+        {
+          "type": "category_percent",
+          "category": "gh-bas",
+          "operator": ">=",
+          "value": 100
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "folder": "2",
+      "jsonFile": "thermal.json",
+      "name": {
+        "en": "Thermal Flight Test",
+        "de": "Thermikflug Prüfung"
+      },
+      "passThreshold": 80,
+      "retryDelayDays": 10,
+      "triggers": [
+        {
+          "type": "category_percent",
+          "category": "th-flight",
+          "operator": ">=",
+          "value": 100
+        },
+        {
+          "type": "flights_count",
+          "operator": ">=",
+          "value": 20
+        }
+      ]
+    }
+  ]
+}
