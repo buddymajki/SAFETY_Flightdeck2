@@ -460,24 +460,24 @@ class FlightTrackingService extends ChangeNotifier {
       return;
     }
 
-    // Find nearest landing site by type
+    // Find nearest landing site by type WITHIN 200m radius
     String landingSiteName = 'Unknown Location';
     String? landingSiteId;
 
-    // First try to find a site specifically typed as "landing"
-    final landingSiteMatch = LocationService.findNearestSiteByType(
+    // First try to find a site specifically typed as "landing" within 200m
+    final landingSiteMatch = LocationService.findNearestSiteByTypeWithinRadius(
       event.latitude,
       event.longitude,
-      event.altitude,
       _cachedSites,
       'landing',
+      radiusThreshold: 200.0,
     );
 
     if (landingSiteMatch != null) {
       final site = landingSiteMatch.site;
       landingSiteName = LocationService.getSiteName(site, lang: _currentLanguage);
       landingSiteId = LocationService.getSiteId(site);
-      log('[FlightTrackingService] Found landing site: $landingSiteName (distance: ${landingSiteMatch.distance.toStringAsFixed(0)}m)');
+      log('[FlightTrackingService] Found landing site within 200m: $landingSiteName (distance: \\${landingSiteMatch.distance.toStringAsFixed(0)}m)');
     } else {
       // Fallback to any nearby site if no landing-specific site found
       final nearbySites = LocationService.findSitesWithinProximity(
@@ -491,10 +491,10 @@ class FlightTrackingService extends ChangeNotifier {
         final site = nearbySites.first.site;
         landingSiteName = LocationService.getSiteName(site, lang: _currentLanguage);
         landingSiteId = LocationService.getSiteId(site);
-        log('[FlightTrackingService] Found nearby site (not typed as landing): $landingSiteName (distance: ${nearbySites.first.horizontalDistance.toStringAsFixed(0)}m)');
+        log('[FlightTrackingService] Found nearby site (not typed as landing): $landingSiteName (distance: \\${nearbySites.first.horizontalDistance.toStringAsFixed(0)}m)');
       } else {
         // Final fallback to coordinates if no site found
-        landingSiteName = 'Unknown Landing (${event.latitude.toStringAsFixed(4)}, ${event.longitude.toStringAsFixed(4)})';
+          landingSiteName = 'Unknown Landing (${event.latitude.toStringAsFixed(4)}, ${event.longitude.toStringAsFixed(4)})';
         log('[FlightTrackingService] No landing site found nearby - using coordinates');
       }
     }
@@ -786,7 +786,7 @@ class FlightTrackingService extends ChangeNotifier {
   }
 
   /// Generate a test tracklog for simulation
-  /// Default coordinates: Brunni (takeoff) → Engelberg (landing), Switzerland
+  /// Default coordinates: test (takeoff) → testlanding (landing), Switzerland
   List<TrackPoint> generateTestTracklog({
     double? startLat,
     double? startLon,
@@ -796,25 +796,26 @@ class FlightTrackingService extends ChangeNotifier {
     double? endAlt,
     Duration? duration,
   }) {
-    // Real paragliding location: Brunni → Engelberg, Switzerland
-    // Takeoff: Brunni cable car top station (1100m)
-    // Landing: Engelberg valley (550m)
+    // Real paragliding location: test → testlanding, Switzerland
+    //időt pedig: gps_screen.dart
+    // Takeoff: test cable car top station (1100m)
+    // Landing: testlanding valley (550m)
     // Distance: ~900m horizontal, 550m vertical drop
     // Typical sled ride duration: 3-5 minutes
-    const double brunniLat = 46.8810;
-    const double brunniLon = 8.3656;
-    const double brunniAlt = 1100.0;
-    const double engelbergLat = 46.882748;
-    const double engelbergLon = 8.377085;
-    const double engelbergAlt = 550.0;
+    const double testLat = 47.250971; //46.8810; Büelen
+    const double testLon = 7.510144;//8.3656;
+    const double testAlt = 1000;//1100.0;
+    const double testlandingLat = 47.172457;// 46.882748;
+    const double testlandingLon = 7.556521;//8.377085;
+    const double testlandingAlt = 500.0;
 
     return TracklogParserService.generateTestTracklog(
-      startLat: startLat ?? brunniLat,
-      startLon: startLon ?? brunniLon,
-      startAlt: startAlt ?? brunniAlt,
-      endLat: endLat ?? engelbergLat,
-      endLon: endLon ?? engelbergLon,
-      endAlt: endAlt ?? engelbergAlt,
+      startLat: startLat ?? testLat,
+      startLon: startLon ?? testLon,
+      startAlt: startAlt ?? testAlt,
+      endLat: endLat ?? testlandingLat,
+      endLon: endLon ?? testlandingLon,
+      endAlt: endAlt ?? testlandingAlt,
       // 4 minutes for ~900m sled ride (realistic speed ~15-20 km/h)
       flightDuration: duration ?? const Duration(minutes: 4),
     );

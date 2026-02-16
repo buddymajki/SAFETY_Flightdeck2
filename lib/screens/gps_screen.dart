@@ -1113,7 +1113,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     final tracklog = service.generateTestTracklog(
       duration: const Duration(minutes: 20),
     );
-    await service.startSimulation(tracklog, interval: const Duration(milliseconds: 50));
+    await service.startSimulation(tracklog, interval: const Duration(milliseconds: 400)); //helyszín: flight_tracking_serviceben, de itt lehet a szimulációt gyorsítan v lassítani nagyobb számmal
   }
 
   Future<void> _startTracklogSimulation(FlightTrackingService service, List<TrackPoint> trackPoints) async {
