@@ -73,17 +73,33 @@ class GpsSensorService extends ChangeNotifier {
         return PermissionStatus.denied;
       }
 
-      // Request location permission
-      var locationStatus = await Permission.location.status;
-      if (locationStatus.isDenied) {
-        locationStatus = await Permission.location.request();
-      }
-      _hasLocationPermission = locationStatus.isGranted;
-
-      if (!_hasLocationPermission) {
-        _errorMessage = 'Location permission is required for flight tracking';
-        notifyListeners();
-        return locationStatus;
+      PermissionStatus locationStatus;
+      if (Platform.isIOS) {
+        // On iOS, use geolocator's requestPermission for best results
+        final geolocatorPermission = await Geolocator.checkPermission();
+        if (geolocatorPermission == LocationPermission.denied || geolocatorPermission == LocationPermission.deniedForever) {
+          final newPermission = await Geolocator.requestPermission();
+          if (newPermission == LocationPermission.denied || newPermission == LocationPermission.deniedForever) {
+            _hasLocationPermission = false;
+            _errorMessage = 'Location permission is required for flight tracking';
+            notifyListeners();
+            return PermissionStatus.denied;
+          }
+        }
+        _hasLocationPermission = true;
+        locationStatus = PermissionStatus.granted;
+      } else {
+        // Android: use permission_handler
+        locationStatus = await Permission.location.status;
+        if (locationStatus.isDenied) {
+          locationStatus = await Permission.location.request();
+        }
+        _hasLocationPermission = locationStatus.isGranted;
+        if (!_hasLocationPermission) {
+          _errorMessage = 'Location permission is required for flight tracking';
+          notifyListeners();
+          return locationStatus;
+        }
       }
 
       // Request background location permission (Android only for API 29+)
@@ -145,7 +161,12 @@ class GpsSensorService extends ChangeNotifier {
 
   /// Open app settings for manual permission configuration
   Future<bool> openAppSettings() async {
-    return await Geolocator.openAppSettings();
+    if (Platform.isIOS) {
+      // On iOS, open location settings directly
+      return await Geolocator.openLocationSettings();
+    } else {
+      return await Geolocator.openAppSettings();
+    }
   }
 
   /// Open location settings
