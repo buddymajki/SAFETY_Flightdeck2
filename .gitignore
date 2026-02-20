@@ -41,6 +41,7 @@ app.*.map.json
 
 # Sensitive files
 lib/firebase_oldexporttonew/serviceAccountKey_old.json
+lib/firebase_oldexporttonew/serviceAccountKey.json
 
 # Android Studio will place build artifacts here
 /android/app/debug
