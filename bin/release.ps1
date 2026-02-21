@@ -78,36 +78,14 @@ Success "APK uploaded to Firebase App Distribution"
 # ---------------------------------------------------------------
 Log "Updating Firestore app_updates/latest..."
 
-# Firebase access token megszerzése a CLI-tól
-$token = (firebase auth:print-access-token 2>$null).Trim()
-if ([string]::IsNullOrEmpty($token)) {
-    Write-Host "[WARN] Could not get Firebase token. Trying gcloud..." -ForegroundColor Yellow
-    $token = (gcloud auth print-access-token 2>$null).Trim()
-}
-
-if ([string]::IsNullOrEmpty($token)) {
-    Write-Host "[WARN] Could not get access token. Firestore update SKIPPED." -ForegroundColor Yellow
+$forceStr = if ($forceUpdate) { "true" } else { "false" }
+try {
+    node bin/update_firestore.js $ver $notes $forceStr
+    if ($LASTEXITCODE -ne 0) { throw "node script failed" }
+    Success "Firestore updated: app_updates/latest -> version=$ver"
+} catch {
+    Write-Host "[WARN] Firestore update failed: $_" -ForegroundColor Yellow
     Write-Host "       Manually update Firestore: app_updates/latest -> version: $ver" -ForegroundColor Yellow
-} else {
-    $firestoreUrl = "https://firestore.googleapis.com/v1/projects/$FIREBASE_PROJECT/databases/(default)/documents/app_updates/latest"
-    $body = @{
-        fields = @{
-            version       = @{ stringValue = $ver }
-            changelog     = @{ stringValue = $notes }
-            isForceUpdate = @{ booleanValue = $forceUpdate }
-        }
-    } | ConvertTo-Json -Depth 5
-
-    try {
-        Invoke-RestMethod -Uri $firestoreUrl `
-            -Method PATCH `
-            -Headers @{ Authorization = "Bearer $token"; "Content-Type" = "application/json" } `
-            -Body $body | Out-Null
-        Success "Firestore updated: app_updates/latest -> version=$ver"
-    } catch {
-        Write-Host "[WARN] Firestore update failed: $_" -ForegroundColor Yellow
-        Write-Host "       Manually update: app_updates/latest -> version: $ver" -ForegroundColor Yellow
-    }
 }
 
 # ---------------------------------------------------------------

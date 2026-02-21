@@ -131,12 +131,21 @@ class UpdateService extends ChangeNotifier {
   // Ez a metódus csak akkor kell, ha kézzel szerelnéd megnyitni a linket.
   // ============================================================
   Future<void> openFirebaseAppDistribution() async {
-    const url = 'https://appdistribution.firebase.google.com/';
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      debugPrint('[Update] Cannot open Firebase App Distribution URL.');
+    // Firebase App Tester app page — this is the tester portal where
+    // invited testers can see and download available releases.
+    // On Android: opens in browser → redirects to App Tester app if installed,
+    //             or shows download page for the tester app.
+    // On iOS: opens the tester portal in Safari.
+    const testerAppsUrl = 'https://appdistribution.firebase.google.com/testerapps';
+    final uri = Uri.parse(testerAppsUrl);
+
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        debugPrint('[Update] Could not launch Firebase App Distribution URL.');
+      }
+    } catch (e) {
+      debugPrint('[Update] Error opening Firebase App Distribution: $e');
     }
   }
 

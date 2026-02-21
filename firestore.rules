@@ -131,6 +131,14 @@ service cloud.firestore {
     }
 
     // ============================================
+    // APP UPDATES (version checking)
+    // ============================================
+    match /app_updates/{document=**} {
+      allow read: if true;        // Anyone can check for updates
+      allow write: if isAdmin();  // Only admins can publish updates
+    }
+
+    // ============================================
     // LIVE TRACKING & ALERTS (FlightRadar)
     // ============================================
     
