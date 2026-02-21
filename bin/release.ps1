@@ -118,6 +118,10 @@ git add .
 git commit -m "Release v$ver"
 if ($LASTEXITCODE -ne 0) { Err "git commit failed" }
 
+Log "Pulling remote changes before push (rebase)..."
+git pull --rebase origin master
+if ($LASTEXITCODE -ne 0) { Err "git pull --rebase failed. Resolve conflicts manually and re-run." }
+
 git tag "v$ver"
 git push origin master
 git push origin --tags
