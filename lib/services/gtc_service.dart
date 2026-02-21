@@ -13,7 +13,7 @@ class GTCService extends ChangeNotifier {
   Map<String, dynamic>? _currentGTC;
   Map<String, dynamic>? _currentAcceptance;
   bool _isLoading = false;
-  String? _currentSchoolId;
+  //String? _currentSchoolId;
   String? _currentUid;
 
   // Getters
@@ -90,7 +90,7 @@ class GTCService extends ChangeNotifier {
       };
       _gtcBySchool[schoolId] = gtcData;
       _currentGTC = gtcData;
-      _currentSchoolId = schoolId;
+      //_currentSchoolId = schoolId;
       
       debugPrint('[GTCService] Successfully loaded GT&C with version: ${_currentGTC?['gtc_version']}');
     } catch (e) {
@@ -106,13 +106,13 @@ class GTCService extends ChangeNotifier {
   /// Check if user has accepted current GT&C for current school
   Future<void> checkGTCAcceptance(String uid, String schoolId) async {
     if (_currentUid == uid && _acceptanceBySchool.containsKey(schoolId)) {
-      _currentSchoolId = schoolId;
+      //_currentSchoolId = schoolId;
       _currentAcceptance = _acceptanceBySchool[schoolId];
       return; // Already checked
     }
 
     _currentUid = uid;
-    _currentSchoolId = schoolId;
+    //_currentSchoolId = schoolId;
 
     try {
       final doc = await _firestore
@@ -229,7 +229,7 @@ class GTCService extends ChangeNotifier {
     _loadingSchools.clear();
     _currentGTC = null;
     _currentAcceptance = null;
-    _currentSchoolId = null;
+    //_currentSchoolId = null;
     _currentUid = null;
     notifyListeners();
   }

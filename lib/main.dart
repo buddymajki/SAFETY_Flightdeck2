@@ -25,7 +25,6 @@ import 'auth/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation.dart';
-import 'widgets/update_dialog.dart';
 
 import 'package:flutter/services.dart';
 
@@ -420,34 +419,6 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBin
         ],
       ),
     );
-  }
-
-  /// Check for app updates and show dialog if update is available
-  Future<void> _checkForUpdates() async {
-    try {
-      final updateService = context.read<UpdateService>();
-      
-      // Check for updates in background
-      final hasUpdate = await updateService.checkForUpdates();
-      
-      if (hasUpdate && mounted) {
-        // Show update dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext dialogContext) => UpdateDialog(
-            onSkip: () {
-              debugPrint('[Update] User skipped update');
-            },
-            onUpdate: () {
-              debugPrint('[Update] Update installed successfully');
-            },
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('[Update] Error checking for updates: $e');
-    }
   }
 
   @override
