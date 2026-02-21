@@ -84,7 +84,7 @@
         <!-- FileProvider for sharing APK files -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.example.flightdeck_firebase.fileprovider"
+            android:authorities="com.example.flightdeck_new_1.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

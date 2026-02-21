@@ -18,24 +18,32 @@ class UpdateDialog extends StatefulWidget {
 }
 
 class _UpdateDialogState extends State<UpdateDialog> {
-  bool _isDownloading = false;
-  bool _isInstalling = false;
+  // ============================================================
+  // RÉGI STATE VÁLTOZÓK – KOMMENTÁLVA (GitHub/GDrive letöltéshez kelltek)
+  // bool _isDownloading = false;
+  // bool _isInstalling = false;
+  // ============================================================
 
-  // Localization texts
   static const Map<String, Map<String, String>> _texts = {
-    'new_version_available': {'en': 'New Version Available', 'de': 'Neue Version verfügbar'},
-    'current_version': {'en': 'Current version:', 'de': 'Aktuelle Version:'},
-    'available_version': {'en': 'Available version:', 'de': 'Verfügbare Version:'},
-    'whats_new': {'en': 'What\'s new:', 'de': 'Neuigkeiten:'},
-    'downloading': {'en': 'Downloading...', 'de': 'Wird heruntergeladen...'},
-    'installing': {'en': 'Installing...', 'de': 'Wird installiert...'},
-    'error': {'en': 'Error:', 'de': 'Fehler:'},
-    'later': {'en': 'Later', 'de': 'Später'},
-    'install': {'en': 'Install', 'de': 'Installieren'},
-    'install_failed': {'en': 'Installation failed.\nError:', 'de': 'Installation fehlgeschlagen.\nFehler:'},
-    'download_failed': {'en': 'Download failed.', 'de': 'Download fehlgeschlagen.'},
-    'apk_not_ready': {'en': 'This version will be released in the next 30 minutes. Click Update in the version menu (hamburger menu).', 'de': 'Diese Version wird in den nächsten 30 Minuten veröffentlicht. Klicken Sie auf Update im Versionsmenü (Hamburger-Menü).'},
-    'permission_needed': {'en': 'Permission required!\n\nTo install updates, you need to allow FlightDeck to install apps from unknown sources.\n\nPlease enable this permission in the settings that will open now, then try updating again.', 'de': 'Berechtigung erforderlich!\n\nUm Updates zu installieren, müssen Sie FlightDeck erlauben, Apps aus unbekannten Quellen zu installieren.\n\nBitte aktivieren Sie diese Berechtigung in den Einstellungen, die jetzt geöffnet werden, und versuchen Sie dann erneut zu aktualisieren.'},
+    'new_version_available': {'en': 'New Version Available', 'de': 'Neue Version verfügbar', 'hu': 'Új verzió elérhető'},
+    'current_version': {'en': 'Current version:', 'de': 'Aktuelle Version:', 'hu': 'Jelenlegi verzió:'},
+    'available_version': {'en': 'Available version:', 'de': 'Verfügbare Version:', 'hu': 'Elérhető verzió:'},
+    'whats_new': {'en': 'What\'s new:', 'de': 'Neuigkeiten:', 'hu': 'Mi új:'},
+    'firebase_info': {
+      'en': 'A new version has been sent to you via Firebase App Distribution.\nCheck your email for the download link.',
+      'de': 'Eine neue Version wurde Ihnen über Firebase App Distribution zugesandt.\nPrüfen Sie Ihre E-Mail für den Download-Link.',
+      'hu': 'Új verziót kaptl Firebase App Distribution emailben.\nKeresd az emailt a letöltési linkkel.',
+    },
+    'open_firebase': {'en': 'Open Firebase App Distribution', 'de': 'Firebase App Distribution öffnen', 'hu': 'Firebase App Distribution megnyêtása'},
+    'later': {'en': 'Later', 'de': 'Später', 'hu': 'Később'},
+    // Régi szövegek – kommentálva (GitHub/GDrive letöltés)
+    // 'downloading': {'en': 'Downloading...', 'de': 'Wird heruntergeladen...'},
+    // 'installing': {'en': 'Installing...', 'de': 'Wird installiert...'},
+    // 'install': {'en': 'Install', 'de': 'Installieren'},
+    // 'install_failed': {'en': 'Installation failed.\nError:', 'de': 'Installation fehlgeschlagen.\nFehler:'},
+    // 'download_failed': {'en': 'Download failed.', 'de': 'Download fehlgeschlagen.'},
+    // 'apk_not_ready': {'en': 'This version will be released in the next 30 minutes...', 'de': '...'},
+    // 'permission_needed': {'en': 'Permission required!\n\n...', 'de': '...'},
   };
 
   String _getText(String key, String lang) {
@@ -54,198 +62,129 @@ class _UpdateDialogState extends State<UpdateDialog> {
 
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-          backgroundColor: Theme.of(context).dialogBackgroundColor,
+          backgroundColor: Theme.of(context).dialogTheme.backgroundColor ?? Theme.of(context).colorScheme.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.of(context).maybePop(),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                    child: Text(_getText('new_version_available', lang), style: Theme.of(context).textTheme.titleLarge),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.system_update, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Text(
+                        _getText('new_version_available', lang),
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${_getText('current_version', lang)} ${updateService.appVersion}'),
-                        const SizedBox(height: 8),
-                        Text('${_getText('available_version', lang)} ${updateInfo.version}'),
-                        const SizedBox(height: 16),
-                        Text(_getText('whats_new', lang)),
-                        const SizedBox(height: 8),
-                        Text(updateInfo.changelog, style: const TextStyle(fontSize: 12)),
-                        const SizedBox(height: 16),
-                        if (_isDownloading)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(_getText('downloading', lang)),
-                              const SizedBox(height: 8),
-                              LinearProgressIndicator(value: updateService.downloadProgress),
-                              const SizedBox(height: 8),
-                              Text('${(updateService.downloadProgress * 100).toStringAsFixed(1)}%'),
-                            ],
-                          ),
-                        if (_isInstalling)
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(_getText('installing', lang)),
-                          ),
-                        if (updateService.lastError.isNotEmpty)
-                          Builder(
-                            builder: (context) {
-                              final isApkNotReady = updateService.lastError.contains('404') || updateService.lastError.contains('APK_NOT_READY');
-                              if (isApkNotReady) {
-                                return Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8.0),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.shade100,
-                                      border: Border.all(color: Colors.red),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      _getText('apk_not_ready', lang),
-                                      style: const TextStyle(color: Colors.red, fontSize: 13),
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                return Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8.0),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.shade100,
-                                      border: Border.all(color: Colors.red),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(_getText('error', lang), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                                        const SizedBox(height: 4),
-                                        Text(updateService.lastError, style: const TextStyle(color: Colors.red, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        if (!_isDownloading && !_isInstalling)
-                          TextButton(
-                            onPressed: () {
-                              widget.onSkip();
-                              Navigator.of(context).pop();
-                            },
-                            child: Text(_getText('later', lang)),
-                          ),
-                        if (!_isDownloading && !_isInstalling)
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.download),
-                            label: Text(_getText('install', lang)),
-                            onPressed: () async {
-                              setState(() => _isDownloading = true);
-                              final success = await updateService.downloadUpdate((progress) { setState(() {}); });
-                              if (success) {
-                                setState(() {
-                                  _isDownloading = false;
-                                  _isInstalling = true;
-                                });
-                                final installed = await updateService.installUpdate();
-                                if (installed) {
-                                  widget.onUpdate();
-                                  if (context.mounted) {
-                                    Navigator.of(context).pop();
-                                  }
-                                } else {
-                                  setState(() => _isInstalling = false);
-                                  if (context.mounted) {
-                                    final needsPermission = updateService.lastError.isEmpty || updateService.lastError.contains('PERMISSION');
-                                    if (needsPermission) {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Icon(Icons.warning_amber, size: 48, color: Colors.orange),
-                                          content: Text(_getText('permission_needed', lang)),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.of(context).pop(),
-                                              child: const Text('OK'),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('${_getText('install_failed', lang)} ${updateService.lastError}'),
-                                          duration: const Duration(seconds: 5),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                }
-                              } else {
-                                setState(() => _isDownloading = false);
-                                if (context.mounted) {
-                                  final isApkNotReady = updateService.lastError.contains('404') || updateService.lastError.contains('APK_NOT_READY');
-                                  if (isApkNotReady) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(_getText('apk_not_ready', lang)),
-                                        duration: const Duration(seconds: 8),
-                                      ),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(_getText('download_failed', lang)),
-                                        duration: const Duration(seconds: 3),
-                                      ),
-                                    );
-                                  }
-                                }
-                              }
-                            },
-                          ),
-                        if (_isDownloading || _isInstalling)
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: SizedBox(
-                              width: 40,
-                              height: 40,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                value: _isDownloading ? null : 1.0,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${_getText('current_version', lang)} ${updateService.appVersion}'),
+                      const SizedBox(height: 4),
+                      Text('${_getText('available_version', lang)} ${updateInfo.version}',
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      Text(_getText('whats_new', lang)),
+                      const SizedBox(height: 4),
+                      Text(updateInfo.changelog, style: const TextStyle(fontSize: 12)),
+                      const SizedBox(height: 16),
+                      // Firebase App Distribution tájékoztató
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          border: Border.all(color: Colors.blue.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.email_outlined, color: Colors.blue, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _getText('firebase_info', lang),
+                                style: TextStyle(fontSize: 12, color: Colors.blue.shade800),
                               ),
                             ),
-                          ),
-                      ],
-                    ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // "Később" gomb: forceUpdate esetén elrejtve
+                      if (!updateInfo.isForceUpdate)
+                        TextButton(
+                          onPressed: () {
+                            widget.onSkip();
+                            Navigator.of(context).pop();
+                          },
+                          child: Text(_getText('later', lang)),
+                        ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.open_in_new, size: 16),
+                        label: Text(_getText('open_firebase', lang)),
+                        onPressed: () async {
+                          await updateService.openFirebaseAppDistribution();
+                          widget.onUpdate();
+                          if (context.mounted) Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         );
       },
     );
+
+    // ============================================================
+    // RÉGI DOWNLOAD/INSTALL UI – KOMMENTÁLVA
+    // Visszatéréshez GitHub release-re: töröld a komment jeleket,
+    // és add vissza az _isDownloading / _isInstalling state-eket.
+    //
+    // if (_isDownloading)
+    //   Column(children: [
+    //     Text(_getText('downloading', lang)),
+    //     LinearProgressIndicator(value: updateService.downloadProgress),
+    //     Text('${(updateService.downloadProgress * 100).toStringAsFixed(1)}%'),
+    //   ]),
+    // if (_isInstalling)
+    //   Text(_getText('installing', lang)),
+    //
+    // ElevatedButton.icon(
+    //   icon: const Icon(Icons.download),
+    //   label: Text(_getText('install', lang)),
+    //   onPressed: () async {
+    //     setState(() => _isDownloading = true);
+    //     final success = await updateService.downloadUpdate((p) => setState(() {}));
+    //     if (success) {
+    //       setState(() { _isDownloading = false; _isInstalling = true; });
+    //       final installed = await updateService.installUpdate();
+    //       if (installed) { widget.onUpdate(); Navigator.of(context).pop(); }
+    //       else { setState(() => _isInstalling = false); }
+    //     } else {
+    //       setState(() => _isDownloading = false);
+    //     }
+    //   },
+    // ),
+    // ============================================================
   }
 }

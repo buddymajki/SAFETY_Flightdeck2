@@ -297,7 +297,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     
     // Determine status color and message
     Color statusColor = Colors.red;
-    String statusText = 'Android GPS Disabled';
+    String statusText = 'Phone GPS Disabled';
     
     if (isTracking) {
       if (hasGpsSignal) {
@@ -367,7 +367,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
             ],
             const SizedBox(height: 8),
             Text(
-              '💡 GPS runs automatically when Android GPS is enabled',
+              '💡 GPS runs automatically when phone GPS is enabled',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: Colors.grey,
                 fontStyle: FontStyle.italic,
