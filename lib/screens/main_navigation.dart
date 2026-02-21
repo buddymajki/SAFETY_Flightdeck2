@@ -222,25 +222,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Future<void> _checkForUpdates() async {
     try {
       final updateService = context.read<UpdateService>();
-      
-      // Check for updates from GitHub metadata.json (raw content)
-      // This URL is constant - metadata.json is auto-updated on each release
-      const metadataUrl = 'https://raw.githubusercontent.com/buddymajki/SAFETY_Flightdeck2/master/metadata.json';
-      
-      final hasUpdate = await updateService.checkForUpdatesFromGoogleDrive(metadataUrl);
-      
+
+      // ============================================================
+      // AKTÍV: Firestore alapú verzió-ellenőrzés
+      // (régen: GitHub / Google Drive metadata.json)
+      // ============================================================
+      final hasUpdate = await updateService.checkForUpdates();
+
+      // ============================================================
+      // RÉGI – KOMMENTÁLVA (GitHub / Google Drive)
+      // const metadataUrl = 'https://raw.githubusercontent.com/buddymajki/SAFETY_Flightdeck2/master/metadata.json';
+      // final hasUpdate = await updateService.checkForUpdatesFromGoogleDrive(metadataUrl);
+      // ============================================================
+
       if (hasUpdate && mounted) {
-        // Show update dialog
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (BuildContext dialogContext) => UpdateDialog(
-            onSkip: () {
-              debugPrint('[Update] User skipped update');
-            },
-            onUpdate: () {
-              debugPrint('[Update] Update installed successfully');
-            },
+            onSkip: () => debugPrint('[Update] User skipped update'),
+            onUpdate: () => debugPrint('[Update] User opened Firebase App Distribution'),
           ),
         );
       }
@@ -252,8 +253,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   /// Manual check for updates (triggered by user from drawer menu)
   Future<void> _manualCheckForUpdates() async {
     if (!mounted) return;
-    
-    // Show loading indicator
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(_getLabel(context, 'checking_updates')),
@@ -263,39 +263,39 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     try {
       final updateService = context.read<UpdateService>();
-      const metadataUrl = 'https://raw.githubusercontent.com/buddymajki/SAFETY_Flightdeck2/master/metadata.json';
-      
-      final hasUpdate = await updateService.checkForUpdatesFromGoogleDrive(metadataUrl);
-      
+
+      // ============================================================
+      // AKTÍV: Firestore alapú verzió-ellenőrzés
+      // ============================================================
+      final hasUpdate = await updateService.checkForUpdates();
+
+      // ============================================================
+      // RÉGI – KOMMENTÁLVA (GitHub / Google Drive)
+      // const metadataUrl = 'https://raw.githubusercontent.com/buddymajki/SAFETY_Flightdeck2/master/metadata.json';
+      // final hasUpdate = await updateService.checkForUpdatesFromGoogleDrive(metadataUrl);
+      // ============================================================
+
       if (!mounted) return;
-      
+
       if (hasUpdate) {
-        // Show update available message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_getLabel(context, 'update_available')),
             duration: const Duration(seconds: 1),
           ),
         );
-        
-        // Show update dialog
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) {
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (BuildContext dialogContext) => UpdateDialog(
-              onSkip: () {
-                debugPrint('[Update] User skipped update');
-              },
-              onUpdate: () {
-                debugPrint('[Update] Update installed successfully');
-              },
+              onSkip: () => debugPrint('[Update] User skipped update'),
+              onUpdate: () => debugPrint('[Update] User opened Firebase App Distribution'),
             ),
           );
         }
       } else {
-        // No updates available
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_getLabel(context, 'no_updates')),

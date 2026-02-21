@@ -1,4 +1,4 @@
-package com.example.flightdeck_firebase
+package com.example.flightdeck_new_1
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -66,7 +66,7 @@ class MainActivity : FlutterActivity() {
                 try {
                     FileProvider.getUriForFile(
                         this,
-                        "com.example.flightdeck_firebase.fileprovider",
+                        "com.example.flightdeck_new_1.fileprovider",
                         file
                     )
                 } catch (e: Exception) {

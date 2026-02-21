@@ -1,5 +1,4 @@
 // Development UI for testing the update system
-// Add this temporary screen to main_navigation.dart or create a debug screen
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -29,35 +28,34 @@ class _UpdateSystemDebugScreenState extends State<UpdateSystemDebugScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Current version info
+                // Version info
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Version Info',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        const Text('Version Info',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 12),
-                        Text('App Version: ${updateService.appVersion}'),
+                        Text('App version (installed): ${updateService.appVersion}'),
                         const SizedBox(height: 8),
                         if (updateService.updateInfo != null) ...[
-                          Text('Latest Version: ${updateService.updateInfo!.version}'),
-                          const SizedBox(height: 8),
+                          Text('Latest version (Firestore): ${updateService.updateInfo!.version}',
+                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text('Force update: ${updateService.updateInfo!.isForceUpdate}'),
+                          const SizedBox(height: 4),
                           const Text('Changelog:'),
-                          Text(
-                            updateService.updateInfo!.changelog,
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 8),
-                          Text('Download URL: ${updateService.updateInfo!.downloadUrl}'),
+                          Text(updateService.updateInfo!.changelog,
+                              style: const TextStyle(fontSize: 12, color: Colors.grey)),
                         ] else
-                          const Text('No update info loaded'),
+                          const Text('No update info loaded yet – click Check for Updates'),
+                        if (updateService.lastError.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text('Last error: ${updateService.lastError}',
+                              style: const TextStyle(color: Colors.red, fontSize: 12)),
+                        ],
                       ],
                     ),
                   ),
@@ -71,143 +69,85 @@ class _UpdateSystemDebugScreenState extends State<UpdateSystemDebugScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Debug Actions',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        const Text('Debug Actions',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+
+                        // 1. Check Firestore
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.cloud_download),
+                            label: const Text('1. Check Firestore for Updates'),
+                            onPressed: _isLoading
+                                ? null
+                                : () async {
+                                    final messenger = ScaffoldMessenger.of(context);
+                                    setState(() => _isLoading = true);
+                                    try {
+                                      final hasUpdate = await updateService.checkForUpdates();
+                                      if (!mounted) return;
+                                      messenger.showSnackBar(SnackBar(
+                                        content: Text(hasUpdate
+                                            ? 'Update available: ${updateService.updateInfo?.version}'
+                                            : 'No update available'),
+                                        backgroundColor: hasUpdate ? Colors.orange : Colors.green,
+                                      ));
+                                    } finally {
+                                      if (mounted) setState(() => _isLoading = false);
+                                    }
+                                  },
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Check for Updates'),
-                          onPressed: _isLoading
-                              ? null
-                              : () async {
-                                  setState(() => _isLoading = true);
-                                  try {
-                                    final hasUpdate =
-                                        await updateService.checkForUpdates();
-                                    if (!mounted) return;
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          hasUpdate
-                                              ? 'Update available!'
-                                              : 'No update available',
-                                        ),
+                        const SizedBox(height: 8),
+
+                        // 2. Show dialog
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.notification_important),
+                            label: const Text('2. Show Update Dialog'),
+                            onPressed: updateService.updateInfo == null
+                                ? null
+                                : () {
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (_) => UpdateDialog(
+                                        onSkip: () => debugPrint('[Debug] skipped'),
+                                        onUpdate: () => debugPrint('[Debug] opened Firebase'),
                                       ),
                                     );
-                                  } finally {
-                                    if (mounted) {
-                                      setState(() => _isLoading = false);
-                                    }
-                                  }
-                                },
+                                  },
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.notification_important),
-                          label: const Text('Show Update Dialog'),
-                          onPressed: updateService.updateInfo == null
-                              ? null
-                              : () {
-                                  showDialog(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (BuildContext dialogContext) =>
-                                        UpdateDialog(
-                                      onSkip: () {
-                                        debugPrint('[Debug] User skipped');
-                                      },
-                                      onUpdate: () {
-                                        debugPrint('[Debug] Update complete');
-                                      },
-                                    ),
-                                  );
-                                },
+
+                        // 3. Open Firebase App Distribution
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.open_in_new),
+                            label: const Text('3. Open Firebase App Distribution'),
+                            onPressed: () => updateService.openFirebaseAppDistribution(),
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.download),
-                          label: const Text('Download Only'),
-                          onPressed: updateService.updateInfo == null
-                              ? null
-                              : () async {
-                                  setState(() => _isLoading = true);
-                                  try {
-                                    final success =
-                                        await updateService.downloadUpdate(
-                                      (progress) {
-                                        debugPrint(
-                                          'Download progress: ${(progress * 100).toStringAsFixed(1)}%',
-                                        );
-                                      },
-                                    );
-                                    if (!mounted) return;
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          success
-                                              ? 'Download successful'
-                                              : 'Download failed',
-                                        ),
-                                      ),
-                                    );
-                                  } finally {
-                                    if (mounted) {
-                                      setState(() => _isLoading = false);
-                                    }
-                                  }
-                                },
-                        ),
-                        const SizedBox(height: 8),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.install_mobile),
-                          label: const Text('Install APK'),
-                          onPressed: updateService.updateInfo == null
-                              ? null
-                              : () async {
-                                  try {
-                                    final success =
-                                        await updateService.installUpdate();
-                                    if (!mounted) return;
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          success
-                                              ? 'Installation started'
-                                              : 'Installation failed',
-                                        ),
-                                      ),
-                                    );
-                                  } catch (e) {
-                                    if (!mounted) return;
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(
-                                      SnackBar(content: Text('Error: $e')),
-                                    );
-                                  }
-                                },
-                        ),
-                        const SizedBox(height: 8),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.clear),
-                          label: const Text('Clear Cache'),
-                          onPressed: () {
-                            updateService.clear();
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Cache cleared'),
-                                ),
-                              );
-                            }
-                          },
+
+                        // Clear
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.clear),
+                            label: const Text('Clear cached update info'),
+                            onPressed: () {
+                              updateService.clear();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Cache cleared')));
+                              }
+                            },
+                          ),
                         ),
                       ],
                     ),
@@ -215,90 +155,55 @@ class _UpdateSystemDebugScreenState extends State<UpdateSystemDebugScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Status section
+                // Status
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Status',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        const Text('Status',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 12),
                         if (_isLoading)
-                          const Row(
-                            children: [
-                              SizedBox(
+                          const Row(children: [
+                            SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                              SizedBox(width: 12),
-                              Text('Loading...'),
-                            ],
-                          )
+                                child: CircularProgressIndicator(strokeWidth: 2)),
+                            SizedBox(width: 12),
+                            Text('Checking Firestore...'),
+                          ])
                         else
-                          Text(
-                            'Ready',
-                            style: TextStyle(
-                              color: Colors.green[600],
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        const SizedBox(height: 8),
-                        if (updateService.downloadProgress > 0)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Download Progress:'),
-                              const SizedBox(height: 4),
-                              LinearProgressIndicator(
-                                value: updateService.downloadProgress,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${(updateService.downloadProgress * 100).toStringAsFixed(1)}%',
-                              ),
-                            ],
-                          ),
+                          Text('Ready',
+                              style: TextStyle(
+                                  color: Colors.green[600], fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Documentation
+                // Instructions
                 Card(
                   color: Colors.blue[50],
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
+                  child: const Padding(
+                    padding: EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Testing Instructions',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          '1. Set up Firestore "app_updates/latest" document\n'
-                          '2. Click "Check for Updates" to sync from Firestore\n'
-                          '3. Click "Show Update Dialog" to test the UI\n'
-                          '4. Use "Download Only" to test APK download\n'
-                          '5. Use "Install APK" to trigger installation\n'
-                          '\n'
-                          'For full flow test:\n'
-                          '- Restart app after checking updates\n'
-                          '- Dialog appears automatically\n'
-                          '- Click "Telepítés" to download & install',
+                        Text('How it works',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 12),
+                        Text(
+                          '1. Upload APK to Firebase App Distribution\n'
+                          '   → testers get an email automatically\n\n'
+                          '2. Update Firestore: app_updates/latest\n'
+                          '   → version, changelog, isForceUpdate\n\n'
+                          '3. App checks Firestore on startup\n'
+                          '   → shows dialog if newer version found\n\n'
+                          'isForceUpdate: true  →  no "Later" button\n'
+                          'isForceUpdate: false →  user can dismiss',
                           style: TextStyle(fontSize: 12),
                         ),
                       ],

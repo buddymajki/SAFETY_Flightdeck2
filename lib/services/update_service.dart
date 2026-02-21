@@ -1,69 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-import 'dart:convert';
-import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+// ============================================================
+// RÉGI IMPORT-OK – KOMMENTÁLVA (GitHub / Google Drive letöltés)
+// Visszaállításhoz töröld a komment jeleket:
+// ============================================================
+// import 'package:dio/dio.dart';
+// import 'package:path_provider/path_provider.dart';
+// import 'dart:io';
+// import 'dart:convert';
+// import 'package:flutter/services.dart';
+// ============================================================
 import 'app_version_service.dart';
 
+/// Frissítési infó – Firestore-ból töltve
 class UpdateInfo {
   final String version;
-  final String downloadUrl;
   final String changelog;
   final bool isForceUpdate;
+  // final String downloadUrl;  // <-- kommentálva: régebben GitHub/Google Drive APK URL volt
 
   UpdateInfo({
     required this.version,
-    required this.downloadUrl,
     required this.changelog,
     required this.isForceUpdate,
+    // required this.downloadUrl,
   });
 
   factory UpdateInfo.fromFirestore(DocumentSnapshot doc) {
     return UpdateInfo(
       version: doc['version'] ?? '',
-      downloadUrl: doc['downloadUrl'] ?? '',
       changelog: doc['changelog'] ?? '',
       isForceUpdate: doc['isForceUpdate'] ?? false,
+      // downloadUrl: doc['downloadUrl'] ?? '',
     );
   }
 
-  /// Create UpdateInfo from JSON (from metadata.json)
-  factory UpdateInfo.fromJson(Map<String, dynamic> json) {
-    return UpdateInfo(
-      version: json['version'] ?? '',
-      downloadUrl: json['downloadUrl'] ?? '',
-      changelog: json['changelog'] ?? '',
-      isForceUpdate: json['isForce'] ?? json['isForceUpdate'] ?? false,
-    );
-  }
+  // ============================================================
+  // RÉGI FACTORY – KOMMENTÁLVA (Google Drive / GitHub metadata.json)
+  // Visszaállításhoz töröld a komment jeleket:
+  // ============================================================
+  // factory UpdateInfo.fromJson(Map<String, dynamic> json) {
+  //   return UpdateInfo(
+  //     version: json['version'] ?? '',
+  //     downloadUrl: json['downloadUrl'] ?? '',
+  //     changelog: json['changelog'] ?? '',
+  //     isForceUpdate: json['isForce'] ?? json['isForceUpdate'] ?? false,
+  //   );
+  // }
 }
 
 class UpdateService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final Dio _dio = Dio();
-  
-  // Android platform channel
-  static const platform = MethodChannel('com.example.flightdeck/update');
-  
+
+  // ============================================================
+  // RÉGI MEZŐK – KOMMENTÁLVA (APK letöltéshez kelltek)
+  // ============================================================
+  // final Dio _dio = Dio();
+  // static const platform = MethodChannel('com.example.flightdeck/update');
+  // double _downloadProgress = 0.0;
+  // ============================================================
+
   UpdateInfo? _updateInfo;
   bool _isChecking = false;
-  double _downloadProgress = 0.0;
   String _lastError = '';
-  
+
   UpdateInfo? get updateInfo => _updateInfo;
   bool get isChecking => _isChecking;
-  double get downloadProgress => _downloadProgress;
   String get lastError => _lastError;
+  // double get downloadProgress => _downloadProgress;  // <-- kommentálva
 
-  /// Get current app version from AppVersionService
+  /// Aktuális app verzió
   String get appVersion => AppVersionService.getVersionSync();
 
-  /// Ellenőriz az új verzióra Firestore-ban
+  // ============================================================
+  // AKTÍV: Firestore alapú verzió-ellenőrzés
+  //
+  // Hogyan kell karbantartani:
+  //   Amikor új APK-t töltösz fel Firebase App Distribution-ba,
+  //   früssítsd a Firestore-ban az alábbi dokumentumot:
+  //
+  //   Collection: app_updates
+  //   Document:   latest
+  //   Mezők:
+  //     version:       "1.0.30"
+  //     changelog:     "Bug fixes, new features..."
+  //     isForceUpdate: false
+  //
+  // ============================================================
   Future<bool> checkForUpdates() async {
     try {
       _isChecking = true;
+      _lastError = '';
       notifyListeners();
 
       final doc = await _firestore
@@ -72,227 +100,201 @@ class UpdateService extends ChangeNotifier {
           .get();
 
       if (!doc.exists) {
+        debugPrint('[Update] Firestore app_updates/latest document does not exist.');
         _isChecking = false;
         notifyListeners();
         return false;
       }
 
       _updateInfo = UpdateInfo.fromFirestore(doc);
+      debugPrint('[Update] Firestore version: ${_updateInfo!.version}, current: $appVersion');
 
-      // Verzió összehasonlítás
-      bool hasUpdate = _compareVersions(_updateInfo!.version, appVersion) > 0;
-      
+      final hasUpdate = _compareVersions(_updateInfo!.version, appVersion) > 0;
+
       _isChecking = false;
       notifyListeners();
-
       return hasUpdate;
     } catch (e) {
-      debugPrint('Error checking for updates: $e');
+      debugPrint('[Update] Error checking for updates via Firestore: $e');
+      _lastError = 'FIRESTORE_ERROR: $e';
       _isChecking = false;
       notifyListeners();
       return false;
     }
   }
 
-  /// Check for updates from Google Drive metadata.json (NO FIRESTORE NEEDED!)
-  /// How to use:
-  /// 1. Upload APK to Google Drive folder
-  /// 2. Create metadata.json in same folder:
-  ///    {
-  ///      "version": "1.0.4",
-  ///      "downloadUrl": "https://drive.google.com/uc?id=FILE_ID&export=download",
-  ///      "changelog": "Bug fixes",
-  ///      "isForce": false
-  ///    }
-  /// 3. Share folder with "Anyone with link"
-  /// 4. Get metadata URL like: https://drive.google.com/uc?id=METADATA_FILE_ID&export=download
-  /// 5. Call this method: checkForUpdatesFromGoogleDrive(metadataUrl)
-  /// 
-  /// Advantage: No need to update Firestore manually!
-  Future<bool> checkForUpdatesFromGoogleDrive(String metadataUrl) async {
-    try {
-      _isChecking = true;
-      notifyListeners();
-
-      debugPrint('[Update] Checking for updates from Google Drive metadata...');
-      debugPrint('[Update] Metadata URL: $metadataUrl');
-
-      // Download metadata.json from Google Drive
-      final response = await _dio.get(metadataUrl);
-      
-      if (response.statusCode != 200) {
-        _lastError = 'METADATA_HTTP_ERROR_${response.statusCode}';
-        debugPrint('[Update] HTTP error: ${response.statusCode}');
-        _isChecking = false;
-        notifyListeners();
-        return false;
-      }
-
-      // Parse JSON
-      final jsonData = jsonDecode(response.data);
-      _updateInfo = UpdateInfo.fromJson(jsonData);
-
-      debugPrint('[Update] Metadata loaded: version=${_updateInfo!.version}');
-
-      // Version comparison
-      bool hasUpdate = _compareVersions(_updateInfo!.version, appVersion) > 0;
-      
-      if (hasUpdate) {
-        debugPrint('[Update] Update available: ${_updateInfo!.version} > $appVersion');
-      } else {
-        debugPrint('[Update] No update needed: ${_updateInfo!.version} <= $appVersion');
-      }
-
-      _lastError = '';
-      _isChecking = false;
-      notifyListeners();
-
-      return hasUpdate;
-    } on DioException catch (e) {
-      _lastError = 'DIO_ERROR_${e.type}';
-      debugPrint('[Update] DioException: ${e.type} - ${e.message}');
-      _isChecking = false;
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _lastError = 'PARSE_ERROR_${e.toString()}';
-      debugPrint('[Update] Error checking for updates from Google Drive: $e');
-      _isChecking = false;
-      notifyListeners();
-      return false;
+  // ============================================================
+  // AKTÍV: Firebase App Distribution teszter oldal megnyítása
+  //
+  // A teszterek emailben kapnak értesítést automatikusan,
+  // amikor új APK kerül fel Firebase App Distribution-ba.
+  // Ez a metódus csak akkor kell, ha kézzel szerelnéd megnyitni a linket.
+  // ============================================================
+  Future<void> openFirebaseAppDistribution() async {
+    const url = 'https://appdistribution.firebase.google.com/';
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      debugPrint('[Update] Cannot open Firebase App Distribution URL.');
     }
   }
 
-  /// Download az APK fájlt
-  Future<bool> downloadUpdate(Function(double progress) onProgress) async {
-    if (_updateInfo == null) {
-      _lastError = 'UPDATE_INFO_NULL';
-      return false;
-    }
+  // ============================================================
+  // RÉGI KÓDOK – KOMMENTÁLVA
+  // Visszaállításhoz (pl. ha vissza akarod térni GitHub release-re):
+  //   Töröld a komment jeleket az alábbi metódusokból.
+  // ============================================================
 
-    try {
-      final appDir = await getApplicationCacheDirectory();
-      final apkFile = File('${appDir.path}/flightdeck_${_updateInfo!.version}.apk');
+  // /// Check for updates from Google Drive / GitHub metadata.json
+  // ///
+  // /// URL példák:
+  // ///   Google Drive: https://drive.google.com/uc?id=FILE_ID&export=download
+  // ///   GitHub (public): https://raw.githubusercontent.com/USER/REPO/master/metadata.json
+  // ///
+  // Future<bool> checkForUpdatesFromGoogleDrive(String metadataUrl) async {
+  //   try {
+  //     _isChecking = true;
+  //     notifyListeners();
+  //
+  //     debugPrint('[Update] Checking for updates from metadata URL: $metadataUrl');
+  //
+  //     final response = await _dio.get(metadataUrl);
+  //
+  //     if (response.statusCode != 200) {
+  //       _lastError = 'METADATA_HTTP_ERROR_${response.statusCode}';
+  //       _isChecking = false;
+  //       notifyListeners();
+  //       return false;
+  //     }
+  //
+  //     final jsonData = jsonDecode(response.data);
+  //     _updateInfo = UpdateInfo.fromJson(jsonData);
+  //
+  //     debugPrint('[Update] Metadata version: ${_updateInfo!.version}, current: $appVersion');
+  //     bool hasUpdate = _compareVersions(_updateInfo!.version, appVersion) > 0;
+  //
+  //     _lastError = '';
+  //     _isChecking = false;
+  //     notifyListeners();
+  //     return hasUpdate;
+  //   } on DioException catch (e) {
+  //     _lastError = 'DIO_ERROR_${e.type}';
+  //     debugPrint('[Update] DioException: ${e.type} - ${e.message}');
+  //     _isChecking = false;
+  //     notifyListeners();
+  //     return false;
+  //   } catch (e) {
+  //     _lastError = 'PARSE_ERROR_${e.toString()}';
+  //     debugPrint('[Update] Error: $e');
+  //     _isChecking = false;
+  //     notifyListeners();
+  //     return false;
+  //   }
+  // }
 
-      debugPrint('[Update] Cache dir: ${appDir.path}');
+  // /// APK letöltés (GitHub / Google Drive URL-ről)
+  // Future<bool> downloadUpdate(Function(double progress) onProgress) async {
+  //   if (_updateInfo == null) {
+  //     _lastError = 'UPDATE_INFO_NULL';
+  //     return false;
+  //   }
+  //   try {
+  //     final appDir = await getApplicationCacheDirectory();
+  //     final apkFile = File('${appDir.path}/flightdeck_${_updateInfo!.version}.apk');
+  //
+  //     if (await apkFile.exists()) {
+  //       final size = await apkFile.length();
+  //       if (size > 1000000) {
+  //         _lastError = '';
+  //         return true;
+  //       } else {
+  //         await apkFile.delete();
+  //       }
+  //     }
+  //
+  //     await _dio.download(
+  //       _updateInfo!.downloadUrl,
+  //       apkFile.path,
+  //       onReceiveProgress: (received, total) {
+  //         if (total != -1) {
+  //           _downloadProgress = received / total;
+  //           onProgress(_downloadProgress);
+  //           notifyListeners();
+  //         }
+  //       },
+  //     );
+  //
+  //     final size = await apkFile.length();
+  //     if (size < 1000000) {
+  //       _lastError = 'APK_FILE_TOO_SMALL_${size}_bytes';
+  //       await apkFile.delete();
+  //       return false;
+  //     }
+  //     _lastError = '';
+  //     return true;
+  //   } on DioException catch (e) {
+  //     if (e.response?.statusCode == 404) {
+  //       _lastError = 'APK_NOT_READY_404';
+  //     } else {
+  //       _lastError = 'DIO_ERROR_${e.type}_${e.response?.statusCode}';
+  //     }
+  //     return false;
+  //   } catch (e) {
+  //     _lastError = 'ERROR_${e.toString()}';
+  //     return false;
+  //   }
+  // }
 
-      // Ha már létezik az APK, ellenőrizze az integritást
-      if (await apkFile.exists()) {
-        final size = await apkFile.length();
-        debugPrint('[Update] APK already exists, size: $size bytes');
-        if (size > 1000000) {
-          _lastError = '';
-          return true;
-        } else {
-          debugPrint('[Update] Deleting corrupted APK');
-          await apkFile.delete();
-        }
-      }
+  // /// APK telepítés platform channel-en keresztül
+  // Future<bool> installUpdate() async {
+  //   if (_updateInfo == null) {
+  //     _lastError = 'UPDATE_INFO_NULL_FOR_INSTALL';
+  //     return false;
+  //   }
+  //   try {
+  //     final appDir = await getApplicationCacheDirectory();
+  //     final apkFile = File('${appDir.path}/flightdeck_${_updateInfo!.version}.apk');
+  //
+  //     if (!await apkFile.exists()) {
+  //       _lastError = 'APK_FILE_NOT_FOUND_${appDir.path}';
+  //       return false;
+  //     }
+  //
+  //     final result = await platform.invokeMethod<bool>('installAPK', {
+  //       'apkPath': apkFile.path,
+  //     });
+  //
+  //     _lastError = '';
+  //     return result ?? false;
+  //   } on PlatformException catch (e) {
+  //     _lastError = 'PLATFORM_ERROR_${e.code}_${e.message}';
+  //     return false;
+  //   } catch (e) {
+  //     _lastError = 'INSTALL_ERROR_${e.toString()}';
+  //     return false;
+  //   }
+  // }
 
-      debugPrint('[Update] Starting download from: ${_updateInfo!.downloadUrl}');
+  // ============================================================
 
-      await _dio.download(
-        _updateInfo!.downloadUrl,
-        apkFile.path,
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            _downloadProgress = received / total;
-            onProgress(_downloadProgress);
-            notifyListeners();
-            debugPrint('[Update] Downloaded: ${(received / 1024 / 1024).toStringAsFixed(2)} MB / ${(total / 1024 / 1024).toStringAsFixed(2)} MB');
-          }
-        },
-      );
-
-      // Ellenőrizze a letöltött fájlt
-      final size = await apkFile.length();
-      debugPrint('[Update] Download complete, APK size: ${(size / 1024 / 1024).toStringAsFixed(2)} MB');
-      
-      if (size < 1000000) {
-        _lastError = 'APK_FILE_TOO_SMALL_${size}_bytes';
-        debugPrint('[Update] ERROR: APK file is too small ($size bytes), probably corrupted or incomplete');
-        await apkFile.delete();
-        return false;
-      }
-
-      _lastError = '';
-      return true;
-    } on DioException catch (e) {
-      // Check if it's a 404 error (APK not ready yet on GitHub)
-      if (e.response?.statusCode == 404) {
-        _lastError = 'APK_NOT_READY_404';
-        debugPrint('[Update] APK not ready yet (404). GitHub release is still building.');
-      } else {
-        _lastError = 'DIO_ERROR_${e.type}_${e.response?.statusCode}';
-        debugPrint('[Update] DioException: ${e.type} - ${e.response?.statusCode} - ${e.message}');
-      }
-      return false;
-    } catch (e) {
-      _lastError = 'ERROR_${e.toString()}';
-      debugPrint('[Update] Error downloading update: $e');
-      return false;
-    }
-  }
-
-  /// Android platform channel segítségével telepíti az APK-t
-  Future<bool> installUpdate() async {
-    if (_updateInfo == null) {
-      _lastError = 'UPDATE_INFO_NULL_FOR_INSTALL';
-      return false;
-    }
-
-    try {
-      final appDir = await getApplicationCacheDirectory();
-      final apkFile = File('${appDir.path}/flightdeck_${_updateInfo!.version}.apk');
-
-      if (!await apkFile.exists()) {
-        _lastError = 'APK_FILE_NOT_FOUND_${appDir.path}';
-        debugPrint('[Update] APK file not found: ${apkFile.path}');
-        return false;
-      }
-
-      final size = await apkFile.length();
-      debugPrint('[Update] APK file found, size: ${(size / 1024 / 1024).toStringAsFixed(2)} MB');
-
-      // Platform channel hívás
-      debugPrint('[Update] Calling platform channel to install APK');
-      final result = await platform.invokeMethod<bool>('installAPK', {
-        'apkPath': apkFile.path,
-      });
-
-      debugPrint('[Update] Platform channel result: $result');
-      _lastError = '';
-      return result ?? false;
-    } on PlatformException catch (e) {
-      _lastError = 'PLATFORM_ERROR_${e.code}_${e.message}';
-      debugPrint('[Update] PlatformException: ${e.code} - ${e.message}');
-      return false;
-    } catch (e) {
-      _lastError = 'INSTALL_ERROR_${e.toString()}';
-      debugPrint('[Update] Error installing update: $e');
-      return false;
-    }
-  }
-
-  /// Verzió összehasonlítás (1.0.0 formátum)
+  /// Verzió összehasonlítás ("1.0.0" formátum)
   int _compareVersions(String newVersion, String currentVersion) {
     final newParts = newVersion.split('.');
     final currentParts = currentVersion.split('.');
 
     for (int i = 0; i < 3; i++) {
-      final newPart = int.tryParse(newParts[i]) ?? 0;
-      final currentPart = int.tryParse(currentParts[i]) ?? 0;
+      final newPart = int.tryParse(i < newParts.length ? newParts[i] : '0') ?? 0;
+      final currentPart = int.tryParse(i < currentParts.length ? currentParts[i] : '0') ?? 0;
 
       if (newPart > currentPart) return 1;
       if (newPart < currentPart) return -1;
     }
-
-    return 0; // Equal versions
+    return 0;
   }
 
-  /// Force az ASP cache-t
   void clear() {
     _updateInfo = null;
-    _downloadProgress = 0.0;
+    // _downloadProgress = 0.0;  // <-- kommentálva
   }
 }
