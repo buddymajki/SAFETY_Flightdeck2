@@ -269,10 +269,16 @@ class _CustomStatusBarState extends State<CustomStatusBar> with TickerProviderSt
     final isTracking = gpsSensorService.isTracking;
     final hasGpsSignal = gpsSensorService.lastPosition != null;
 
+    // Extra horizontal padding so the clock / battery % don't get clipped
+    // on phones with curved display edges (iPhone Dynamic Island, Samsung Edge, etc.)
+    final safePad = MediaQuery.of(context).padding;
+    final extraLeft  = safePad.left  > 0 ? safePad.left  + 4.0 : 16.0;
+    final extraRight = safePad.right > 0 ? safePad.right + 4.0 : 16.0;
+
     return Container(
       height: widget.height,
       color: widget.backgroundColor,
-      padding: EdgeInsets.symmetric(horizontal: 12.0),
+      padding: EdgeInsets.only(left: extraLeft, right: extraRight),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

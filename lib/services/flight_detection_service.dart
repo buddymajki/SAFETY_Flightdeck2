@@ -39,33 +39,40 @@ class FlightDetectionService {
   /// TUNING: 0.3 m/s = 1.08 km/h vertical - catches slow thermal climbs
   /// Typical paraglider sink rate is -1.0 to -1.5 m/s, climb +1 to +4 m/s
   /// Minimum vertical speed (absolute) to START considering takeoff (m/s)
-  /// TUNING: 0.5 m/s = detecting climb OR descent after leaving ground
+  /// TUNING: 0.4 m/s catches both gentle thermal lift-offs and sled rides
   /// Paragliders: sink rate -1.0 to -1.5 m/s, climb +1 to +4 m/s
-  /// This catches both thermal climbs AND sled rides (descending flights)
-  static const double takeoffVerticalSpeedThreshold = 0.5;
+  /// Cable cars: vertical speed is typically < 3 m/s but SUSTAINED with no horizontal accel burst
+  static const double takeoffVerticalSpeedThreshold = 0.4;
 
   /// Minimum horizontal speed for takeoff detection (m/s)
-  /// TUNING: 5.0 m/s = 18 km/h - filters out walking (5 km/h) and slow jogging
+  /// TUNING: 3.5 m/s = 12.6 km/h - filters out walking (5 km/h) and jogging (10 km/h)
   /// Paraglider launch run: 10-20 km/h, in-flight: 25-50 km/h
-  /// With headwind, ground speed could be lower, so this is conservative
-  /// NOTE: This is the PRIMARY indicator - paragliders always move forward
-  static const double takeoffHorizontalSpeedThreshold = 5.0;
+  /// In strong headwind, ground speed can be as low as ~12-15 km/h right after launch
+  /// Cable cars: typically 5-12 m/s (18-43 km/h) but move on a FIXED bearing with no
+  ///   sudden stop-to-run acceleration pattern, so the IMU + pre-movement check filters them
+  static const double takeoffHorizontalSpeedThreshold = 3.5;
 
   /// Minimum altitude CHANGE (up OR down) required to confirm takeoff (m)
-  /// TUNING: 5m allows for GPS noise (±10-15m) while detecting real flight
-  /// Slope launches: pilot often descends 20-50m before finding lift
-  /// This is ABSOLUTE change - works for climbs AND sled rides
-  static const double minAltitudeChangeForTakeoff = 5.0;
+  /// TUNING: 3m is above GPS altitude noise (±1-2m when stationary) while
+  ///   catching real flight early. Slope launches descend 5-20m in the first seconds.
+  static const double minAltitudeChangeForTakeoff = 3.0;
 
   /// Minimum duration of takeoff conditions before confirming (seconds)
-  /// TUNING: 5 seconds filters out brief GPS glitches and car speed bumps
-  /// Real takeoff: sustained flight for 10+ seconds typically
-  static const int takeoffConfirmationSeconds = 5;
+  /// TUNING: 3 seconds filters brief GPS glitches / car speed bumps while
+  ///   catching takeoffs ~2s earlier than before. Industry variometers (Skytraxx,
+  ///   XCTracer) typically confirm within 2-4s.
+  static const int takeoffConfirmationSeconds = 3;
 
   /// Maximum ground speed that's considered "on ground" for takeoff reference (m/s)
   /// TUNING: 1.5 m/s = 5.4 km/h - about fast walking speed
   /// Used to establish ground altitude reference before takeoff
   static const double groundSpeedThreshold = 1.5;
+
+  /// Minimum acceleration spike (m/s²) from the IMU that helps confirm a launch run.
+  /// TUNING: During the takeoff run the pilot accelerates hard from standstill;
+  ///   a 1.2 m/s² sustained excess over gravity is enough to distinguish a run
+  ///   from calm standing but not triggered by walking (~0.4 m/s² excess).
+  static const double launchAccelerationThreshold = 1.2;
 
   // ============================================
   // LANDING DETECTION THRESHOLDS
@@ -140,6 +147,10 @@ class FlightDetectionService {
   DateTime? _takeoffConditionsStartTime;
   double? _takeoffConditionsStartAltitude;
 
+  // --- Pre-takeoff ground position (industry-standard: remember the last
+  //     stationary coordinate so we can use it as the true takeoff point) ---
+  TrackPoint? _lastStationaryPoint;
+
   /// Reset the detection state
   void reset() {
     _recentTrackPoints.clear();
@@ -149,6 +160,7 @@ class FlightDetectionService {
     _isInFlight = false;
     _takeoffConditionsStartTime = null;
     _takeoffConditionsStartAltitude = null;
+    _lastStationaryPoint = null;
   }
 
   /// Get current flight status
@@ -210,9 +222,13 @@ class FlightDetectionService {
           'v_speed=${verticalSpeed.toStringAsFixed(2)}m/s, alt=${currentPoint.altitude.toStringAsFixed(0)}m, '
           'ground=${_groundAltitude?.toStringAsFixed(0) ?? "?"}m', name: 'FlightDetection');
 
-    // Update ground altitude reference when stationary
+    // Update ground altitude reference AND remember position when stationary.
+    // This is the industry-standard technique: the last point where the pilot
+    // was still "on the ground" becomes the takeoff coordinate, NOT the point
+    // where the algorithm finally fires (which can be 50-100 m into the flight).
     if (horizontalSpeed < groundSpeedThreshold && verticalSpeed.abs() < 0.5) {
       _groundAltitude = currentPoint.altitude;
+      _lastStationaryPoint = currentPoint;
     }
 
     // Use initial altitude as ground reference if not set
@@ -225,12 +241,21 @@ class FlightDetectionService {
     final imuIndicatesFlight = _checkImuForFlight();
     final imuIndicatesGround = _checkImuForGround();
 
+    // --- IMU-assisted early detection ---
+    // If accelerometer shows a sustained acceleration burst (launch run),
+    // we can relax the GPS-speed requirement slightly because GPS lags ~1-2s
+    // behind real movement.
+    final imuShowsLaunchRun = _checkImuForLaunchRun();
+
     // PRIMARY TAKEOFF CONDITION:
     // 1. Horizontal speed must exceed threshold (paragliders always move forward)
+    //    – OR the IMU detects a launch-run acceleration burst AND speed is at
+    //      least 2.5 m/s (9 km/h) to avoid false positives while reacting faster
     // 2. PLUS either significant vertical movement OR altitude change
     //    - Vertical speed uses ABSOLUTE value (climb OR descent)
     //    - Altitude change uses ABSOLUTE value (gain OR loss from ground)
-    final speedIndicatesTakeoff = horizontalSpeed >= takeoffHorizontalSpeedThreshold;
+    final speedIndicatesTakeoff = horizontalSpeed >= takeoffHorizontalSpeedThreshold ||
+        (imuShowsLaunchRun && horizontalSpeed >= 2.5);
     final verticalIndicatesTakeoff = verticalSpeed.abs() > takeoffVerticalSpeedThreshold || 
                                      altitudeChange >= minAltitudeChangeForTakeoff;
     
@@ -282,9 +307,16 @@ class FlightDetectionService {
         
         developer.log('[FlightDetection] ✅ TAKEOFF CONFIRMED!', name: 'FlightDetection');
 
-        // Find the actual takeoff point (lowest altitude in recent history for climb,
-        // or highest for descent - the point where flight began)
-        final takeoffPoint = _findTakeoffPoint() ?? currentPoint;
+        // --- Industry-standard takeoff coordinate selection ---
+        // Priority:
+        //   1. Last stationary point (where pilot was standing before the run)
+        //   2. Heuristic scan of recent points (_findTakeoffPoint)
+        //   3. Current point as last resort
+        final takeoffPoint = _lastStationaryPoint ?? _findTakeoffPoint() ?? currentPoint;
+
+        developer.log('[FlightDetection] Takeoff coord source: '
+              '${_lastStationaryPoint != null ? "last-stationary" : "heuristic/current"}, '
+              'alt=${takeoffPoint.altitude.toStringAsFixed(0)}m', name: 'FlightDetection');
 
         return FlightEvent(
           type: FlightEventType.takeoff,
@@ -424,6 +456,40 @@ class FlightDetectionService {
     // High variance indicates jerky ground movement (walking, driving on rough road)
     // Low variance indicates smooth flight or stationary
     return variance > accelerometerGroundThreshold;
+  }
+
+  /// Check if IMU data indicates a launch-run acceleration pattern.
+  ///
+  /// During a paraglider launch, the pilot sprints from near-standstill.
+  /// This produces a distinct forward-acceleration signature that the
+  /// accelerometer picks up ~1-2 seconds before GPS speed reflects it.
+  /// Cable cars produce constant velocity (≈ 0 excess accel) so they
+  /// won't trigger this.
+  bool _checkImuForLaunchRun() {
+    if (_recentSensorData.isEmpty) return false;
+
+    final recentData = _recentSensorData.toList();
+    // Need at least a few samples (at ~50 Hz we get plenty in 1s)
+    if (recentData.length < 3) return false;
+
+    // Check the last ~1s of data (last 5 samples at varying rates)
+    int spikeCount = 0;
+    int total = 0;
+    for (final data in recentData.skip(max(0, recentData.length - 10))) {
+      if (data.accelerometerX != null) {
+        total++;
+        final accelMag = sqrt(data.accelerationMagnitude);
+        // Excess acceleration above resting gravity
+        final excess = accelMag - 9.8;
+        if (excess > launchAccelerationThreshold) {
+          spikeCount++;
+        }
+      }
+    }
+
+    if (total < 3) return false;
+    // If more than 40% of recent samples show launch-level acceleration
+    return spikeCount / total > 0.4;
   }
 
   /// Calculate vertical speed from recent track points (m/s)

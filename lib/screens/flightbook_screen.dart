@@ -1066,35 +1066,50 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
           controller.selection = TextSelection.collapsed(offset: controller.text.length);
         }
         
-        // Select all text when field gains focus
-        focusNode.addListener(() {
-          if (focusNode.hasFocus && controller.text.isNotEmpty) {
-            controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
-          }
-        });
-        
-        controller.addListener(() {
-          // Prevent free text entry - revert to last valid selection if user types invalid text
-          final typedText = controller.text;
-          final isValidSelection = schools.any((s) => (s['name'] ?? '') == typedText);
-          
-          if (typedText.isNotEmpty && !isValidSelection) {
-            // User is typing, allow it temporarily for autocomplete
-            // The onSelected callback will handle setting the valid ID
-          }
-        });
-        
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          decoration: InputDecoration(
-            labelText: _t('School_This_Flight', lang),
-            prefixIcon: const Icon(Icons.school),
-            suffixIcon: schools.isNotEmpty
-                ? const Icon(Icons.arrow_drop_down)
-                : null,
-            border: const OutlineInputBorder(),
-          ),
+        return ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, textValue, _) {
+            return TextField(
+              controller: controller,
+              focusNode: focusNode,
+              onTap: () {
+                if (controller.text.isNotEmpty) {
+                  controller.selection = TextSelection(
+                    baseOffset: 0,
+                    extentOffset: controller.text.length,
+                  );
+                }
+              },
+              decoration: InputDecoration(
+                labelText: _t('School_This_Flight', lang),
+                prefixIcon: const Icon(Icons.school),
+                suffixIcon: textValue.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        tooltip: 'Clear school',
+                        onPressed: () {
+                          controller.clear();
+                          setState(() {
+                            _selectedFormSchoolId =
+                                widget.profileService.userProfile?.mainSchoolId;
+                            _loadLocations();
+                            _takeoffController.clear();
+                            _landingController.clear();
+                            _takeoffAltitudeController.text = '1000';
+                            _landingAltitudeController.text = '500';
+                            _takeoffFromDropdown = false;
+                            _landingFromDropdown = false;
+                          });
+                          focusNode.requestFocus();
+                        },
+                      )
+                    : (schools.isNotEmpty
+                        ? const Icon(Icons.arrow_drop_down)
+                        : null),
+                border: const OutlineInputBorder(),
+              ),
+            );
+          },
         );
       },
     );
@@ -1390,44 +1405,66 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                       });
                     },
                     fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                      // Sync our controller with the autocomplete controller
+                      // One-time sync: ensure autocomplete controller matches our backing state
                       if (controller.text != _takeoffController.text) {
                         controller.text = _takeoffController.text;
                         controller.selection = TextSelection.collapsed(offset: controller.text.length);
                       }
-                      
-                      // Select all text when field gains focus
-                      focusNode.addListener(() {
-                        if (focusNode.hasFocus && controller.text.isNotEmpty) {
-                          controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
-                        }
-                      });
-                      
-                      controller.addListener(() {
-                        if (controller.text != _takeoffController.text) {
-                          _takeoffController.text = controller.text;
-                          if (_takeoffFromDropdown) {
-                            setState(() => _takeoffFromDropdown = false);
-                          }
-                        }
-                      });
-                      
-                      return TextField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        readOnly: !canEditDateAndLocation,
-                        decoration: InputDecoration(
-                          labelText: _t('Takeoff_Location', lang),
-                          prefixIcon: const Icon(Icons.flight_takeoff),
-                          suffixIcon: canEditDateAndLocation && _filteredTakeoffLocations.isNotEmpty
-                              ? const Icon(Icons.arrow_drop_down)
-                              : null,
-                          border: const OutlineInputBorder(),
-                          enabled: canEditDateAndLocation,
-                          helperText: _filteredTakeoffLocations.isNotEmpty
-                              ? _t('Type_Or_Select', lang)
-                              : null,
-                        ),
+
+                      return ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: controller,
+                        builder: (context, textValue, _) {
+                          return TextField(
+                            controller: controller,
+                            focusNode: focusNode,
+                            readOnly: !canEditDateAndLocation,
+                            onTap: () {
+                              // Select-all on tap so user can immediately type to replace
+                              if (controller.text.isNotEmpty) {
+                                controller.selection = TextSelection(
+                                  baseOffset: 0,
+                                  extentOffset: controller.text.length,
+                                );
+                              }
+                            },
+                            onChanged: (text) {
+                              if (text != _takeoffController.text) {
+                                _takeoffController.text = text;
+                              }
+                              if (_takeoffFromDropdown && mounted) {
+                                setState(() => _takeoffFromDropdown = false);
+                              }
+                            },
+                            decoration: InputDecoration(
+                              labelText: _t('Takeoff_Location', lang),
+                              prefixIcon: const Icon(Icons.flight_takeoff),
+                              suffixIcon: canEditDateAndLocation
+                                  ? (textValue.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear, size: 20),
+                                          tooltip: 'Clear takeoff',
+                                          onPressed: () {
+                                            controller.clear();
+                                            setState(() {
+                                              _takeoffController.clear();
+                                              _takeoffAltitudeController.text = '1000';
+                                              _takeoffFromDropdown = false;
+                                            });
+                                            focusNode.requestFocus();
+                                          },
+                                        )
+                                      : (_filteredTakeoffLocations.isNotEmpty
+                                          ? const Icon(Icons.arrow_drop_down)
+                                          : null))
+                                  : null,
+                              border: const OutlineInputBorder(),
+                              enabled: canEditDateAndLocation,
+                              helperText: _filteredTakeoffLocations.isNotEmpty
+                                  ? _t('Type_Or_Select', lang)
+                                  : null,
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
@@ -1492,44 +1529,66 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                       });
                     },
                     fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                      // Sync our controller with the autocomplete controller
+                      // One-time sync: ensure autocomplete controller matches our backing state
                       if (controller.text != _landingController.text) {
                         controller.text = _landingController.text;
                         controller.selection = TextSelection.collapsed(offset: controller.text.length);
                       }
-                      
-                      // Select all text when field gains focus
-                      focusNode.addListener(() {
-                        if (focusNode.hasFocus && controller.text.isNotEmpty) {
-                          controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
-                        }
-                      });
-                      
-                      controller.addListener(() {
-                        if (controller.text != _landingController.text) {
-                          _landingController.text = controller.text;
-                          if (_landingFromDropdown) {
-                            setState(() => _landingFromDropdown = false);
-                          }
-                        }
-                      });
-                      
-                      return TextField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        readOnly: !canEditDateAndLocation,
-                        decoration: InputDecoration(
-                          labelText: _t('Landing_Location', lang),
-                          prefixIcon: const Icon(Icons.flight_land),
-                          suffixIcon: canEditDateAndLocation && _filteredLandingLocations.isNotEmpty
-                              ? const Icon(Icons.arrow_drop_down)
-                              : null,
-                          border: const OutlineInputBorder(),
-                          enabled: canEditDateAndLocation,
-                          helperText: _filteredLandingLocations.isNotEmpty
-                              ? _t('Type_Or_Select', lang)
-                              : null,
-                        ),
+
+                      return ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: controller,
+                        builder: (context, textValue, _) {
+                          return TextField(
+                            controller: controller,
+                            focusNode: focusNode,
+                            readOnly: !canEditDateAndLocation,
+                            onTap: () {
+                              // Select-all on tap so user can immediately type to replace
+                              if (controller.text.isNotEmpty) {
+                                controller.selection = TextSelection(
+                                  baseOffset: 0,
+                                  extentOffset: controller.text.length,
+                                );
+                              }
+                            },
+                            onChanged: (text) {
+                              if (text != _landingController.text) {
+                                _landingController.text = text;
+                              }
+                              if (_landingFromDropdown && mounted) {
+                                setState(() => _landingFromDropdown = false);
+                              }
+                            },
+                            decoration: InputDecoration(
+                              labelText: _t('Landing_Location', lang),
+                              prefixIcon: const Icon(Icons.flight_land),
+                              suffixIcon: canEditDateAndLocation
+                                  ? (textValue.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear, size: 20),
+                                          tooltip: 'Clear landing',
+                                          onPressed: () {
+                                            controller.clear();
+                                            setState(() {
+                                              _landingController.clear();
+                                              _landingAltitudeController.text = '500';
+                                              _landingFromDropdown = false;
+                                            });
+                                            focusNode.requestFocus();
+                                          },
+                                        )
+                                      : (_filteredLandingLocations.isNotEmpty
+                                          ? const Icon(Icons.arrow_drop_down)
+                                          : null))
+                                  : null,
+                              border: const OutlineInputBorder(),
+                              enabled: canEditDateAndLocation,
+                              helperText: _filteredLandingLocations.isNotEmpty
+                                  ? _t('Type_Or_Select', lang)
+                                  : null,
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
