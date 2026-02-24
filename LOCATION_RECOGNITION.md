@@ -1,3 +1,7 @@
+# LOCATION_RECOGNITION
+## Overview
+This document describes the location recognition features implemented in the FlightDeck application.
+...existing content...
 # Automatic Location Recognition for Takeoff/Landing
 
 ## Overview

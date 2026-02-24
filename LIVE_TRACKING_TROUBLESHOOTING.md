@@ -1,3 +1,7 @@
+# LIVE_TRACKING_TROUBLESHOOTING
+## Overview
+This document provides troubleshooting steps for issues related to live tracking in the FlightDeck application.
+...existing content...
 # Live Tracking Troubleshooting Guide
 
 ## Issue: "Takeoff detected but nothing sent to cloud"

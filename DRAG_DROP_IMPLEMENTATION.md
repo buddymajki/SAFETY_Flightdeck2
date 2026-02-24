@@ -1,3 +1,6 @@
+# DRAG_DROP_IMPLEMENTATION
+
+...existing content...
 # Drag-and-Drop Card Reordering - Implementation Guide
 
 ## Overview

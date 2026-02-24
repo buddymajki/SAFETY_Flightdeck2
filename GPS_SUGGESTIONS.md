@@ -1,3 +1,6 @@
+# GPS_SUGGESTIONS
+
+...existing content...
 # GPS Suggestions
 
 ## Battery saver toggle (concept)

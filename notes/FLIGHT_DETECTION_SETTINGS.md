@@ -1,0 +1,3 @@
+# FLIGHT_DETECTION_SETTINGS
+
+...existing content...

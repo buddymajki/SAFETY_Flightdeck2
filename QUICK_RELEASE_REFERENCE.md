@@ -1,3 +1,7 @@
+# QUICK_RELEASE_REFERENCE
+## Overview
+This document serves as a quick reference for the release process of the FlightDeck application.
+...existing content...
 # QUICK REFERENCE: RELEASE WORKFLOW
 
 ## EVERY RELEASE: JUST CHANGE THE VERSION AND RUN 5 COMMANDS

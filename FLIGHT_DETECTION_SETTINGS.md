@@ -1,3 +1,6 @@
+# FLIGHT_DETECTION_SETTINGS
+
+...existing content...
 # Flight Detection Settings & Thresholds
 
 ## Location: `lib/services/flight_detection_service.dart` (Lines 1-30)

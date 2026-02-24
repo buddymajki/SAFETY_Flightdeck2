@@ -81,15 +81,27 @@ class TestTrigger {
     switch (type) {
       case 'category_percent':
         final catName = category ?? '?';
-        if (lang == 'de') {
-          return 'Kategorie "$catName" $operator ${value.toInt()}%';
+        switch (lang) {
+          case 'de':
+            return 'Kategorie "$catName" $operator ${value.toInt()}%';
+          case 'it':
+            return 'Categoria "$catName" $operator ${value.toInt()}%';
+          case 'fr':
+            return 'Catégorie "$catName" $operator ${value.toInt()}%';
+          default:
+            return 'Category "$catName" $operator ${value.toInt()}%';
         }
-        return 'Category "$catName" $operator ${value.toInt()}%';
       case 'flights_count':
-        if (lang == 'de') {
-          return 'Anzahl Flüge $operator ${value.toInt()}';
+        switch (lang) {
+          case 'de':
+            return 'Anzahl Flüge $operator ${value.toInt()}';
+          case 'it':
+            return 'Numero di voli $operator ${value.toInt()}';
+          case 'fr':
+            return 'Nombre de vols $operator ${value.toInt()}';
+          default:
+            return 'Flights count $operator ${value.toInt()}';
         }
-        return 'Flights count $operator ${value.toInt()}';
       default:
         return '$type $operator $value';
     }

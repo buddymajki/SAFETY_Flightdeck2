@@ -1,3 +1,7 @@
+# PROGRESS_NOTES
+## Overview
+This document contains progress notes and updates regarding the development of the FlightDeck application.
+...existing content...
 # Progress Notes - Login/Logout Data Loading Fix
 
 ## Issue Identified

@@ -1,3 +1,7 @@
+# INTEGRATION_GOOGLE_DRIVE
+## Overview
+This document describes the integration of Google Drive for metadata management in the FlightDeck application.
+...existing content...
 # 🔧 INTEGRATION: Google Drive Metadata Method
 
 This file shows exactly how to integrate the new `checkForUpdatesFromGoogleDrive()` method into your app.

@@ -12,16 +12,25 @@ const Color theoryButtonColor = Color(0xFF805ad5); // Purple
 class TheoryTopic {
   final String titleEn;
   final String titleDe;
+  final String titleIt;
+  final String titleFr;
   final String url;
 
   TheoryTopic({
     required this.titleEn,
     required this.titleDe,
+    required this.titleIt,
+    required this.titleFr,
     required this.url,
   });
 
   String getTitle(String languageCode) {
-    return languageCode == 'de' ? titleDe : titleEn;
+    switch (languageCode) {
+      case 'de': return titleDe;
+      case 'it': return titleIt;
+      case 'fr': return titleFr;
+      default: return titleEn;
+    }
   }
 }
 
@@ -30,26 +39,36 @@ final List<TheoryTopic> theoryTopics = [
   TheoryTopic(
     titleEn: "Aerodynamics",
     titleDe: "Aerodynamik",
+    titleIt: "Aerodinamica",
+    titleFr: "Aérodynamique",
     url: "https://flywithmiki.com/theory/aerodynamics.pdf",
   ),
   TheoryTopic(
     titleEn: "Flying Practice",
     titleDe: "Flugpraxis",
+    titleIt: "Pratica di volo",
+    titleFr: "Pratique de vol",
     url: "https://flywithmiki.com/theory/flightpraxis.pdf",
   ),
   TheoryTopic(
     titleEn: "Legislation (Airspaces)",
     titleDe: "Luftfahrtgesetze (Lufträume)",
+    titleIt: "Legislazione (Spazi aerei)",
+    titleFr: "Législation (Espaces aériens)",
     url: "https://flywithmiki.com/theory/law.pdf",
   ),
   TheoryTopic(
     titleEn: "Material Sciences",
     titleDe: "Materialwissenschaften",
+    titleIt: "Scienza dei materiali",
+    titleFr: "Sciences des matériaux",
     url: "https://flywithmiki.com/theory/material.pdf",
   ),
   TheoryTopic(
     titleEn: "Weather",
     titleDe: "Wetter",
+    titleIt: "Meteorologia",
+    titleFr: "Météorologie",
     url: "https://flywithmiki.com/theory/meteo.pdf",
   ),
 ];
@@ -59,14 +78,18 @@ class TheoryScreen extends StatelessWidget {
 
   // Localization map
   static const Map<String, Map<String, String>> _texts = {
-    'Core_Theory': {'en': 'Core Theory', 'de': 'Kerntheorie'},
+    'Core_Theory': {'en': 'Core Theory', 'de': 'Kerntheorie', 'it': 'Teoria di base', 'fr': 'Théorie fondamentale'},
     'Select_Topic': {
       'en': 'Please select the theoretical topic to download or open the corresponding PDF.',
       'de': 'Bitte wählen Sie das Thema zum Herunterladen oder Öffnen der entsprechenden PDF-Datei.',
+      'it': 'Selezionare l\'argomento teorico per scaricare o aprire il PDF corrispondente.',
+      'fr': 'Veuillez sélectionner le sujet théorique pour télécharger ou ouvrir le PDF correspondant.',
     },
     'Coming_Soon': {
       'en': 'Visit this site from time to time - new content will come soon...',
       'de': 'Besuchen Sie diese Website von Zeit zu Zeit - neue Inhalte werden bald verfügbar...',
+      'it': 'Visitate questo sito di tanto in tanto - nuovi contenuti arriveranno presto...',
+      'fr': 'Visitez ce site de temps en temps - de nouveaux contenus arriveront bientôt...',
     },
   };
 

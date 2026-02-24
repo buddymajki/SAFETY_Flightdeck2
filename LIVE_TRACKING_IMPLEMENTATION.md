@@ -1,3 +1,7 @@
+# LIVE_TRACKING_IMPLEMENTATION
+## Overview
+This document outlines the implementation of live tracking features in the FlightDeck application.
+...existing content...
 # Live Tracking Implementation Plan
 
 ## Feature Name: **"SkyWatch"** or **"Live Tracking"**

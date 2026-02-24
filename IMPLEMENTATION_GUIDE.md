@@ -1,3 +1,7 @@
+# IMPLEMENTATION_GUIDE
+## Overview
+This guide provides detailed instructions on how to implement and utilize the features of the FlightDeck application.
+...existing content...
 # Implementation Guide: Images and Disclaimers in Tests
 
 ## ✅ What Was Implemented

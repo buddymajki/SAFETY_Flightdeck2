@@ -11,24 +11,24 @@ class GlobalDataService extends ChangeNotifier {
   ];
 
   static const Map<String, Map<String, String>> categoryTitles = {
-    'gh-bas': {'en': 'Groundhandling Basics', 'de': 'Bodenhandling Grundlagen'},
-    'gh-adv': {'en': 'Groundhandling Advanced', 'de': 'Bodenhandling Fortgeschritten'},
-    'th-flight': {'en': 'In flight Theory', 'de': 'Theorie im Flug'},
-    'th-core': {'en': 'Core Theory', 'de': 'Kerntheorie'},
-    'hf-bas': {'en': 'High Flights Basic', 'de': 'Höhenflüge Grundlagen'},
-    'hf-adv': {'en': 'High Flights Advanced', 'de': 'Höhenflüge Fortgeschritten'},
-    'exam': {'en': 'Exam Preparation', 'de': 'Prüfungsvorbereitung'},
+    'gh-bas': {'en': 'Groundhandling Basics', 'de': 'Bodenhandling Grundlagen', 'it': 'Groundhandling base', 'fr': 'Bases du maniement au sol'},
+    'gh-adv': {'en': 'Groundhandling Advanced', 'de': 'Bodenhandling Fortgeschritten', 'it': 'Groundhandling avanzato', 'fr': 'Maniement au sol avancé'},
+    'th-flight': {'en': 'In flight Theory', 'de': 'Theorie im Flug', 'it': 'Teoria in volo', 'fr': 'Théorie en vol'},
+    'th-core': {'en': 'Core Theory', 'de': 'Kerntheorie', 'it': 'Teoria di base', 'fr': 'Théorie fondamentale'},
+    'hf-bas': {'en': 'High Flights Basic', 'de': 'Höhenflüge Grundlagen', 'it': 'Voli in quota base', 'fr': 'Vols en altitude bases'},
+    'hf-adv': {'en': 'High Flights Advanced', 'de': 'Höhenflüge Fortgeschritten', 'it': 'Voli in quota avanzato', 'fr': 'Vols en altitude avancé'},
+    'exam': {'en': 'Exam Preparation', 'de': 'Prüfungsvorbereitung', 'it': 'Preparazione esame', 'fr': 'Préparation à l\'examen'},
   };
 
   // Short names for tab display
   static const Map<String, Map<String, String>> categoryShortNames = {
-    'gh-bas': {'en': 'GH Basic', 'de': 'ÜH Grund'},
-    'gh-adv': {'en': 'GH Adv', 'de': 'ÜH Fort'},
-    'th-flight': {'en': 'TH Flight', 'de': 'TH Flug'},
-    'th-core': {'en': 'TH Core', 'de': 'TH Kern'},
-    'hf-bas': {'en': 'HF Basic', 'de': 'HF Grund'},
-    'hf-adv': {'en': 'HF Adv', 'de': 'HF Fort'},
-    'exam': {'en': 'Exam', 'de': 'Prüf'},
+    'gh-bas': {'en': 'GH Basic', 'de': 'ÜH Grund', 'it': 'GH Base', 'fr': 'MS Base'},
+    'gh-adv': {'en': 'GH Adv', 'de': 'ÜH Fort', 'it': 'GH Avanz', 'fr': 'MS Av'},
+    'th-flight': {'en': 'TH Flight', 'de': 'TH Flug', 'it': 'TH Volo', 'fr': 'TH Vol'},
+    'th-core': {'en': 'TH Core', 'de': 'TH Kern', 'it': 'TH Base', 'fr': 'TH Fond'},
+    'hf-bas': {'en': 'HF Basic', 'de': 'HF Grund', 'it': 'VA Base', 'fr': 'VA Base'},
+    'hf-adv': {'en': 'HF Adv', 'de': 'HF Fort', 'it': 'VA Avanz', 'fr': 'VA Av'},
+    'exam': {'en': 'Exam', 'de': 'Prüf', 'it': 'Esame', 'fr': 'Exam'},
   };
 
   List<Map<String, dynamic>>? globalChecklists;

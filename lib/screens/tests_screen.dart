@@ -29,16 +29,34 @@ class _TestsScreenState extends State<TestsScreen> {
   Set<String> _loadedSignedGtcSchools = {};
 
   static const Map<String, Map<String, String>> _gtcTexts = {
-    'GTC_Title': {'en': 'General Terms & Conditions', 'de': 'Allgemeine Geschaeftsbedingungen'},
-    'GTC_Error_Message': {'en': 'Please accept every section and sign', 'de': 'Bitte akzeptieren Sie alle Abschnitte und unterschreiben'},
-    'Accepted_On': {'en': 'Accepted on', 'de': 'Akzeptiert am'},
-    'View_Terms': {'en': 'View Terms', 'de': 'Bedingungen anzeigen'},
-    'Collapse': {'en': 'Collapse', 'de': 'Einklappen'},
-    'Accept_And_Sign': {'en': 'Accept & Sign', 'de': 'Akzeptieren & unterschreiben'},
-    'Signed_GTC': {'en': 'Signed Terms & Conditions', 'de': 'Unterzeichnete Bedingungen'},
-    'School': {'en': 'School', 'de': 'Schule'},
-    'I_Accept': {'en': 'I accept', 'de': 'Ich akzeptiere'},
-    'GTC_Not_Available': {'en': 'Terms not available', 'de': 'Bedingungen nicht verfuegbar'},
+    'GTC_Title': {'en': 'General Terms & Conditions', 'de': 'Allgemeine Geschaeftsbedingungen', 'it': 'Termini e Condizioni Generali', 'fr': 'Conditions Générales'},
+    'GTC_Error_Message': {'en': 'Please accept every section and sign', 'de': 'Bitte akzeptieren Sie alle Abschnitte und unterschreiben', 'it': 'Accettare tutte le sezioni e firmare', 'fr': 'Veuillez accepter chaque section et signer'},
+    'Accepted_On': {'en': 'Accepted on', 'de': 'Akzeptiert am', 'it': 'Accettato il', 'fr': 'Accepté le'},
+    'View_Terms': {'en': 'View Terms', 'de': 'Bedingungen anzeigen', 'it': 'Visualizza termini', 'fr': 'Voir les conditions'},
+    'Collapse': {'en': 'Collapse', 'de': 'Einklappen', 'it': 'Comprimi', 'fr': 'Réduire'},
+    'Accept_And_Sign': {'en': 'Accept & Sign', 'de': 'Akzeptieren & unterschreiben', 'it': 'Accetta e firma', 'fr': 'Accepter et signer'},
+    'Signed_GTC': {'en': 'Signed Terms & Conditions', 'de': 'Unterzeichnete Bedingungen', 'it': 'Termini e condizioni firmati', 'fr': 'Conditions signées'},
+    'School': {'en': 'School', 'de': 'Schule', 'it': 'Scuola', 'fr': 'École'},
+    'I_Accept': {'en': 'I accept', 'de': 'Ich akzeptiere', 'it': 'Accetto', 'fr': 'J\'accepte'},
+    'GTC_Not_Available': {'en': 'Terms not available', 'de': 'Bedingungen nicht verfuegbar', 'it': 'Termini non disponibili', 'fr': 'Conditions non disponibles'},
+    'Available_Tests': {'en': 'Available Tests', 'de': 'Verfügbare Tests', 'it': 'Test disponibili', 'fr': 'Tests disponibles'},
+    'Failed_Tests': {'en': 'Failed Tests', 'de': 'Nicht bestanden', 'it': 'Test non superati', 'fr': 'Tests échoués'},
+    'Passed_Tests': {'en': 'Passed Tests', 'de': 'Bestandene Tests', 'it': 'Test superati', 'fr': 'Tests réussis'},
+    'Locked_Tests': {'en': 'Locked Tests', 'de': 'Gesperrte Tests', 'it': 'Test bloccati', 'fr': 'Tests verrouillés'},
+    'Requirements_Not_Met': {'en': 'Requirements not met', 'de': 'Voraussetzungen nicht erfüllt', 'it': 'Requisiti non soddisfatti', 'fr': 'Prérequis non remplis'},
+    'PASSED': {'en': 'PASSED', 'de': 'Bestanden', 'it': 'SUPERATO', 'fr': 'RÉUSSI'},
+    'FAILED': {'en': 'FAILED', 'de': 'Nicht bestanden', 'it': 'NON SUPERATO', 'fr': 'ÉCHOUÉ'},
+    'Attempts': {'en': 'Attempts', 'de': 'Versuche', 'it': 'Tentativi', 'fr': 'Tentatives'},
+    'Retry_In_Days': {'en': 'Retry available in', 'de': 'Wiederholung möglich in', 'it': 'Ripetizione disponibile tra', 'fr': 'Nouvel essai disponible dans'},
+    'Days': {'en': 'days', 'de': 'Tagen', 'it': 'giorni', 'fr': 'jours'},
+    'Tap_To_Retry': {'en': 'Tap to retry', 'de': 'Tippen zum Wiederholen', 'it': 'Tocca per riprovare', 'fr': 'Appuyez pour réessayer'},
+    'Tap_To_Start': {'en': 'Tap to start test', 'de': 'Tippen um den Test zu starten', 'it': 'Tocca per iniziare il test', 'fr': 'Appuyez pour commencer le test'},
+    'Passed_Excl': {'en': 'PASSED!', 'de': 'Bestanden!', 'it': 'SUPERATO!', 'fr': 'RÉUSSI !'},
+    'Failed_Excl': {'en': 'FAILED', 'de': 'Nicht bestanden', 'it': 'NON SUPERATO', 'fr': 'ÉCHOUÉ'},
+    'Correct': {'en': 'correct', 'de': 'richtig', 'it': 'corrette', 'fr': 'correctes'},
+    'Pass_Threshold': {'en': 'Pass threshold', 'de': 'Bestehensgrenze', 'it': 'Soglia di superamento', 'fr': 'Seuil de réussite'},
+    'Retry_Message': {'en': 'You can retry this test in', 'de': 'Sie können den Test in', 'it': 'Puoi riprovare questo test tra', 'fr': 'Vous pouvez réessayer ce test dans'},
+    'Retry_Message_Suffix': {'en': 'days', 'de': 'Tagen wiederholen', 'it': 'giorni', 'fr': 'jours'},
   };
 
   @override
@@ -259,7 +277,7 @@ class _TestsScreenState extends State<TestsScreen> {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                lang == 'de' ? 'Verfügbare Tests' : 'Available Tests',
+                _t('Available_Tests', lang),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
@@ -278,7 +296,7 @@ class _TestsScreenState extends State<TestsScreen> {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                lang == 'de' ? 'Nicht bestanden' : 'Failed Tests',
+                _t('Failed_Tests', lang),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
@@ -302,7 +320,7 @@ class _TestsScreenState extends State<TestsScreen> {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                lang == 'de' ? 'Bestandene Tests' : 'Passed Tests',
+                _t('Passed_Tests', lang),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
@@ -321,7 +339,7 @@ class _TestsScreenState extends State<TestsScreen> {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                lang == 'de' ? 'Gesperrte Tests' : 'Locked Tests',
+                _t('Locked_Tests', lang),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
@@ -699,6 +717,8 @@ class _TestCard extends StatelessWidget {
     this.statsJson,
   });
 
+  String _t(String key) => _TestsScreenState._gtcTexts[key]?[lang] ?? _TestsScreenState._gtcTexts[key]?['en'] ?? key;
+
   @override
   Widget build(BuildContext context) {
     final isPassed = submission?.passed == true;
@@ -765,7 +785,7 @@ class _TestCard extends StatelessWidget {
                     // Status / info line
                     if (isLocked) ...[
                       Text(
-                        lang == 'de' ? 'Voraussetzungen nicht erfüllt' : 'Requirements not met',
+                        _t('Requirements_Not_Met'),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
                       ),
                       const SizedBox(height: 2),
@@ -790,41 +810,39 @@ class _TestCard extends StatelessWidget {
                       }),
                     ] else if (isPassed) ...[
                       Text(
-                        '${lang == 'de' ? 'Bestanden' : 'PASSED'} - ${score?.toStringAsFixed(0)}%',
+                        '${_t('PASSED')} - ${score?.toStringAsFixed(0)}%',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.green, fontWeight: FontWeight.w600),
                       ),
                       if (attempts.isNotEmpty)
                         Text(
-                          '${lang == 'de' ? 'Versuche' : 'Attempts'}: ${attempts.length}',
+                          '${_t('Attempts')}: ${attempts.length}',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey, fontSize: 11),
                         ),
                     ] else if (isFailed) ...[
                       Text(
-                        '${lang == 'de' ? 'Nicht bestanden' : 'FAILED'} - ${score?.toStringAsFixed(0)}%',
+                        '${_t('FAILED')} - ${score?.toStringAsFixed(0)}%',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red),
                       ),
                       if (!canRetry)
                         Text(
-                          lang == 'de'
-                              ? 'Wiederholung möglich in $daysLeft Tagen'
-                              : 'Retry available in $daysLeft days',
+                          '${_t('Retry_In_Days')} $daysLeft ${_t('Days')}',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Colors.orange, fontSize: 11),
                         )
                       else
                         Text(
-                          lang == 'de' ? 'Tippen zum Wiederholen' : 'Tap to retry',
+                          _t('Tap_To_Retry'),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Theme.of(context).colorScheme.primary),
                         ),
                       if (attempts.isNotEmpty)
                         Text(
-                          '${lang == 'de' ? 'Versuche' : 'Attempts'}: ${attempts.length}',
+                          '${_t('Attempts')}: ${attempts.length}',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey, fontSize: 11),
                         ),
                     ] else ...[
                       Text(
-                        lang == 'de' ? 'Tippen um den Test zu starten' : 'Tap to start test',
+                        _t('Tap_To_Start'),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
@@ -1325,6 +1343,8 @@ class _TestResultDialog extends StatelessWidget {
     required this.lang,
   });
 
+  String _t(String key) => _TestsScreenState._gtcTexts[key]?[lang] ?? _TestsScreenState._gtcTexts[key]?['en'] ?? key;
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -1339,9 +1359,7 @@ class _TestResultDialog extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            passed
-                ? (lang == 'de' ? 'Bestanden!' : 'PASSED!')
-                : (lang == 'de' ? 'Nicht bestanden' : 'FAILED'),
+            passed ? _t('Passed_Excl') : _t('Failed_Excl'),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: passed ? Colors.green : Colors.red,
@@ -1354,12 +1372,12 @@ class _TestResultDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '$correct / $total ${lang == 'de' ? 'richtig' : 'correct'}',
+            '$correct / $total ${_t('Correct')}',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 4),
           Text(
-            '${lang == 'de' ? 'Bestehensgrenze' : 'Pass threshold'}: $passThreshold%',
+            '${_t('Pass_Threshold')}: $passThreshold%',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
           ),
           if (!passed && retryAvailableAt != null) ...[
@@ -1377,9 +1395,7 @@ class _TestResultDialog extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      lang == 'de'
-                          ? 'Sie können den Test in $retryDelayDays Tagen wiederholen'
-                          : 'You can retry this test in $retryDelayDays days',
+                      '${_t('Retry_Message')} $retryDelayDays ${_t('Retry_Message_Suffix')}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.orange.shade800),
                     ),
                   ),

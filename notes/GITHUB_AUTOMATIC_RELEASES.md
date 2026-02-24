@@ -1,0 +1,3 @@
+# GITHUB_AUTOMATIC_RELEASES
+
+...existing content...

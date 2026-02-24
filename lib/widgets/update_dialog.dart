@@ -25,17 +25,19 @@ class _UpdateDialogState extends State<UpdateDialog> {
   // ============================================================
 
   static const Map<String, Map<String, String>> _texts = {
-    'new_version_available': {'en': 'New Version Available', 'de': 'Neue Version verfügbar', 'hu': 'Új verzió elérhető'},
-    'current_version': {'en': 'Current version:', 'de': 'Aktuelle Version:', 'hu': 'Jelenlegi verzió:'},
-    'available_version': {'en': 'Available version:', 'de': 'Verfügbare Version:', 'hu': 'Elérhető verzió:'},
-    'whats_new': {'en': 'What\'s new:', 'de': 'Neuigkeiten:', 'hu': 'Mi új:'},
+    'new_version_available': {'en': 'New Version Available', 'de': 'Neue Version verfügbar', 'hu': 'Új verzió elérhető', 'it': 'Nuova versione disponibile', 'fr': 'Nouvelle version disponible'},
+    'current_version': {'en': 'Current version:', 'de': 'Aktuelle Version:', 'hu': 'Jelenlegi verzió:', 'it': 'Versione attuale:', 'fr': 'Version actuelle :'},
+    'available_version': {'en': 'Available version:', 'de': 'Verfügbare Version:', 'hu': 'Elérhető verzió:', 'it': 'Versione disponibile:', 'fr': 'Version disponible :'},
+    'whats_new': {'en': 'What\'s new:', 'de': 'Neuigkeiten:', 'hu': 'Mi új:', 'it': 'Novità:', 'fr': 'Nouveautés :'},
     'firebase_info': {
       'en': 'A new version has been sent to you via Firebase App Distribution.\nCheck your email for the download link.',
       'de': 'Eine neue Version wurde Ihnen über Firebase App Distribution zugesandt.\nPrüfen Sie Ihre E-Mail für den Download-Link.',
       'hu': 'Új verziót kaptl Firebase App Distribution emailben.\nKeresd az emailt a letöltési linkkel.',
+      'it': 'Una nuova versione è stata inviata tramite Firebase App Distribution.\nControlla la tua email per il link di download.',
+      'fr': 'Une nouvelle version vous a été envoyée via Firebase App Distribution.\nVérifiez votre e-mail pour le lien de téléchargement.',
     },
-    'open_firebase': {'en': 'Open Firebase App Distribution', 'de': 'Firebase App Distribution öffnen', 'hu': 'Firebase App Distribution megnyêtása'},
-    'later': {'en': 'Later', 'de': 'Später', 'hu': 'Később'},
+    'open_firebase': {'en': 'Open Firebase App Distribution', 'de': 'Firebase App Distribution öffnen', 'hu': 'Firebase App Distribution megnyêtása', 'it': 'Apri Firebase App Distribution', 'fr': 'Ouvrir Firebase App Distribution'},
+    'later': {'en': 'Later', 'de': 'Später', 'hu': 'Később', 'it': 'Più tardi', 'fr': 'Plus tard'},
     // Régi szövegek – kommentálva (GitHub/GDrive letöltés)
     // 'downloading': {'en': 'Downloading...', 'de': 'Wird heruntergeladen...'},
     // 'installing': {'en': 'Installing...', 'de': 'Wird installiert...'},

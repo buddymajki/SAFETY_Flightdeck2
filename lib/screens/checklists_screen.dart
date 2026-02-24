@@ -417,8 +417,8 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
   ) {
     final theme = Theme.of(context);
     final isCompleted = user.isChecklistItemCompleted(item.id);
-    final title = languageCode == 'de' ? item.title_de : item.title_en;
-    final description = languageCode == 'de' ? item.description_de : item.description_en;
+    final title = item.getTitle(languageCode);
+    final description = item.getDescription(languageCode);
 
     return Container(
       decoration: BoxDecoration(
@@ -532,8 +532,8 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
     String languageCode,
   ) {
     final theme = Theme.of(context);
-    final title = languageCode == 'de' ? item.title_de : item.title_en;
-    final description = languageCode == 'de' ? item.description_de : item.description_en;
+    final title = item.getTitle(languageCode);
+    final description = item.getDescription(languageCode);
 
     showDialog(
       context: context,

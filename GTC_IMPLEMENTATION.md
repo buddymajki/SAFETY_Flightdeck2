@@ -1,3 +1,7 @@
+# GTC_IMPLEMENTATION
+## Overview
+This document describes the GT&C system implemented in the FlightDeck application. The system allows schools to define terms and conditions that students must accept before proceeding. Acceptances are tracked per user/school combination for audit and compliance purposes.
+...existing content...
 # General Terms & Conditions (GT&C) Implementation Guide
 
 ## Overview

@@ -1,3 +1,7 @@
+# IMPORTANT_TODO_RELEASE_KEY
+## Overview
+This document lists important tasks and keys to be addressed before the release of the FlightDeck application.
+...existing content...
 # IMPORTANT TODO: Android Release Signing Key
 
 To ensure seamless updates across all machines and future releases, set up a custom release signing key (key.jks) for FlightDeck.

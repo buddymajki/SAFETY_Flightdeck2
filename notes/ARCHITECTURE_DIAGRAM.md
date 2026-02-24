@@ -1,0 +1,3 @@
+# ARCHITECTURE_DIAGRAM
+
+...existing content...

@@ -1,0 +1,3 @@
+# AUTO_UPDATE_SETUP
+
+...existing content...
