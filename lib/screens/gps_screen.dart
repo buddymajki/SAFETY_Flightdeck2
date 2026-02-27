@@ -78,6 +78,8 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     'Clear_All_Title': {'en': 'Clear All?', 'de': 'Alle löschen?', 'it': 'Cancellare tutto?', 'fr': 'Tout effacer ?'},
     'Clear_All_Message': {'en': 'Delete all pending tracklogs? This action cannot be undone.', 'de': 'Möchtest du alle ausstehenden Trackprotokolle löschen? Diese Aktion kann nicht rückgängig gemacht werden.', 'it': 'Eliminare tutti i tracklog in sospeso? Questa azione non può essere annullata.', 'fr': 'Supprimer tous les tracklogs en attente ? Cette action est irréversible.'},
     'All_Cleared': {'en': 'All tracklogs cleared', 'de': 'Alle Trackprotokolle gelöscht', 'it': 'Tutti i tracklog cancellati', 'fr': 'Tous les tracklogs effacés'},
+    'GPS_Enabled': {'en': 'GPS Tracking', 'de': 'GPS-Tracking', 'it': 'Tracciamento GPS', 'fr': 'Suivi GPS'},
+    'Audio_Feedback': {'en': 'Audio Feedback', 'de': 'Audio-Feedback', 'it': 'Feedback audio', 'fr': 'Retour audio'},
   };
 
   String _t(String key, String lang) {
@@ -298,12 +300,16 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     // Check actual position signal and tracking status
     final hasGpsSignal = gpsSensorService.lastPosition != null;
     final isTracking = gpsSensorService.isTracking;
+    final isGpsToggleOn = isTracking || service.isTrackingEnabled;
     
     // Determine status color and message
     Color statusColor = Colors.red;
     String statusText = 'Phone GPS Disabled';
     
-    if (isTracking) {
+    if (!isGpsToggleOn) {
+      statusColor = Colors.grey;
+      statusText = _t('Tracking_Disabled', lang);
+    } else if (isTracking) {
       if (hasGpsSignal) {
         statusColor = Colors.green;
         statusText = 'GPS Signal OK';
@@ -324,7 +330,7 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
             Row(
               children: [
                 Icon(
-                  hasGpsSignal ? Icons.gps_fixed : Icons.gps_off,
+                  hasGpsSignal && isGpsToggleOn ? Icons.gps_fixed : Icons.gps_off,
                   color: statusColor,
                   size: 32,
                 ),
@@ -352,6 +358,68 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
                 ),
               ],
             ),
+            if (!isWebPlatform) ...[
+              const SizedBox(height: 16),
+              // GPS on/off toggle
+              Row(
+                children: [
+                  Icon(
+                    isGpsToggleOn ? Icons.gps_fixed : Icons.gps_off,
+                    color: isGpsToggleOn ? Colors.green : Colors.grey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _t('GPS_Enabled', lang),
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                  Switch(
+                    value: isGpsToggleOn,
+                    activeColor: Colors.green,
+                    onChanged: (value) async {
+                      if (value) {
+                        // Turn GPS on
+                        final success = await gpsSensorService.autoStartTracking();
+                        if (success) {
+                          await service.enableTracking();
+                        }
+                      } else {
+                        // Turn GPS off
+                        await service.disableTracking();
+                        await gpsSensorService.stopTracking();
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const Divider(height: 8),
+              // Audio feedback on/off toggle
+              Row(
+                children: [
+                  Icon(
+                    service.audioFeedbackEnabled ? Icons.volume_up : Icons.volume_off,
+                    color: service.audioFeedbackEnabled ? Colors.blue : Colors.grey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _t('Audio_Feedback', lang),
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                  Switch(
+                    value: service.audioFeedbackEnabled,
+                    activeColor: Colors.blue,
+                    onChanged: (value) async {
+                      await service.setAudioFeedback(value);
+                    },
+                  ),
+                ],
+              ),
+            ],
             if (!isWebPlatform && !gpsSensorService.hasBackgroundPermission && isTracking) ...[
               const SizedBox(height: 12),
               Container(
@@ -369,14 +437,6 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
                 ),
               ),
             ],
-            const SizedBox(height: 8),
-            Text(
-              '💡 GPS runs automatically when phone GPS is enabled',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.grey,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
           ],
         ),
       ),

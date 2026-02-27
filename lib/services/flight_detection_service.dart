@@ -52,16 +52,23 @@ class FlightDetectionService {
   ///   sudden stop-to-run acceleration pattern, so the IMU + pre-movement check filters them
   static const double takeoffHorizontalSpeedThreshold = 3.5;
 
+  /// High-confidence speed threshold (m/s) — when the GPS-reported speed
+  /// is clearly this high, the pilot is definitely moving and the vertical /
+  /// altitude condition can be skipped.  5 m/s = 18 km/h, well above any
+  /// walking / jogging false-positive range.
+  static const double takeoffHighConfidenceSpeed = 5.0;
+
   /// Minimum altitude CHANGE (up OR down) required to confirm takeoff (m)
   /// TUNING: 3m is above GPS altitude noise (±1-2m when stationary) while
   ///   catching real flight early. Slope launches descend 5-20m in the first seconds.
   static const double minAltitudeChangeForTakeoff = 3.0;
 
   /// Minimum duration of takeoff conditions before confirming (seconds)
-  /// TUNING: 3 seconds filters brief GPS glitches / car speed bumps while
-  ///   catching takeoffs ~2s earlier than before. Industry variometers (Skytraxx,
-  ///   XCTracer) typically confirm within 2-4s.
-  static const int takeoffConfirmationSeconds = 3;
+  /// TUNING: 2 seconds — variometers (Skytraxx, XCTracer) confirm in 2-4s.
+  /// GPS-reported Doppler speed is accurate enough that we don't need a
+  /// longer window to filter noise; the moving-average fallback already
+  /// smooths position-derived speed.
+  static const int takeoffConfirmationSeconds = 2;
 
   /// Maximum ground speed that's considered "on ground" for takeoff reference (m/s)
   /// TUNING: 1.5 m/s = 5.4 km/h - about fast walking speed
@@ -102,9 +109,11 @@ class FlightDetectionService {
   // ============================================
 
   /// Window size for moving average calculations (number of GPS points)
-  /// TUNING: 5 points at 1Hz = 5 second window for smoothing
-  /// Larger windows = more stable but slower response
-  static const int movingAverageWindowSize = 5;
+  /// TUNING: 3 points at 1Hz = 3 second window for smoothing.
+  /// Note: the primary speed signal now comes from the GPS chip's Doppler
+  /// speed (instant, sub-second latency). The moving-average calculation is
+  /// only a fallback when GPS speed is unavailable.
+  static const int movingAverageWindowSize = 3;
 
   /// Minimum track points needed before detection can occur
   /// TUNING: Need enough history to calculate reliable averages
@@ -213,12 +222,22 @@ class FlightDetectionService {
       return null;
     }
 
-    // Calculate current speeds
-    final horizontalSpeed = _calculateHorizontalSpeed();
+    // Calculate current speeds.
+    // PRIORITY: Use GPS-reported Doppler speed when available — it is
+    // instant (no moving-average lag) and more accurate than position-
+    // derived speed. Fall back to calculated speed only when GPS speed
+    // is missing or zero (some devices / simulators don't provide it).
+    final calculatedSpeed = _calculateHorizontalSpeed();
+    final gpsSpeed = currentPoint.speed;
+    final horizontalSpeed = (gpsSpeed != null && gpsSpeed > 0)
+        ? gpsSpeed
+        : calculatedSpeed;
     final verticalSpeed = _calculateVerticalSpeed();
     
     // DEBUG: Log detection values
-    developer.log('[FlightDetection] h_speed=${horizontalSpeed.toStringAsFixed(1)}m/s (need>$takeoffHorizontalSpeedThreshold), '
+    developer.log('[FlightDetection] h_speed=${horizontalSpeed.toStringAsFixed(1)}m/s '
+          '(gps=${gpsSpeed?.toStringAsFixed(1) ?? "-"}, calc=${calculatedSpeed.toStringAsFixed(1)}, '
+          'need>$takeoffHorizontalSpeedThreshold), '
           'v_speed=${verticalSpeed.toStringAsFixed(2)}m/s, alt=${currentPoint.altitude.toStringAsFixed(0)}m, '
           'ground=${_groundAltitude?.toStringAsFixed(0) ?? "?"}m', name: 'FlightDetection');
 
@@ -252,17 +271,23 @@ class FlightDetectionService {
     //    – OR the IMU detects a launch-run acceleration burst AND speed is at
     //      least 2.5 m/s (9 km/h) to avoid false positives while reacting faster
     // 2. PLUS either significant vertical movement OR altitude change
+    //    – OR speed is clearly above walking/jogging range (≥ takeoffHighConfidenceSpeed)
+    //      which makes altitude change unnecessary (flat-field launches, scooter tests)
     //    - Vertical speed uses ABSOLUTE value (climb OR descent)
     //    - Altitude change uses ABSOLUTE value (gain OR loss from ground)
     final speedIndicatesTakeoff = horizontalSpeed >= takeoffHorizontalSpeedThreshold ||
         (imuShowsLaunchRun && horizontalSpeed >= 2.5);
     final verticalIndicatesTakeoff = verticalSpeed.abs() > takeoffVerticalSpeedThreshold || 
                                      altitudeChange >= minAltitudeChangeForTakeoff;
+    // High-confidence override: if speed is well above jogging range, the
+    // pilot/aircraft is definitely moving — don't wait for altitude noise.
+    final highConfidenceSpeed = horizontalSpeed >= takeoffHighConfidenceSpeed;
     
     // DEBUG: Log condition status
     if (speedIndicatesTakeoff || verticalIndicatesTakeoff) {
       developer.log('[FlightDetection] CONDITIONS: speed=${speedIndicatesTakeoff ? "✓" : "✗"}, '
             'vertical=${verticalIndicatesTakeoff ? "✓" : "✗"} (altChange=${altitudeChange.toStringAsFixed(1)}m), '
+            'highConf=${highConfidenceSpeed ? "✓" : "✗"}, '
             'imuFlight=${imuIndicatesFlight ? "✓" : "-"}, imuGround=${imuIndicatesGround ? "✗" : "-"}', name: 'FlightDetection');
     }
 
@@ -273,8 +298,11 @@ class FlightDetectionService {
       return null;
     }
 
-    // Check if basic takeoff conditions are met
-    final takeoffConditionsMet = speedIndicatesTakeoff && verticalIndicatesTakeoff;
+    // Check if basic takeoff conditions are met.
+    // Speed is always required.  The vertical/altitude gate is needed UNLESS
+    // speed alone is high-confidence (well above walking/jogging).
+    final takeoffConditionsMet = speedIndicatesTakeoff &&
+        (verticalIndicatesTakeoff || highConfidenceSpeed);
 
     if (takeoffConditionsMet) {
       // Start tracking takeoff conditions
@@ -297,10 +325,12 @@ class FlightDetectionService {
       developer.log('[FlightDetection] ⏱️ Confirmation: ${conditionsDuration}s/${takeoffConfirmationSeconds}s needed, '
             'altChange=${altitudeChangeDuringConfirmation.toStringAsFixed(1)}m', name: 'FlightDetection');
 
-      // CONFIRM TAKEOFF: conditions held + meaningful altitude change (up OR down)
-      // Use a smaller threshold here since we already had initial conditions met
-      if (conditionsDuration >= takeoffConfirmationSeconds && 
-          altitudeChangeDuringConfirmation >= minAltitudeChangeForTakeoff / 2) {
+      // CONFIRM TAKEOFF: conditions held for required duration.
+      // Altitude change during confirmation is a bonus signal but NOT
+      // mandatory — on flat ground (field launches, scooter tests) GPS
+      // altitude barely changes, so gating on it causes multi-second /
+      // hundreds-of-meters delay.
+      if (conditionsDuration >= takeoffConfirmationSeconds) {
         _isInFlight = true;
         _takeoffConditionsStartTime = null;
         _takeoffConditionsStartAltitude = null;

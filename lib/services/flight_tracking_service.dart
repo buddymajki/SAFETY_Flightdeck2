@@ -28,6 +28,7 @@ class FlightTrackingService extends ChangeNotifier {
   static const String _trackedFlightsCacheKeyBase = 'gps_tracked_flights';
   static const String _currentFlightCacheKeyBase = 'gps_current_flight';
   static const String _trackingEnabledKey = 'gps_tracking_enabled';
+  static const String _audioFeedbackKey = 'gps_audio_feedback_enabled';
   
   // Current user ID for cache isolation
   String? _currentUserId;
@@ -40,6 +41,7 @@ class FlightTrackingService extends ChangeNotifier {
 
   // State
   bool _isTrackingEnabled = false;
+  bool _audioFeedbackEnabled = true;
   bool _isInitialized = false;
   TrackedFlight? _currentFlight;
   List<TrackedFlight> _trackedFlights = [];
@@ -89,6 +91,7 @@ class FlightTrackingService extends ChangeNotifier {
 
   // Getters
   bool get isTrackingEnabled => _isTrackingEnabled;
+  bool get audioFeedbackEnabled => _audioFeedbackEnabled;
   bool get isInitialized => _isInitialized;
   bool get isInFlight => _currentFlight != null;
   bool get isSimulating => _isSimulating;
@@ -171,9 +174,16 @@ class FlightTrackingService extends ChangeNotifier {
     _cachedSites = sites;
     _currentLanguage = lang;
     _isInitialized = true;
+    // Load persisted audio feedback preference (defaults to true on first run)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _audioFeedbackEnabled = prefs.getBool(_audioFeedbackKey) ?? true;
+    } catch (e) {
+      log('[FlightTrackingService] Failed to load audio preference: $e');
+    }
     // Defer notifyListeners to avoid calling during build phase
     _safeNotifyListeners();
-    log('[FlightTrackingService] Initialized with ${sites.length} sites');
+    log('[FlightTrackingService] Initialized with ${sites.length} sites, audioFeedback=$_audioFeedbackEnabled');
   }
   
   /// Set the live tracking service for authorities
@@ -365,12 +375,14 @@ class FlightTrackingService extends ChangeNotifier {
 
   /// Handle takeoff detection
   Future<void> _handleTakeoff(FlightEvent event, TrackPoint position) async {
-        // Play takeoff sound
-        try {
-          await _audioPlayer.setAsset('assets/sounds/takeoff.mp3');
-          _audioPlayer.play();
-        } catch (e) {
-          log('[FlightTrackingService] Failed to play takeoff sound: $e');
+        // Play takeoff sound (if audio feedback is enabled)
+        if (_audioFeedbackEnabled) {
+          try {
+            await _audioPlayer.setAsset('assets/sounds/takeoff.mp3');
+            _audioPlayer.play();
+          } catch (e) {
+            log('[FlightTrackingService] Failed to play takeoff sound: $e');
+          }
         }
     // Find nearest takeoff site within 500m radius
     // Use the current position (position parameter) which is the fresh GPS reading,
@@ -444,12 +456,14 @@ class FlightTrackingService extends ChangeNotifier {
 
   /// Handle landing detection
   Future<void> _handleLanding(FlightEvent event, TrackPoint position) async {
-        // Play landing sound
-        try {
-          await _audioPlayer.setAsset('assets/sounds/landing.mp3');
-          _audioPlayer.play();
-        } catch (e) {
-          log('[FlightTrackingService] Failed to play landing sound: $e');
+        // Play landing sound (if audio feedback is enabled)
+        if (_audioFeedbackEnabled) {
+          try {
+            await _audioPlayer.setAsset('assets/sounds/landing.mp3');
+            _audioPlayer.play();
+          } catch (e) {
+            log('[FlightTrackingService] Failed to play landing sound: $e');
+          }
         }
     debugPrint('🛬🛬🛬 [FlightTracking] ========================================');
     debugPrint('🛬 [FlightTracking] _handleLanding CALLED!');
@@ -770,6 +784,8 @@ class FlightTrackingService extends ChangeNotifier {
   }
 
   /// Stop ongoing simulation
+  /// Also cancels any in-progress flight and resets detection,
+  /// so stale GPS points don't trigger a new takeoff.
   void stopSimulation() {
     _simulationTimer?.cancel();
     _simulationTimer = null;
@@ -777,12 +793,25 @@ class FlightTrackingService extends ChangeNotifier {
     _simulationTracklog = null;
     _simulationIndex = 0;
 
-    if (!_detectionService.isInFlight) {
-      _updateStatus('Simulation ended');
+    // Cancel any in-progress flight spawned by the simulation
+    _cancelAutoCloseTimer();
+    if (_currentFlight != null) {
+      final cancelledFlight = _currentFlight!.copyWith(
+        status: FlightTrackingStatus.cancelled,
+        landingTime: DateTime.now(),
+      );
+      _trackedFlights.insert(0, cancelledFlight);
+      _saveTrackedFlights();
+      _currentFlight = null;
+      _clearCurrentFlight();
     }
 
+    // Reset detection so leftover state doesn't re-trigger a takeoff
+    _detectionService.reset();
+    _updateStatus('Simulation ended');
+
     notifyListeners();
-    log('[FlightTrackingService] Simulation stopped');
+    log('[FlightTrackingService] Simulation stopped (flight & detection reset)');
   }
 
   /// Generate a test tracklog for simulation
@@ -826,8 +855,20 @@ class FlightTrackingService extends ChangeNotifier {
   // ============================================
 
   /// Cancel current flight (if in progress)
+  /// Also stops any running simulation to prevent it from
+  /// feeding GPS points that would immediately trigger a new takeoff.
   Future<void> cancelCurrentFlight() async {
     if (_currentFlight == null) return;
+
+    // Stop simulation first so no more GPS points arrive
+    if (_isSimulating) {
+      _simulationTimer?.cancel();
+      _simulationTimer = null;
+      _isSimulating = false;
+      _simulationTracklog = null;
+      _simulationIndex = 0;
+      log('[FlightTrackingService] Simulation stopped as part of flight cancel');
+    }
 
     _cancelAutoCloseTimer();
 
@@ -980,9 +1021,20 @@ class FlightTrackingService extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_trackingEnabledKey, _isTrackingEnabled);
+      await prefs.setBool(_audioFeedbackKey, _audioFeedbackEnabled);
     } catch (e) {
       log('[FlightTrackingService] Save tracking state error: $e');
     }
+  }
+
+  /// Toggle audio feedback for takeoff/landing events
+  /// Persisted in SharedPreferences so the user's preference is remembered.
+  Future<void> setAudioFeedback(bool enabled) async {
+    if (_audioFeedbackEnabled == enabled) return;
+    _audioFeedbackEnabled = enabled;
+    await _saveTrackingState();
+    notifyListeners();
+    log('[FlightTrackingService] Audio feedback ${enabled ? "enabled" : "disabled"}');
   }
 
   /// Clear all cached data for current user
