@@ -5,6 +5,7 @@ import '../main.dart';
 import 'dashboard_screen.dart';
 import 'profile_screen.dart';
 import 'theory_screen.dart';
+import 'calendar_screen.dart';
 import 'checklists_screen.dart';
 import 'flightbook_screen.dart';
 import 'gps_screen.dart';
@@ -12,6 +13,7 @@ import 'tests_screen.dart';
 import '../services/app_config_service.dart';
 import '../services/app_version_service.dart';
 import '../services/update_service.dart';
+import '../services/calendar_service.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/custom_status_bar.dart';
 import '../widgets/update_dialog.dart';
@@ -33,15 +35,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   String _currentTitle = 'Dashboard';
   late PageController _pageController;
 
-  final List<Widget> _widgetOptions = <Widget>[
-    const DashboardScreen(),
-    const ChecklistsScreen(),
-    const FlightBookScreen(),
-    const GpsScreen(),
-    const TheoryScreen(),
-    const TestsScreen(),
-    const ProfileScreen(),
-  ];
+  // Dynamic page lists based on license
+  // Student: Calendar at index 4, Theory moved to hamburger menu
+  // Pilot:   Theory at index 4, no Calendar
+  List<Widget> _getWidgetOptions(bool isStudentLicense) {
+    if (isStudentLicense) {
+      return const [
+        DashboardScreen(),      // 0
+        ChecklistsScreen(),     // 1
+        FlightBookScreen(),     // 2
+        GpsScreen(),            // 3
+        CalendarScreen(),       // 4 ← Calendar for students
+        TestsScreen(),          // 5
+        TheoryScreen(),         // 6 (hamburger menu)
+        ProfileScreen(),        // 7 (hamburger menu)
+      ];
+    } else {
+      return const [
+        DashboardScreen(),      // 0
+        ChecklistsScreen(),     // 1
+        FlightBookScreen(),     // 2
+        GpsScreen(),            // 3
+        TheoryScreen(),         // 4 ← Theory for pilots
+        TestsScreen(),          // 5
+        ProfileScreen(),        // 6 (hamburger menu)
+      ];
+    }
+  }
 
   static const Map<String, Map<String, String>> _localizedLabels = {
     'en': {
@@ -50,6 +70,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       'flightbook': 'Flight Book',
       'gps': 'GPS',
       'theory': 'Theory',
+      'calendar': 'Calendar',
       'tests': 'Tests',
       'profile': 'Profile',
       'menu': 'Menu',
@@ -65,6 +86,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       'flightbook': 'Flugbuch',
       'gps': 'GPS',
       'theory': 'Theorie',
+      'calendar': 'Kalender',
       'tests': 'Prüfungen',
       'profile': 'Profil',
       'menu': 'Menü',
@@ -80,6 +102,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       'flightbook': 'Libro di Volo',
       'gps': 'GPS',
       'theory': 'Teoria',
+      'calendar': 'Calendario',
       'tests': 'Esami',
       'profile': 'Profilo',
       'menu': 'Menu',
@@ -95,6 +118,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       'flightbook': 'Carnet de Vol',
       'gps': 'GPS',
       'theory': 'Théorie',
+      'calendar': 'Calendrier',
       'tests': 'Examens',
       'profile': 'Profil',
       'menu': 'Menu',
@@ -111,16 +135,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return _localizedLabels[lang]?[key] ?? _localizedLabels['en']![key]!;
   }
 
-  List<String> _getTitles(BuildContext context) {
-    return [
-      _getLabel(context, 'dashboard'),
-      _getLabel(context, 'checklist'),
-      _getLabel(context, 'flightbook'),
-      _getLabel(context, 'gps'),
-      _getLabel(context, 'theory'),
-      _getLabel(context, 'tests'),
-      _getLabel(context, 'profile'),
-    ];
+  List<String> _getTitles(BuildContext context, bool isStudentLicense) {
+    if (isStudentLicense) {
+      return [
+        _getLabel(context, 'dashboard'),
+        _getLabel(context, 'checklist'),
+        _getLabel(context, 'flightbook'),
+        _getLabel(context, 'gps'),
+        _getLabel(context, 'calendar'),
+        _getLabel(context, 'tests'),
+        _getLabel(context, 'theory'),
+        _getLabel(context, 'profile'),
+      ];
+    } else {
+      return [
+        _getLabel(context, 'dashboard'),
+        _getLabel(context, 'checklist'),
+        _getLabel(context, 'flightbook'),
+        _getLabel(context, 'gps'),
+        _getLabel(context, 'theory'),
+        _getLabel(context, 'tests'),
+        _getLabel(context, 'profile'),
+      ];
+    }
   }
 
   @override
@@ -140,10 +177,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.dispose();
   }
 
-  void _onItemTapped(int index) {
+  void _onItemTapped(int index, bool isStudentLicense) {
     setState(() {
       _selectedIndex = index;
-      _currentTitle = _getTitles(context)[index];
+      _currentTitle = _getTitles(context, isStudentLicense)[index];
     });
     _pageController.animateToPage(
       index,
@@ -152,10 +189,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  void _onPageChanged(int index) {
+  void _onPageChanged(int index, bool isStudentLicense) {
     setState(() {
       _selectedIndex = index;
-      _currentTitle = _getTitles(context)[index];
+      _currentTitle = _getTitles(context, isStudentLicense)[index];
     });
   }
 
@@ -174,8 +211,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
-  void _showBottomMenu(BuildContext context) {
+  void _showBottomMenu(BuildContext context, bool isStudentLicense) {
     final navBarColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.black;
+    // Profile page index depends on license
+    final profileIndex = isStudentLicense ? 7 : 6;
+    // Theory page index (only in hamburger for students)
+    final theoryIndex = isStudentLicense ? 6 : -1; // -1 = not in hamburger
 
     showModalBottomSheet(
       context: context,
@@ -185,12 +226,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           shrinkWrap: true,
           padding: const EdgeInsets.all(8),
           children: [
+            // Theory menu item (only for students - moved from bottom nav)
+            if (isStudentLicense) ...[
+              ListTile(
+                leading: const Icon(Icons.school, color: Color(0xFF805ad5)),
+                title: Text(_getLabel(context, 'theory'), style: const TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _onItemTapped(theoryIndex, isStudentLicense);
+                },
+              ),
+              const Divider(color: Colors.grey),
+            ],
             ListTile(
               leading: const Icon(Icons.person, color: Colors.white),
               title: Text(_getLabel(context, 'profile'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
-                _onItemTapped(6); // Navigate to Profile screen
+                _onItemTapped(profileIndex, isStudentLicense);
               },
             ),
             const Divider(color: Colors.grey),
@@ -358,9 +411,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final gtcService = context.watch<GTCService>();
     final profileService = context.watch<ProfileService>();
     final profile = profileService.userProfile;
-    final isStudent = (profile?.license ?? '').toLowerCase() == 'student';
+    final isStudentLicense = (profile?.license ?? '').toLowerCase() == 'student';
     final schoolId = profile?.mainSchoolId;
-    final hasUnacceptedGtc = isStudent && schoolId != null && gtcService.getGTCForSchool(schoolId) != null && !gtcService.isGTCAcceptedForSchool(schoolId);
+    final hasUnacceptedGtc = isStudentLicense && schoolId != null && gtcService.getGTCForSchool(schoolId) != null && !gtcService.isGTCAcceptedForSchool(schoolId);
+
+    // Initialize CalendarService when school and uid are available
+    if (isStudentLicense && schoolId != null && profile?.uid != null) {
+      final calendarService = context.read<CalendarService>();
+      calendarService.initialize(schoolId, profile!.uid);
+    }
 
     // Test notification logic - show badge only if user has actionable tests available
     // First, ensure submissions are loaded so we can check accurately
@@ -443,8 +502,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   child: PageView(
                     controller: _pageController,
                     physics: const AlwaysScrollableScrollPhysics(),
-                    onPageChanged: _onPageChanged,
-                    children: _widgetOptions,
+                    onPageChanged: (i) => _onPageChanged(i, isStudentLicense),
+                    children: _getWidgetOptions(isStudentLicense),
                   ),
                 ),
               ),
@@ -460,47 +519,48 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   icon: Icons.dashboard,
                   label: _getLabel(context, 'dashboard'),
                   isSelected: _selectedIndex == 0,
-                  onTap: () => _onItemTapped(0),
+                  onTap: () => _onItemTapped(0, isStudentLicense),
                   primaryColor: primaryColor,
                 ),
                 _buildNavBarItem(
                   icon: Icons.fact_check,
                   label: _getLabel(context, 'checklist'),
                   isSelected: _selectedIndex == 1,
-                  onTap: () => _onItemTapped(1),
+                  onTap: () => _onItemTapped(1, isStudentLicense),
                   primaryColor: primaryColor,
                 ),
                 _buildNavBarItem(
                   icon: Icons.book,
                   label: _getLabel(context, 'flightbook'),
                   isSelected: _selectedIndex == 2,
-                  onTap: () => _onItemTapped(2),
+                  onTap: () => _onItemTapped(2, isStudentLicense),
                   primaryColor: primaryColor,
                 ),
                 _buildNavBarItem(
                   icon: Icons.gps_fixed,
                   label: _getLabel(context, 'gps'),
                   isSelected: _selectedIndex == 3,
-                  onTap: () => _onItemTapped(3),
+                  onTap: () => _onItemTapped(3, isStudentLicense),
                   primaryColor: primaryColor,
                 ),
+                // Index 4: Calendar for students, Theory for pilots
                 _buildNavBarItem(
-                  icon: Icons.school,
-                  label: _getLabel(context, 'theory'),
+                  icon: isStudentLicense ? Icons.calendar_month : Icons.school,
+                  label: _getLabel(context, isStudentLicense ? 'calendar' : 'theory'),
                   isSelected: _selectedIndex == 4,
-                  onTap: () => _onItemTapped(4),
+                  onTap: () => _onItemTapped(4, isStudentLicense),
                   primaryColor: primaryColor,
                 ),
                 _buildNavBarItem(
                   icon: Icons.quiz,
                   label: _getLabel(context, 'tests'),
                   isSelected: _selectedIndex == 5,
-                  onTap: () => _onItemTapped(5),
+                  onTap: () => _onItemTapped(5, isStudentLicense),
                   primaryColor: primaryColor,
                   showBadge: showTestsBadge,
                 ),
                 InkWell(
-                  onTap: () => _showBottomMenu(context),
+                  onTap: () => _showBottomMenu(context, isStudentLicense),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,

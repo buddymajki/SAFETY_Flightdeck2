@@ -112,6 +112,22 @@ service cloud.firestore {
       }
     }
 
+    // ============================================
+    // CALENDAR EVENTS (synced from Google Calendar)
+    // ============================================
+    match /schools/{schoolId}/events/{eventId} {
+      // Any authenticated user can read events
+      allow read: if isAuth();
+      // Only admins or Cloud Functions can create/update/delete events
+      allow create, update, delete: if isSchoolAdmin(schoolId);
+
+      // Registrations: students manage their own, everyone can read
+      match /registrations/{uid} {
+        allow read: if isAuth();
+        allow create, update, delete: if isOwner(uid);
+      }
+    }
+
     // Pending flights collection
     match /schools/{schoolId}/pendingFlights/{flightId} {
       allow read: if isSchoolAdmin(schoolId);

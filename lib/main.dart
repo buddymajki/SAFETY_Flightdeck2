@@ -21,6 +21,7 @@ import 'services/gtc_service.dart';
 import 'services/test_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/update_service.dart';
+import 'services/calendar_service.dart';
 import 'auth/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -98,6 +99,7 @@ class _MyAppState extends State<MyApp> {
         }),
         ChangeNotifierProvider(create: (_) => UpdateService()),
         ChangeNotifierProvider(create: (_) => GlobalDataService()),
+        ChangeNotifierProvider(create: (_) => CalendarService()),
         ChangeNotifierProvider(create: (_) => AppConfigService()),
         ChangeNotifierProvider(create: (_) => GTCService()),
         ChangeNotifierProvider(create: (_) => TestService()),

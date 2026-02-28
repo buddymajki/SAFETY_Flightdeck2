@@ -46,6 +46,7 @@ dependencies:
   # UI
   cupertino_icons: ^1.0.6 
   just_audio: ^0.9.36
+  table_calendar: ^3.1.2      # Calendar widget for events screen
   # -------------------------------------
 
 dev_dependencies:
