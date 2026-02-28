@@ -36,35 +36,30 @@ export const onFlightLogDeleted = onDocumentDeleted('users/{uid}/flightlog/{logI
 // GOOGLE CALENDAR → FIRESTORE SYNC
 // ============================================
 //
-// This scheduled function syncs a public Google Calendar into
-// Firestore at schools/{SCHOOL_ID}/events/{gcalEventId}.
+// This scheduled function syncs Google Calendar events into Firestore.
+// It reads the calendarId from each school document in Firestore,
+// so each school can have its own Google Calendar.
+//
+// Firestore schema:
+//   schools/{schoolId}.gcalCalendarId = "xxxxx@group.calendar.google.com"
 //
 // SETUP REQUIREMENTS:
-// 1. Enable "Google Calendar API" in GCP Console
-// 2. Create a Service Account (or use the default Firebase one)
-// 3. Share the Google Calendar with the Service Account email (read-only)
-//    e.g. firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
-// 4. Set the CALENDAR_ID and SCHOOL_ID below
+// 1. Enable "Google Calendar API" in GCP Console for your Firebase project
+// 2. Find your Service Account email:
+//    Firebase Console → Project Settings (⚙️) → Service accounts tab
+//    → "Firebase Admin SDK" → shows email like:
+//    firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+// 3. Share the Google Calendar with that Service Account email
+//    Google Calendar → Settings → "FLYwithMIKI" → Share with specific people → Add → paste SA email → "See all event details"
+// 4. Set the gcalCalendarId field on the school doc in Firestore
 // 5. npm install googleapis   (in /functions)
 // 6. firebase deploy --only functions
-//
-// The calendar "FLYwithMIKI - Schooling days" is public with full event details,
-// so we can also use the public calendar ID directly.
-//
-// To get the calendar ID:
-// Google Calendar → Settings → "FLYwithMIKI - Schooling days" → Integrate calendar → Calendar ID
-// It looks like: xxxxxxxxxxxxxxxxxxxx@group.calendar.google.com
-
-// ── CONFIG (UPDATE THESE) ────────────────────────────────
-const CALENDAR_ID = 'REPLACE_WITH_YOUR_GOOGLE_CALENDAR_ID@group.calendar.google.com';
-const SCHOOL_ID = 'REPLACE_WITH_YOUR_SCHOOL_ID';
-// ──────────────────────────────────────────────────────────
 
 export const syncGoogleCalendar = onSchedule(
   {
     schedule: 'every 10 minutes',
     region: 'us-central1',
-    timeoutSeconds: 60,
+    timeoutSeconds: 120,
   },
   async () => {
     // Dynamic import so the function still deploys even if googleapis isn't installed yet
@@ -76,8 +71,15 @@ export const syncGoogleCalendar = onSchedule(
       return;
     }
 
-    if (CALENDAR_ID.startsWith('REPLACE')) {
-      console.warn('[syncGoogleCalendar] CALENDAR_ID not configured – update index.ts');
+    const db = admin.firestore();
+
+    // Find all schools that have a Google Calendar configured
+    const schoolsSnap = await db.collection('schools')
+      .where('gcalCalendarId', '!=', '')
+      .get();
+
+    if (schoolsSnap.empty) {
+      console.log('[syncGoogleCalendar] No schools with gcalCalendarId configured');
       return;
     }
 
@@ -85,58 +87,72 @@ export const syncGoogleCalendar = onSchedule(
       const auth = new google.auth.GoogleAuth({
         scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
       });
+      const authClient = await auth.getClient();
+      const calendar = google.calendar({ version: 'v3', auth: authClient });
 
-      const calendar = google.calendar({ version: 'v3', auth: await auth.getClient() });
+      // Process each school
+      for (const schoolDoc of schoolsSnap.docs) {
+        const schoolId = schoolDoc.id;
+        const calendarId = schoolDoc.data().gcalCalendarId;
 
-      const now = new Date();
-      const future = new Date();
-      future.setDate(future.getDate() + 90); // Next 90 days
+        if (!calendarId) continue;
 
-      const res = await calendar.events.list({
-        calendarId: CALENDAR_ID,
-        timeMin: now.toISOString(),
-        timeMax: future.toISOString(),
-        singleEvents: true,
-        orderBy: 'startTime',
-      });
+        console.log(`[syncGoogleCalendar] Syncing school=${schoolId}, calendar=${calendarId}`);
 
-      const events = res.data.items || [];
-      const db = admin.firestore();
-      const batch = db.batch();
-      const eventsRef = db.collection('schools').doc(SCHOOL_ID).collection('events');
+        try {
+          const now = new Date();
+          const future = new Date();
+          future.setDate(future.getDate() + 90); // Next 90 days
 
-      for (const gcalEvent of events) {
-        if (!gcalEvent.id) continue;
+          const res = await calendar.events.list({
+            calendarId: calendarId,
+            timeMin: now.toISOString(),
+            timeMax: future.toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime',
+          });
 
-        const docRef = eventsRef.doc(gcalEvent.id);
-        batch.set(
-          docRef,
-          {
-            gcalId: gcalEvent.id,
-            title: gcalEvent.summary || '',
-            description: gcalEvent.description || '',
-            location: gcalEvent.location || '',
-            startTime: gcalEvent.start?.dateTime || gcalEvent.start?.date || '',
-            endTime: gcalEvent.end?.dateTime || gcalEvent.end?.date || '',
-            status: gcalEvent.status === 'cancelled' ? 'cancelled' : 'active',
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            source: 'google_calendar',
-          },
-          { merge: true } // Don't overwrite registrations sub-collection
-        );
-      }
+          const events = res.data.items || [];
+          const batch = db.batch();
+          const eventsRef = db.collection('schools').doc(schoolId).collection('events');
 
-      // Mark events that disappeared from GCal as cancelled
-      const existingSnap = await eventsRef.where('source', '==', 'google_calendar').get();
-      const gcalIds = new Set(events.map((e: any) => e.id));
-      for (const doc of existingSnap.docs) {
-        if (!gcalIds.has(doc.id) && doc.data().status !== 'cancelled') {
-          batch.update(doc.ref, { status: 'cancelled' });
+          for (const gcalEvent of events) {
+            if (!gcalEvent.id) continue;
+
+            const docRef = eventsRef.doc(gcalEvent.id);
+            batch.set(
+              docRef,
+              {
+                gcalId: gcalEvent.id,
+                title: gcalEvent.summary || '',
+                description: gcalEvent.description || '',
+                location: gcalEvent.location || '',
+                startTime: gcalEvent.start?.dateTime || gcalEvent.start?.date || '',
+                endTime: gcalEvent.end?.dateTime || gcalEvent.end?.date || '',
+                status: gcalEvent.status === 'cancelled' ? 'cancelled' : 'active',
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                source: 'google_calendar',
+              },
+              { merge: true } // Don't overwrite registrations sub-collection
+            );
+          }
+
+          // Mark events that disappeared from GCal as cancelled
+          const existingSnap = await eventsRef.where('source', '==', 'google_calendar').get();
+          const gcalIds = new Set(events.map((e: any) => e.id));
+          for (const doc of existingSnap.docs) {
+            if (!gcalIds.has(doc.id) && doc.data().status !== 'cancelled') {
+              batch.update(doc.ref, { status: 'cancelled' });
+            }
+          }
+
+          await batch.commit();
+          console.log(`[syncGoogleCalendar] School ${schoolId}: synced ${events.length} events`);
+        } catch (schoolError) {
+          console.error(`[syncGoogleCalendar] Error syncing school ${schoolId}:`, schoolError);
+          // Continue with next school
         }
       }
-
-      await batch.commit();
-      console.log(`[syncGoogleCalendar] Synced ${events.length} events from Google Calendar`);
     } catch (error) {
       console.error('[syncGoogleCalendar] Error:', error);
     }
