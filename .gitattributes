@@ -1,0 +1,2 @@
+# Force LF line endings for shell scripts (needed for macOS / Xcode Cloud)
+*.sh text eol=lf
