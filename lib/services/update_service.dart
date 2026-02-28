@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 // ============================================================
@@ -10,7 +9,6 @@ import 'package:url_launcher/url_launcher.dart';
 // import 'package:path_provider/path_provider.dart';
 // import 'dart:io';
 // import 'dart:convert';
-// ============================================================
 // import 'package:flutter/services.dart';
 // ============================================================
 import 'app_version_service.dart';
@@ -79,11 +77,11 @@ class UpdateService extends ChangeNotifier {
   // AKTÍV: Firestore alapú verzió-ellenőrzés
   //
   // Hogyan kell karbantartani:
-  //   Amikor új verziót töltösz fel (pl. Android Firebase-re, iOS TestFlight-ra),
-  //   frissítsd a Firestore-ban a megfelelő platform dokumentumát:
+  //   Amikor új APK-t töltösz fel Firebase App Distribution-ba,
+  //   früssítsd a Firestore-ban az alábbi dokumentumot:
   //
   //   Collection: app_updates
-  //   Document:   android  (vagy ios)
+  //   Document:   latest
   //   Mezők:
   //     version:       "1.0.30"
   //     changelog:     "Bug fixes, new features..."
@@ -96,18 +94,13 @@ class UpdateService extends ChangeNotifier {
       _lastError = '';
       notifyListeners();
 
-      // Platformfüggő dokumentum ellenőrzése
-      final String platformDoc = kIsWeb 
-          ? 'latest' 
-          : (defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android');
-
       final doc = await _firestore
           .collection('app_updates')
-          .doc(platformDoc)
+          .doc('latest')
           .get();
 
       if (!doc.exists) {
-        debugPrint('[Update] Firestore app_updates/$platformDoc document does not exist.');
+        debugPrint('[Update] Firestore app_updates/latest document does not exist.');
         _isChecking = false;
         notifyListeners();
         return false;
@@ -131,24 +124,28 @@ class UpdateService extends ChangeNotifier {
   }
 
   // ============================================================
-  // AKTÍV: Frissítési oldal megnyitása (Android: App Distribution, iOS: TestFlight)
+  // AKTÍV: Firebase App Distribution teszter oldal megnyítása
+  //
+  // A teszterek emailben kapnak értesítést automatikusan,
+  // amikor új APK kerül fel Firebase App Distribution-ba.
+  // Ez a metódus csak akkor kell, ha kézzel szerelnéd megnyitni a linket.
   // ============================================================
-  Future<void> openAppUpdateLink() async {
-    // Android: opens in browser → redirects to App Tester app if installed
-    // iOS: opens TestFlight up using itms-beta scheme
-    final String updateUrl = (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) 
-        ? 'itms-beta://' // Natively opens the TestFlight app 
-        : 'https://appdistribution.firebase.google.com/testerapps';
-        
-    final uri = Uri.parse(updateUrl);
+  Future<void> openFirebaseAppDistribution() async {
+    // Firebase App Tester app page — this is the tester portal where
+    // invited testers can see and download available releases.
+    // On Android: opens in browser → redirects to App Tester app if installed,
+    //             or shows download page for the tester app.
+    // On iOS: opens the tester portal in Safari.
+    const testerAppsUrl = 'https://appdistribution.firebase.google.com/testerapps';
+    final uri = Uri.parse(testerAppsUrl);
 
     try {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched) {
-        debugPrint('[Update] Could not launch update URL: $updateUrl');
+        debugPrint('[Update] Could not launch Firebase App Distribution URL.');
       }
     } catch (e) {
-      debugPrint('[Update] Error opening update URL: $e');
+      debugPrint('[Update] Error opening Firebase App Distribution: $e');
     }
   }
 
