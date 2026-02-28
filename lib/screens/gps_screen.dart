@@ -1531,7 +1531,6 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     FlightTrackingService service,
     String lang,
   ) {
-    final count = service.trackedFlights.length;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
