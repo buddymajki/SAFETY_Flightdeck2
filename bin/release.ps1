@@ -23,7 +23,11 @@ param(
     [bool]$forceUpdate = $false,      # kötelező frissítés-e
 
     [Parameter(Mandatory=$false)]
-    [string]$group = "testers"        # Firebase App Distribution csoport neve
+    [string]$group = "testers",       # Firebase App Distribution csoport neve
+
+    [Parameter(Mandatory=$false)]
+    [ValidateSet("android","ios","both")]
+    [string]$platform = "android"     # platform: android, ios, or both
 )
 
 # ---------------------------------------------------------------
@@ -53,39 +57,48 @@ if ($LASTEXITCODE -ne 0) { Err "update_version.dart failed" }
 Success "Version updated"
 
 # ---------------------------------------------------------------
-# 2. Flutter release APK build
+# 2. Build / Distribute / Firestore Update
 # ---------------------------------------------------------------
-Log "Building release APK..."
-flutter build apk --release
-if ($LASTEXITCODE -ne 0) { Err "Flutter build failed" }
-Success "APK built: $APK_PATH"
-
-# ---------------------------------------------------------------
-# 3. Firebase App Distribution – feltöltés
-#    A teszterek automatikusan emailt kapnak!
-# ---------------------------------------------------------------
-Log "Uploading to Firebase App Distribution (group: $group)..."
-firebase appdistribution:distribute $APK_PATH `
-    --app $FIREBASE_APP_ID `
-    --groups $group `
-    --release-notes $notes
-if ($LASTEXITCODE -ne 0) { Err "Firebase App Distribution upload failed" }
-Success "APK uploaded to Firebase App Distribution"
-
-# ---------------------------------------------------------------
-# 4. Firestore frissítés – app_updates/latest
-#    Az app ebből tudja, hogy van-e frissítés!
-# ---------------------------------------------------------------
-Log "Updating Firestore app_updates/latest..."
-
 $forceStr = if ($forceUpdate) { "true" } else { "false" }
-try {
-    node bin/update_firestore.js $ver $notes $forceStr
-    if ($LASTEXITCODE -ne 0) { throw "node script failed" }
-    Success "Firestore updated: app_updates/latest -> version=$ver"
-} catch {
-    Write-Host "[WARN] Firestore update failed: $_" -ForegroundColor Yellow
-    Write-Host "       Manually update Firestore: app_updates/latest -> version: $ver" -ForegroundColor Yellow
+
+if ($platform -eq "android" -or $platform -eq "both") {
+    Log "Building Android release APK..."
+    flutter build apk --release
+    if ($LASTEXITCODE -ne 0) { Err "Flutter build failed" }
+    Success "APK built: $APK_PATH"
+
+    Log "Uploading Android to Firebase App Distribution (group: $group)..."
+    firebase appdistribution:distribute $APK_PATH `
+        --app $FIREBASE_APP_ID `
+        --groups $group `
+        --release-notes $notes
+    if ($LASTEXITCODE -ne 0) { Err "Firebase App Distribution upload failed" }
+    Success "APK uploaded to Firebase App Distribution"
+
+    Log "Updating Firestore app_updates/android..."
+    try {
+        node bin/update_firestore.js $ver "$notes" $forceStr "android"
+        if ($LASTEXITCODE -ne 0) { throw "node script failed" }
+        Success "Firestore updated: app_updates/android -> version=$ver"
+    } catch {
+        Write-Host "[WARN] Firestore update failed: $_" -ForegroundColor Yellow
+        Write-Host "       Manually update Firestore: app_updates/android -> version: $ver" -ForegroundColor Yellow
+    }
+}
+
+if ($platform -eq "ios" -or $platform -eq "both") {
+    Log "Updating Firestore app_updates/ios..."
+    try {
+        node bin/update_firestore.js $ver "$notes" $forceStr "ios"
+        if ($LASTEXITCODE -ne 0) { throw "node script failed" }
+        Success "Firestore updated: app_updates/ios -> version=$ver"
+    } catch {
+        Write-Host "[WARN] Firestore update failed: $_" -ForegroundColor Yellow
+        Write-Host "       Manually update Firestore: app_updates/ios -> version: $ver" -ForegroundColor Yellow
+    }
+    
+    Log "NOTE: iOS release to TestFlight typically requires macOS/Xcode."
+    Log "Please ensure you build and upload the iOS app to TestFlight manually, or it won't be available."
 }
 
 # ---------------------------------------------------------------

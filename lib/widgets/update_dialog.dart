@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/update_service.dart';
@@ -29,14 +30,22 @@ class _UpdateDialogState extends State<UpdateDialog> {
     'current_version': {'en': 'Current version:', 'de': 'Aktuelle Version:', 'hu': 'Jelenlegi verzió:', 'it': 'Versione attuale:', 'fr': 'Version actuelle :'},
     'available_version': {'en': 'Available version:', 'de': 'Verfügbare Version:', 'hu': 'Elérhető verzió:', 'it': 'Versione disponibile:', 'fr': 'Version disponible :'},
     'whats_new': {'en': 'What\'s new:', 'de': 'Neuigkeiten:', 'hu': 'Mi új:', 'it': 'Novità:', 'fr': 'Nouveautés :'},
-    'firebase_info': {
+    'update_info_android': {
       'en': 'A new version has been sent to you via Firebase App Distribution.\nCheck your email for the download link.',
       'de': 'Eine neue Version wurde Ihnen über Firebase App Distribution zugesandt.\nPrüfen Sie Ihre E-Mail für den Download-Link.',
-      'hu': 'Új verziót kaptl Firebase App Distribution emailben.\nKeresd az emailt a letöltési linkkel.',
+      'hu': 'Új verziót kaptál Firebase App Distribution emailben.\nKeresd az emailt a letöltési linkkel.',
       'it': 'Una nuova versione è stata inviata tramite Firebase App Distribution.\nControlla la tua email per il link di download.',
       'fr': 'Une nouvelle version vous a été envoyée via Firebase App Distribution.\nVérifiez votre e-mail pour le lien de téléchargement.',
     },
-    'open_firebase': {'en': 'Open Firebase App Distribution', 'de': 'Firebase App Distribution öffnen', 'hu': 'Firebase App Distribution megnyêtása', 'it': 'Apri Firebase App Distribution', 'fr': 'Ouvrir Firebase App Distribution'},
+    'update_info_ios': {
+      'en': 'A new version is available on TestFlight.\nOpen the TestFlight app to download the update.',
+      'de': 'Eine neue Version ist auf TestFlight verfügbar.\nÖffnen Sie die TestFlight-App, um das Update herunterzuladen.',
+      'hu': 'Új verzió érhető el a TestFlight-ban.\nNyisd meg a TestFlight alkalmazást a letöltéshez.',
+      'it': 'Una nuova versione è disponibile su TestFlight.\nApri l\'app TestFlight per scaricare l\'aggiornamento.',
+      'fr': 'Une nouvelle version est disponible sur TestFlight.\nOuvrez l\'application TestFlight pour télécharger la mise à jour.',
+    },
+    'open_update_android': {'en': 'Open App Distribution', 'de': 'App Distribution öffnen', 'hu': 'Letöltési oldal megnyitása', 'it': 'Apri App Distribution', 'fr': 'Ouvrir App Distribution'},
+    'open_update_ios': {'en': 'Open TestFlight', 'de': 'TestFlight öffnen', 'hu': 'TestFlight megnyitása', 'it': 'Apri TestFlight', 'fr': 'Ouvrir TestFlight'},
     'later': {'en': 'Later', 'de': 'Später', 'hu': 'Később', 'it': 'Più tardi', 'fr': 'Plus tard'},
     // Régi szövegek – kommentálva (GitHub/GDrive letöltés)
     // 'downloading': {'en': 'Downloading...', 'de': 'Wird heruntergeladen...'},
@@ -113,7 +122,12 @@ class _UpdateDialogState extends State<UpdateDialog> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                _getText('firebase_info', lang),
+                                _getText(
+                                  (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) 
+                                      ? 'update_info_ios' 
+                                      : 'update_info_android', 
+                                  lang
+                                ),
                                 style: TextStyle(fontSize: 12, color: Colors.blue.shade800),
                               ),
                             ),
@@ -140,9 +154,16 @@ class _UpdateDialogState extends State<UpdateDialog> {
                       const SizedBox(width: 8),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.open_in_new, size: 16),
-                        label: Text(_getText('open_firebase', lang)),
+                        label: Text(
+                          _getText(
+                            (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) 
+                                ? 'open_update_ios' 
+                                : 'open_update_android', 
+                            lang
+                          )
+                        ),
                         onPressed: () async {
-                          await updateService.openFirebaseAppDistribution();
+                          await updateService.openAppUpdateLink();
                           widget.onUpdate();
                           if (context.mounted) Navigator.of(context).pop();
                         },

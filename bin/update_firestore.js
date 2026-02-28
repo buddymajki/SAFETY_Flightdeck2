@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Firestore app_updates/latest frissítő script
+ * Firestore app_updates document frissítő script
  * 
  * Használat:
- *   node bin/update_firestore.js <version> <changelog> [forceUpdate]
+ *   node bin/update_firestore.js <version> <changelog> [forceUpdate] [platform]
  * 
  * Példa:
- *   node bin/update_firestore.js "1.0.31" "Bug fixes" false
+ *   node bin/update_firestore.js "1.0.31" "Bug fixes" false android
  * 
  * Előfeltétel: firebase login (Firebase CLI bejelentkezve)
  */
@@ -18,10 +18,11 @@ async function main() {
   const version = process.argv[2];
   const changelog = process.argv[3] || 'New release';
   const isForceUpdate = process.argv[4] === 'true';
+  const platform = process.argv[5] || 'latest'; // android, ios, latest
   const projectId = 'flightdeck-v2';
 
   if (!version) {
-    console.error('Usage: node bin/update_firestore.js <version> <changelog> [forceUpdate]');
+    console.error('Usage: node bin/update_firestore.js <version> <changelog> [forceUpdate] [platform]');
     process.exit(1);
   }
 
@@ -63,7 +64,7 @@ async function main() {
   }
 
   // Update Firestore document via REST API
-  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/app_updates/latest`;
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/app_updates/${platform}`;
   const body = JSON.stringify({
     fields: {
       version: { stringValue: version },
@@ -75,7 +76,7 @@ async function main() {
 
   try {
     await httpRequest(url, 'PATCH', body, token);
-    console.log(`[OK] Firestore updated: app_updates/latest -> version=${version}`);
+    console.log(`[OK] Firestore updated: app_updates/${platform} -> version=${version}`);
   } catch (e) {
     console.error(`[ERROR] Firestore update failed: ${e.message}`);
     process.exit(1);

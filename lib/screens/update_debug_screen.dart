@@ -123,13 +123,13 @@ class _UpdateSystemDebugScreenState extends State<UpdateSystemDebugScreen> {
                         ),
                         const SizedBox(height: 8),
 
-                        // 3. Open Firebase App Distribution
+                        // 3. Open App Update Link
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.open_in_new),
-                            label: const Text('3. Open Firebase App Distribution'),
-                            onPressed: () => updateService.openFirebaseAppDistribution(),
+                            label: const Text('3. Open App Update Link'),
+                            onPressed: () => updateService.openAppUpdateLink(),
                           ),
                         ),
                         const SizedBox(height: 8),
