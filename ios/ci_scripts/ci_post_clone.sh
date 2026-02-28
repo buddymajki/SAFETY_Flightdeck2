@@ -1,25 +1,38 @@
 #!/bin/sh
 set -e
 
-# The default execution directory of this script is the ci_scripts directory.
-cd "$CI_WORKSPACE"
+echo "=== ci_post_clone.sh START ==="
+echo "CI_PRIMARY_REPOSITORY_PATH: $CI_PRIMARY_REPOSITORY_PATH"
+echo "CI_WORKSPACE: $CI_WORKSPACE"
 
-# Export HOME to avoid permission issues
-export HOME="$CI_WORKSPACE"
+# Use the primary repository path (the cloned repo root)
+REPO_DIR="${CI_PRIMARY_REPOSITORY_PATH:-$CI_WORKSPACE}"
+cd "$REPO_DIR"
 
-# Install Flutter using git.
-git clone https://github.com/flutter/flutter.git --depth 1 -b stable "$CI_WORKSPACE/flutter"
-export PATH="$CI_WORKSPACE/flutter/bin:$PATH"
+# Install Flutter SDK to /tmp so it doesn't conflict with the repo
+FLUTTER_DIR="/tmp/flutter_sdk"
+if [ ! -d "$FLUTTER_DIR" ]; then
+  echo "=== Cloning Flutter SDK ==="
+  git clone https://github.com/flutter/flutter.git --depth 1 -b stable "$FLUTTER_DIR"
+else
+  echo "=== Flutter SDK already exists, skipping clone ==="
+fi
+export PATH="$FLUTTER_DIR/bin:$PATH"
 
-# Install Flutter artifacts for iOS.
+echo "=== Flutter version ==="
+flutter --version
+
+echo "=== Flutter precache --ios ==="
 flutter precache --ios
 
-# Install Flutter dependencies.
+echo "=== Flutter pub get ==="
 flutter pub get
 
-# Install CocoaPods using Homebrew.
+echo "=== Installing CocoaPods ==="
 export HOMEBREW_NO_AUTO_UPDATE=1
-brew install cocoapods
+brew install cocoapods || true
 
-# Install CocoaPods dependencies.
-cd ios && pod install
+echo "=== Pod install ==="
+cd "$REPO_DIR/ios" && pod install
+
+echo "=== ci_post_clone.sh DONE ==="
