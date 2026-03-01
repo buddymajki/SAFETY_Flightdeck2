@@ -84,6 +84,15 @@ if ($platform -eq "android" -or $platform -eq "both") {
         Write-Host "[WARN] Firestore update failed: $_" -ForegroundColor Yellow
         Write-Host "       Manually update Firestore: app_updates/android -> version: $ver" -ForegroundColor Yellow
     }
+
+    Log "Updating Firestore app_updates/latest..."
+    try {
+        node bin/update_firestore.js $ver "$notes" $forceStr "latest"
+        if ($LASTEXITCODE -ne 0) { throw "node script failed" }
+        Success "Firestore updated: app_updates/latest -> version=$ver"
+    } catch {
+        Write-Host "[WARN] Firestore latest update failed: $_" -ForegroundColor Yellow
+    }
 }
 
 if ($platform -eq "ios" -or $platform -eq "both") {

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -78,36 +79,71 @@ class UpdateService extends ChangeNotifier {
   //
   // Hogyan kell karbantartani:
   //   Amikor új APK-t töltösz fel Firebase App Distribution-ba,
-  //   früssítsd a Firestore-ban az alábbi dokumentumot:
+  //   a release.ps1 script automatikusan frissíti a Firestore-t:
   //
   //   Collection: app_updates
-  //   Document:   latest
+  //   Documents:  android, ios, latest
   //   Mezők:
-  //     version:       "1.0.30"
+  //     version:       "1.0.40"
   //     changelog:     "Bug fixes, new features..."
   //     isForceUpdate: false
   //
+  //   Az app először a platform-specifikus dokumentumot olvassa
+  //   (android/ios), majd fallback a 'latest' dokumentumra.
   // ============================================================
+
+  /// Returns the platform-specific Firestore document ID ("android" or "ios")
+  String get _platformDocId {
+    if (kIsWeb) return 'latest';
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.android:
+        return 'android';
+      default:
+        return 'latest';
+    }
+  }
+
   Future<bool> checkForUpdates() async {
     try {
       _isChecking = true;
       _lastError = '';
       notifyListeners();
 
-      final doc = await _firestore
+      // Web: no in-app update prompts
+      if (kIsWeb) {
+        _isChecking = false;
+        notifyListeners();
+        return false;
+      }
+
+      // 1) Try platform-specific document first (android / ios)
+      final platformId = _platformDocId;
+      DocumentSnapshot doc = await _firestore
           .collection('app_updates')
-          .doc('latest')
+          .doc(platformId)
           .get();
 
+      // 2) Fallback to 'latest' if platform doc doesn't exist
       if (!doc.exists) {
-        debugPrint('[Update] Firestore app_updates/latest document does not exist.');
+        debugPrint('[Update] app_updates/$platformId not found, trying app_updates/latest...');
+        doc = await _firestore
+            .collection('app_updates')
+            .doc('latest')
+            .get();
+      }
+
+      if (!doc.exists) {
+        debugPrint('[Update] Firestore app_updates document does not exist (tried: $platformId, latest).');
         _isChecking = false;
         notifyListeners();
         return false;
       }
 
       _updateInfo = UpdateInfo.fromFirestore(doc);
-      debugPrint('[Update] Firestore version: ${_updateInfo!.version}, current: $appVersion');
+      debugPrint('[Update] Firestore version: ${_updateInfo!.version} (from ${doc.id}), current: $appVersion');
 
       final hasUpdate = _compareVersions(_updateInfo!.version, appVersion) > 0;
 
@@ -146,6 +182,34 @@ class UpdateService extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('[Update] Error opening Firebase App Distribution: $e');
+    }
+  }
+
+  /// Open the correct update destination depending on platform.
+  ///
+  /// - iOS: opens TestFlight
+  /// - Android: opens Firebase App Distribution tester portal
+  /// - Web: no-op
+  Future<void> openAppUpdateLink() async {
+    if (kIsWeb) return;
+
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // Opens the TestFlight app (or prompts install if not available)
+      final uri = Uri.parse('itms-beta://');
+      try {
+        final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (!launched) {
+          debugPrint('[Update] Could not launch TestFlight.');
+        }
+      } catch (e) {
+        debugPrint('[Update] Error opening TestFlight: $e');
+      }
+      return;
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await openFirebaseAppDistribution();
+      return;
     }
   }
 

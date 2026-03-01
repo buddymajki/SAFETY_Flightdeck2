@@ -115,7 +115,7 @@ class _UpdateSystemDebugScreenState extends State<UpdateSystemDebugScreen> {
                                       barrierDismissible: false,
                                       builder: (_) => UpdateDialog(
                                         onSkip: () => debugPrint('[Debug] skipped'),
-                                        onUpdate: () => debugPrint('[Debug] opened Firebase'),
+                                        onUpdate: () => debugPrint('[Debug] opened update link'),
                                       ),
                                     );
                                   },
@@ -123,13 +123,13 @@ class _UpdateSystemDebugScreenState extends State<UpdateSystemDebugScreen> {
                         ),
                         const SizedBox(height: 8),
 
-                        // 3. Open Firebase App Distribution
+                        // 3. Open platform update link
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.open_in_new),
-                            label: const Text('3. Open Firebase App Distribution'),
-                            onPressed: () => updateService.openFirebaseAppDistribution(),
+                            label: const Text('3. Open Update Link (TestFlight/Firebase)'),
+                            onPressed: () => updateService.openAppUpdateLink(),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -198,8 +198,10 @@ class _UpdateSystemDebugScreenState extends State<UpdateSystemDebugScreen> {
                         Text(
                           '1. Upload APK to Firebase App Distribution\n'
                           '   → testers get an email automatically\n\n'
-                          '2. Update Firestore: app_updates/latest\n'
-                          '   → version, changelog, isForceUpdate\n\n'
+                          '2. Update Firestore:\n'
+                          '   → app_updates/android (Android)\n'
+                          '   → app_updates/ios (iOS)\n'
+                          '   → app_updates/latest (fallback)\n\n'
                           '3. App checks Firestore on startup\n'
                           '   → shows dialog if newer version found\n\n'
                           'isForceUpdate: true  →  no "Later" button\n'
