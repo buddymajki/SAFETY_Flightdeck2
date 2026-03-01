@@ -33,6 +33,9 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 brew install cocoapods || true
 
 echo "=== Pod install ==="
-cd "$REPO_DIR/ios" && pod install
+cd "$REPO_DIR/ios"
+# Prevent CDN errors by explicitly updating the repo first or retrying
+pod repo update
+pod install --repo-update || pod install
 
 echo "=== ci_post_clone.sh DONE ==="
