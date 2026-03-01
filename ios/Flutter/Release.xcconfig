@@ -1,2 +1,9 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
 #include "Generated.xcconfig"
+
+// Force PROVISIONING_PROFILE_SPECIFIER to be empty to allow Manual signing with distribution profile
+// This forces Xcode Cloud to use a Distribution certificate instead of Development (which requires devices)
+CODE_SIGN_IDENTITY = Apple Distribution
+CODE_SIGN_STYLE = Manual
+PROVISIONING_PROFILE_SPECIFIER = 
+DEVELOPMENT_TEAM = QNH8RGX236
