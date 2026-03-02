@@ -28,6 +28,13 @@ flutter precache --ios
 echo "=== Flutter pub get ==="
 flutter pub get
 
+if [ -n "$CI_BUILD_NUMBER" ]; then
+  echo "=== Flutter config-only (set build number: $CI_BUILD_NUMBER) ==="
+  flutter build ios --config-only --release --build-number "$CI_BUILD_NUMBER"
+else
+  echo "=== CI_BUILD_NUMBER not set; skipping build-number override ==="
+fi
+
 echo "=== Installing CocoaPods ==="
 export HOMEBREW_NO_AUTO_UPDATE=1
 brew install cocoapods || true
