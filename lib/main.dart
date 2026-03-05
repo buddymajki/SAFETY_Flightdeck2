@@ -22,6 +22,7 @@ import 'services/test_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/update_service.dart';
 import 'services/calendar_service.dart';
+import 'services/glider_service.dart';
 import 'auth/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -159,6 +160,20 @@ class _MyAppState extends State<MyApp> {
             final service = liveTrackingService ?? LiveTrackingService();
             // Update profile data for live tracking
             service.updateProfile(profileService.userProfile);
+            return service;
+          },
+        ),
+        // GliderService lifecycle: reload when auth state changes
+        ChangeNotifierProxyProvider<AuthService, GliderService>(
+          create: (_) => GliderService(),
+          update: (_, authService, gliderService) {
+            final service = gliderService ?? GliderService();
+            final uid = authService.currentUser?.uid;
+            if (uid != null) {
+              service.initializeData(uid);
+            } else {
+              service.resetService();
+            }
             return service;
           },
         ),

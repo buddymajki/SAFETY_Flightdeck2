@@ -1,0 +1,10 @@
+[
+  { "id": "supair-eona-3", "brand": "Supair", "glider": "Eona 3", "class": "EN-A", "tandem": false, "light": false },
+  { "id": "supair-eona-4", "brand": "Supair", "glider": "Eona 4", "class": "EN-A", "tandem": false, "light": false },
+  { "id": "supair-eiko-2", "brand": "Supair", "glider": "Eiko 2", "class": "EN-A", "tandem": false, "light": true },
+  { "id": "phi-concerto", "brand": "Phi", "glider": "Concerto", "class": "EN-A", "tandem": true, "light": false },
+  { "id": "phi-symphonia-2", "brand": "Phi", "glider": "Symphonia 2", "class": "EN-A", "tandem": false, "light": false },
+  { "id": "advance-epsilon-dls", "brand": "Advance", "glider": "Epsilon DLS", "class": "EN-B", "tandem": false, "light": false },
+  { "id": "advance-alpha-6", "brand": "Advance", "glider": "Alpha 6", "class": "EN-A", "tandem": false, "light": false },
+  { "id": "nova-aonic-2", "brand": "Nova", "glider": "Aonic 2", "class": "EN-A", "tandem": false, "light": false }
+]

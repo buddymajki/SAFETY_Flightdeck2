@@ -63,6 +63,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Glider catalog (public read for all registered users)
+    match /gliders/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // User Data Access
     match /users/{uid} {
       // Owner can always read/write their own data
@@ -81,6 +87,10 @@ service cloud.firestore {
         allow read, update: if isAdmin() || 
                         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
                          isSchoolAdmin(get(/databases/$(database)/documents/users/$(uid)).data.mainschool_id));
+      }
+
+      match /gliders/{document=**} {
+        allow read, create, update, delete: if isOwner(uid);
       }
 
       match /checklistprogress/{document=**} {
