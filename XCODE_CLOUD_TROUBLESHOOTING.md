@@ -5,8 +5,8 @@ This repo builds a Flutter iOS app (`Runner`) with Xcode Cloud.
 ## 1) Export fails (exit code 70) for **Development** / **Ad Hoc**
 
 **Symptom (from `.xcdistributionlogs`):**
-- `Xcode couldn't find any iOS App Development provisioning profiles matching 'com.flywithmiki.flightdeck'.`
-- `Xcode couldn't find any iOS Ad Hoc provisioning profiles matching 'com.flywithmiki.flightdeck'.`
+- `Xcode couldn't find any iOS App Development provisioning profiles matching 'com.flywithmiki.ios'.`
+- `Xcode couldn't find any iOS Ad Hoc provisioning profiles matching 'com.flywithmiki.ios'.`
 - Apple Portal error `resultCode 8220`:
   - `Your team has no devices from which to generate a provisioning profile.`
 
@@ -47,7 +47,11 @@ This repo builds a Flutter iOS app (`Runner`) with Xcode Cloud.
 - Log into https://appstoreconnect.apple.com with the Apple ID that owns the team.
 - Accept any pending agreements (App Store Connect → Agreements, Tax, and Banking).
 - Ensure the Apple ID has an appropriate App Store Connect role (e.g., Account Holder/Admin/App Manager).
-- Ensure the App Store Connect app record exists and matches the bundle ID `com.flywithmiki.flightdeck`.
+- Ensure the App Store Connect app record exists and matches the bundle ID `com.flywithmiki.ios`.
+
+## Bundle ID note (2026-03)
+
+This repo is currently configured to use bundle ID `com.flywithmiki.ios`.
 - Re-run the workflow.
 
 ## Reality check: “Can I develop without an iPhone?”

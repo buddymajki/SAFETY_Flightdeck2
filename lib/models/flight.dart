@@ -28,6 +28,8 @@ class Flight {
   DateTime? updatedAt;
   bool gpsTracked; // true if tracked by GPS, false if manually added
   bool isPendingUpload; // Local flag: not synced yet
+  String? gliderId; // user's glider document ID (users/{uid}/gliders/{id})
+  String? gliderDisplayName; // e.g. "Eiko 2 (Supair)"
 
   Flight({
     this.id,
@@ -54,6 +56,8 @@ class Flight {
     this.updatedAt,
     this.gpsTracked = false,
     this.isPendingUpload = false,
+    this.gliderId,
+    this.gliderDisplayName,
   });
 
   /// Parse from Firestore data
@@ -83,6 +87,8 @@ class Flight {
       updatedAt: _parseTimestamp(data['updated_at']),
       gpsTracked: data['gps_tracked'] ?? false,
       isPendingUpload: false,
+      gliderId: data['glider_id'],
+      gliderDisplayName: data['glider_display_name'],
     );
   }
 
@@ -113,6 +119,8 @@ class Flight {
       updatedAt: data['updated_at'] != null ? DateTime.parse(data['updated_at']) : null,
       gpsTracked: data['gps_tracked'] ?? false,
       isPendingUpload: data['isPendingUpload'] ?? false,
+      gliderId: data['glider_id'],
+      gliderDisplayName: data['glider_display_name'],
     );
   }
 
@@ -141,6 +149,8 @@ class Flight {
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       'updated_at': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
       'gps_tracked': gpsTracked,
+      'glider_id': gliderId,
+      'glider_display_name': gliderDisplayName,
     };
   }
 
@@ -171,6 +181,8 @@ class Flight {
       'updated_at': updatedAt?.toIso8601String(),
       'gps_tracked': gpsTracked,
       'isPendingUpload': isPendingUpload,
+      'glider_id': gliderId,
+      'glider_display_name': gliderDisplayName,
     };
   }
 

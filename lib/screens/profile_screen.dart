@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import '../services/profile_service.dart';
 import '../services/gtc_service.dart';
 import '../services/app_config_service.dart';
+import '../services/glider_service.dart';
+import '../models/user_glider.dart';
 import '../widgets/responsive_layout.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -93,7 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Personal_Details': {'en': 'Personal Details', 'de': 'Persönliche Angaben', 'it': 'Dati personali', 'fr': 'Données personnelles'},
     'Address': {'en': 'Address', 'de': 'Adresse', 'it': 'Indirizzo', 'fr': 'Adresse'},
     'Emergency_Contact': {'en': 'Emergency Contact', 'de': 'Notfallkontakt', 'it': 'Contatto di emergenza', 'fr': 'Contact d\'urgence'},
-    'License_Equipment': {'en': 'License and Equipment', 'de': 'Lizenz und Ausrüstung', 'it': 'Licenza e attrezzatura', 'fr': 'Licence et équipement'},
+    'License_Equipment': {'en': 'License', 'de': 'Lizenz', 'it': 'Licenza', 'fr': 'Licence'},
     'Change_Password': {'en': 'Change Password', 'de': 'Passwort ändern', 'it': 'Cambia password', 'fr': 'Changer le mot de passe'},
     'Family_Name': {'en': 'Family Name', 'de': 'Familienname', 'it': 'Cognome', 'fr': 'Nom de famille'},
     'Forename': {'en': 'Forename', 'de': 'Vorname', 'it': 'Nome', 'fr': 'Prénom'},
@@ -126,6 +128,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Synced_Cloud': {'en': 'Synced with cloud', 'de': 'Mit Cloud synchronisiert', 'it': 'Sincronizzato con il cloud', 'fr': 'Synchronisé avec le cloud'},
     'Password_Error': {'en': 'Error changing password', 'de': 'Fehler beim Ändern des Passworts', 'it': 'Errore nel cambio password', 'fr': 'Erreur lors du changement de mot de passe'},
     'Empty_Password_Fields': {'en': 'Both password fields are required', 'de': 'Beide Passwortfelder sind erforderlich', 'it': 'Entrambi i campi password sono obbligatori', 'fr': 'Les deux champs de mot de passe sont obligatoires'},
+    'My_Gliders': {'en': 'My Gliders', 'de': 'Meine Gleitschirme', 'it': 'I miei parapendio', 'fr': 'Mes parapentes'},
+    'Add_Glider': {'en': 'Add Glider', 'de': 'Gleitschirm hinzufügen', 'it': 'Aggiungi parapendio', 'fr': 'Ajouter parapente'},
+    'Brand': {'en': 'Brand', 'de': 'Marke', 'it': 'Marca', 'fr': 'Marque'},
+    'Select_Brand': {'en': 'Select brand', 'de': 'Marke auswählen', 'it': 'Seleziona marca', 'fr': 'Sélectionner la marque'},
+    'Select_Glider': {'en': 'Select glider', 'de': 'Gleitschirm auswählen', 'it': 'Seleziona parapendio', 'fr': 'Sélectionner le parapente'},
+    'Color_Main': {'en': 'Color (main)', 'de': 'Farbe (Haupt)', 'it': 'Colore (principale)', 'fr': 'Couleur (principale)'},
+    'Select_Color': {'en': 'Select color', 'de': 'Farbe auswählen', 'it': 'Seleziona colore', 'fr': 'Sélectionner la couleur'},
+    'No_Gliders': {'en': 'No gliders added yet', 'de': 'Noch keine Gleitschirme hinzugefügt', 'it': 'Nessun parapendio aggiunto', 'fr': 'Aucun parapente ajouté'},
+    'Delete_Glider': {'en': 'Delete glider?', 'de': 'Gleitschirm löschen?', 'it': 'Eliminare parapendio?', 'fr': 'Supprimer le parapente ?'},
+    'Delete': {'en': 'Delete', 'de': 'Löschen', 'it': 'Elimina', 'fr': 'Supprimer'},
+    'Cancel': {'en': 'Cancel', 'de': 'Abbrechen', 'it': 'Annulla', 'fr': 'Annuler'},
+    'Tandem': {'en': 'Tandem', 'de': 'Tandem', 'it': 'Tandem', 'fr': 'Tandem'},
+    'Light': {'en': 'Light', 'de': 'Leicht', 'it': 'Leggero', 'fr': 'Léger'},
+    'Color_White': {'en': 'White', 'de': 'Weiß', 'it': 'Bianco', 'fr': 'Blanc'},
+    'Color_Black': {'en': 'Black', 'de': 'Schwarz', 'it': 'Nero', 'fr': 'Noir'},
+    'Color_Red': {'en': 'Red', 'de': 'Rot', 'it': 'Rosso', 'fr': 'Rouge'},
+    'Color_Blue': {'en': 'Blue', 'de': 'Blau', 'it': 'Blu', 'fr': 'Bleu'},
+    'Color_Green': {'en': 'Green', 'de': 'Grün', 'it': 'Verde', 'fr': 'Vert'},
+    'Color_Yellow': {'en': 'Yellow', 'de': 'Gelb', 'it': 'Giallo', 'fr': 'Jaune'},
+    'Color_Orange': {'en': 'Orange', 'de': 'Orange', 'it': 'Arancione', 'fr': 'Orange'},
+    'Color_Purple': {'en': 'Purple', 'de': 'Lila', 'it': 'Viola', 'fr': 'Violet'},
+    'Color_Pink': {'en': 'Pink', 'de': 'Rosa', 'it': 'Rosa', 'fr': 'Rose'},
+    'Color_Grey': {'en': 'Grey', 'de': 'Grau', 'it': 'Grigio', 'fr': 'Gris'},
+    'Success_Saved': {'en': 'Successfully saved!', 'de': 'Erfolgreich gespeichert!', 'it': 'Salvato con successo!', 'fr': 'Enregistré avec succès !'},
+    'Error': {'en': 'Error', 'de': 'Fehler', 'it': 'Errore', 'fr': 'Erreur'},
+    'Glider_Already_Added': {'en': 'This glider is already in your collection', 'de': 'Dieser Gleitschirm befindet sich bereits in deiner Sammlung', 'it': 'Questo parapendio è già nella tua collezione', 'fr': 'Ce parapente est déjà dans votre collection'},
   };
 
   String _t(String key, String lang) {
@@ -581,6 +609,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
+              _buildMyGlidersSection(lang),
               _buildSection(
                 title: _t('License_Equipment', lang),
                 children: [
@@ -589,10 +618,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildTextField(
                     label: _t('SHV_Number', lang),
                     controller: _shvNumberController,
-                  ),
-                  _buildTextField(
-                    label: _t('Glider', lang),
-                    controller: _gliderController,
                   ),
                 ],
               ),
@@ -918,6 +943,337 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         },
       ),
+    );
+  }
+
+  // --- Color definitions for glider color picker ---
+  static const List<Map<String, dynamic>> _gliderColors = [
+    {'key': 'Color_White', 'color': Colors.white, 'value': 'White'},
+    {'key': 'Color_Black', 'color': Colors.black, 'value': 'Black'},
+    {'key': 'Color_Red', 'color': Colors.red, 'value': 'Red'},
+    {'key': 'Color_Blue', 'color': Colors.blue, 'value': 'Blue'},
+    {'key': 'Color_Green', 'color': Colors.green, 'value': 'Green'},
+    {'key': 'Color_Yellow', 'color': Colors.yellow, 'value': 'Yellow'},
+    {'key': 'Color_Orange', 'color': Colors.orange, 'value': 'Orange'},
+    {'key': 'Color_Purple', 'color': Colors.purple, 'value': 'Purple'},
+    {'key': 'Color_Pink', 'color': Colors.pink, 'value': 'Pink'},
+    {'key': 'Color_Grey', 'color': Colors.grey, 'value': 'Grey'},
+  ];
+
+  /// Build the "My Gliders" section
+  Widget _buildMyGlidersSection(String lang) {
+    final theme = Theme.of(context);
+    final gliderService = context.watch<GliderService>();
+    final userGliders = gliderService.userGliders;
+
+    return Card(
+      color: theme.cardColor,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ExpansionTile(
+        initiallyExpanded: false,
+        title: Row(
+          children: [
+            Expanded(child: Text(_t('My_Gliders', lang), style: theme.textTheme.titleMedium)),
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              tooltip: _t('Add_Glider', lang),
+              onPressed: () => _showAddGliderDialog(lang),
+            ),
+          ],
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: userGliders.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(_t('No_Gliders', lang), style: theme.textTheme.bodySmall),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: userGliders.map((glider) => _buildGliderTile(glider, lang)).toList(),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGliderTile(UserGlider glider, String lang) {
+    final theme = Theme.of(context);
+
+    // Find color swatch for display
+    Color? colorSwatch;
+    for (final c in _gliderColors) {
+      if (c['value'] == glider.colorMain) {
+        colorSwatch = c['color'] as Color;
+        break;
+      }
+    }
+
+    final tags = <String>[];
+    tags.add(glider.gliderClass);
+    if (glider.tandem) tags.add(_t('Tandem', lang));
+    if (glider.light) tags.add(_t('Light', lang));
+    if (glider.colorMain != null) {
+      // Find localized color name
+      final colorDef = _gliderColors.firstWhere(
+        (c) => c['value'] == glider.colorMain,
+        orElse: () => {'key': glider.colorMain!, 'color': Colors.grey, 'value': glider.colorMain!},
+      );
+      tags.add(_t(colorDef['key'] as String, lang));
+    }
+
+    return Dismissible(
+      key: Key(glider.id ?? glider.displayName),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: Colors.red,
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (direction) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(_t('Delete_Glider', lang)),
+            content: Text(glider.displayName),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_t('Cancel', lang))),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_t('Delete', lang))),
+            ],
+          ),
+        );
+      },
+      onDismissed: (_) {
+        if (glider.id != null) {
+          context.read<GliderService>().removeUserGlider(glider.id!);
+        }
+      },
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: colorSwatch != null
+            ? Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: colorSwatch,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: theme.dividerColor),
+                ),
+              )
+            : const Icon(Icons.paragliding),
+        title: Text(glider.displayName, style: theme.textTheme.bodyMedium),
+        subtitle: Text(tags.join(' · '), style: theme.textTheme.bodySmall),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete_outline, size: 20),
+          onPressed: () async {
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(_t('Delete_Glider', lang)),
+                content: Text(glider.displayName),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(_t('Cancel', lang))),
+                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_t('Delete', lang))),
+                ],
+              ),
+            );
+            if (confirmed == true && glider.id != null) {
+              if (mounted) context.read<GliderService>().removeUserGlider(glider.id!);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Show dialog to add a new glider
+  void _showAddGliderDialog(String lang) {
+    final gliderService = context.read<GliderService>();
+    String? selectedBrand;
+    Map<String, dynamic>? selectedGlider;
+    String? selectedColor;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return ListenableBuilder(
+          listenable: gliderService,
+          builder: (_, __) {
+            return StatefulBuilder(
+              builder: (ctx, setDialogState) {
+            final theme = Theme.of(ctx);
+            final brands = gliderService.brands;
+            final glidersForBrand = selectedBrand != null
+                ? gliderService.getGlidersByBrand(selectedBrand!)
+                : <Map<String, dynamic>>[];
+
+            return AlertDialog(
+              title: Text(_t('Add_Glider', lang)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Brand dropdown - always visible
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: _t('Brand', lang),
+                        filled: true,
+                        fillColor: theme.cardColor,
+                      ),
+                      value: selectedBrand,
+                      hint: Text(_t('Select_Brand', lang)),
+                      items: brands.isEmpty
+                          ? null
+                          : brands
+                              .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                              .toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedBrand = value;
+                          selectedGlider = null;
+                        });
+                      },
+                    ),
+
+                    // Glider dropdown - only visible after brand selected
+                    if (selectedBrand != null) ...[                      
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          labelText: _t('Glider', lang),
+                          filled: true,
+                          fillColor: theme.cardColor,
+                        ),
+                        value: selectedGlider?['id'] as String?,
+                        hint: Text(_t('Select_Glider', lang)),
+                        items: (() {
+                          final sorted = [...glidersForBrand]..sort(
+                              (a, b) => (a['glider'] as String? ?? '')
+                                  .compareTo(b['glider'] as String? ?? ''),
+                            );
+                          return sorted
+                              .map((g) => DropdownMenuItem<String>(
+                                    value: g['id'] as String,
+                                    child: Text(g['glider'] as String? ?? ''),
+                                  ))
+                              .toList();
+                        })(),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedGlider = glidersForBrand.firstWhere((g) => g['id'] == value);
+                          });
+                        },
+                      ),
+                    ],
+
+                    // Color picker + tandem/light - only visible after glider selected (and not duplicate)
+                    if (selectedGlider != null &&
+                        !gliderService.userGliders.any(
+                            (g) => g.brand == selectedBrand && g.type == selectedGlider!['glider'])) ...[
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          labelText: _t('Color_Main', lang),
+                          filled: true,
+                          fillColor: theme.cardColor,
+                        ),
+                        value: selectedColor,
+                        hint: Text(_t('Select_Color', lang)),
+                        items: _gliderColors.map((c) {
+                          return DropdownMenuItem(
+                            value: c['value'] as String,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 18,
+                                  height: 18,
+                                  decoration: BoxDecoration(
+                                    color: c['color'] as Color,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: theme.dividerColor),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(_t(c['key'] as String, lang)),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedColor = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          if (selectedGlider!['tandem'] == true)
+                            Chip(label: Text(_t('Tandem', lang)), backgroundColor: Colors.orange.withValues(alpha: 0.3)),
+                          if (selectedGlider!['light'] == true) ...[
+                            const SizedBox(width: 8),
+                            Chip(label: Text(_t('Light', lang)), backgroundColor: Colors.lightBlue.withValues(alpha: 0.3)),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(_t('Cancel', lang)),
+                ),
+                ElevatedButton(
+                  onPressed: selectedGlider == null ||
+                          gliderService.userGliders.any(
+                              (g) => g.brand == selectedBrand && g.type == selectedGlider!['glider'])
+                      ? null
+                      : () async {
+                          try {
+                            final newGlider = UserGlider(
+                              brand: selectedGlider!['brand'] as String? ?? '',
+                              type: selectedGlider!['glider'] as String? ?? '',
+                              gliderClass: selectedGlider!['class'] as String? ?? '',
+                              tandem: selectedGlider!['tandem'] as bool? ?? false,
+                              light: selectedGlider!['light'] as bool? ?? false,
+                              colorMain: selectedColor,
+                            );
+                            await gliderService.addUserGlider(newGlider);
+                            if (!mounted) return;
+                            Navigator.pop(dialogContext);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(_t('Add_Glider', lang) + ' - ${_t('Success_Saved', lang)}'),
+                                duration: const Duration(seconds: 2),
+                                backgroundColor: Colors.green.shade700,
+                              ),
+                            );
+                          } catch (e) {
+                            if (!mounted) return;
+                            Navigator.pop(dialogContext);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(_t('Error', lang) + ': ${e.toString()}'),
+                                duration: const Duration(seconds: 3),
+                                backgroundColor: Colors.red.shade700,
+                              ),
+                            );
+                          }
+                        },
+                  child: Text(_t('Add_Glider', lang)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+      },
     );
   }
 

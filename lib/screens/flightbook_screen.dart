@@ -8,6 +8,7 @@ import '../services/flight_service.dart';
 import '../services/profile_service.dart';
 import '../services/app_config_service.dart';
 import '../services/global_data_service.dart';
+import '../services/glider_service.dart';
 import '../widgets/responsive_layout.dart';
 
 class FlightBookScreen extends StatefulWidget {
@@ -514,6 +515,9 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
     'Start_Type': {'en': 'Start Type', 'de': 'Startart', 'it': 'Tipo di partenza', 'fr': 'Type de départ'},
     'Select_Start_Type': {'en': 'Select start type', 'de': 'Startart auswählen', 'it': 'Seleziona tipo di partenza', 'fr': 'Sélectionner le type de départ'},
     'Comment': {'en': 'Comment', 'de': 'Kommentar', 'it': 'Commento', 'fr': 'Commentaire'},
+    'Glider': {'en': 'Glider', 'de': 'Gleitschirm', 'it': 'Parapendio', 'fr': 'Parapente'},
+    'Select_Glider': {'en': 'Select glider', 'de': 'Gleitschirm auswählen', 'it': 'Seleziona parapendio', 'fr': 'Sélectionner le parapente'},
+    'No_Gliders_Profile': {'en': 'Add gliders in your profile first', 'de': 'Füge zuerst Gleitschirme in deinem Profil hinzu', 'it': 'Aggiungi prima i parapendio nel tuo profilo', 'fr': 'Ajoutez d\'abord des parapentes dans votre profil'},
     'Save': {'en': 'Save', 'de': 'Speichern', 'it': 'Salva', 'fr': 'Enregistrer'},
     'Cancel': {'en': 'Cancel', 'de': 'Abbrechen', 'it': 'Annulla', 'fr': 'Annuler'},
     'Close': {'en': 'Close', 'de': 'Schließen', 'it': 'Chiudi', 'fr': 'Fermer'},
@@ -604,6 +608,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
   List<Map<String, dynamic>> _filteredLandingLocations = [];
   bool _takeoffFromDropdown = false; // Track if takeoff was selected from dropdown
   bool _landingFromDropdown = false; // Track if landing was selected from dropdown
+  String? _selectedGliderId; // Selected user glider ID
 
   // Track previous profile state to detect changes
   String? _previousMainSchoolId;
@@ -634,6 +639,12 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    
+    // Auto-select single glider if available
+    final gliderService = context.read<GliderService>();
+    if (_selectedGliderId == null && gliderService.userGliders.length == 1) {
+      _selectedGliderId = gliderService.userGliders[0].id;
+    }
     _checkProfileChangesAndReloadLocations();
   }
 
@@ -811,6 +822,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
       _selectedStartTypeId = flight.startTypeId;
       _selectedFlightTypeId = flight.flightTypeId;
       _selectedManeuvers = Set.from(flight.advancedManeuvers);
+      _selectedGliderId = flight.gliderId;
 
       _hours = flight.flightTimeMinutes ~/ 60;
       _minutes = flight.flightTimeMinutes % 60;
@@ -833,6 +845,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
       _selectedStartTypeId = null;
       _selectedFlightTypeId = null;
       _selectedManeuvers = {};
+      _selectedGliderId = null;
       _takeoffFromDropdown = false;
       _landingFromDropdown = false;
 
@@ -853,12 +866,18 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
   }
 
   bool get _isFormValid {
+    final gliderService = context.read<GliderService>();
+    final userGlidersCount = gliderService.userGliders.length;
+    // If user has gliders, glider selection is mandatory
+    final gliderValid = userGlidersCount == 0 || _selectedGliderId != null;
+    
     return _dateController.text.isNotEmpty &&
         _takeoffController.text.isNotEmpty &&
         _landingController.text.isNotEmpty &&
         _takeoffAltitudeController.text.isNotEmpty &&
         _landingAltitudeController.text.isNotEmpty &&
-        (_hours > 0 || _minutes > 0);
+        (_hours > 0 || _minutes > 0) &&
+        gliderValid;
   }
 
   Future<void> _saveFlight() async {
@@ -910,6 +929,8 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
         createdAt: widget.flight?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
         gpsTracked: widget.gpsTracked,
+        gliderId: _selectedGliderId,
+        gliderDisplayName: _getSelectedGliderDisplayName(),
       );
 
       debugPrint('[AddEditFlightForm] Saving flight: gpsTracked=${flight.gpsTracked}, isNewFromGps=${widget.isNewFromGps}');
@@ -1341,6 +1362,69 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
     );
   }
 
+  /// Get the display name for the currently selected glider
+  String? _getSelectedGliderDisplayName() {
+    if (_selectedGliderId == null) return null;
+    final gliderService = context.read<GliderService>();
+    for (final g in gliderService.userGliders) {
+      if (g.id == _selectedGliderId) {
+        return g.displayName;
+      }
+    }
+    return null;
+  }
+
+  /// Build user's glider selector dropdown
+  Widget _buildGliderSelector(String lang) {
+    final gliderService = context.watch<GliderService>();
+    final userGliders = gliderService.userGliders;
+
+    if (userGliders.isEmpty) {
+      return InputDecorator(
+        decoration: InputDecoration(
+          labelText: _t('Glider', lang),
+          prefixIcon: const Icon(Icons.paragliding),
+          border: const OutlineInputBorder(),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          child: Text(
+            _t('No_Gliders_Profile', lang),
+            style: TextStyle(color: Theme.of(context).hintColor, fontSize: 13),
+          ),
+        ),
+      );
+    }
+
+    // Make sure selected value is still valid
+    final validIds = userGliders.map((g) => g.id).toSet();
+    if (_selectedGliderId != null && !validIds.contains(_selectedGliderId)) {
+      _selectedGliderId = null;
+    }
+
+    return DropdownButtonFormField<String>(
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: _t('Glider', lang),
+        prefixIcon: const Icon(Icons.paragliding),
+        border: const OutlineInputBorder(),
+      ),
+      value: _selectedGliderId,
+      hint: Text(_t('Select_Glider', lang)),
+      items: userGliders.map((g) {
+        return DropdownMenuItem(
+          value: g.id,
+          child: Text(g.displayName),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedGliderId = value;
+        });
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1714,6 +1798,10 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                 border: const OutlineInputBorder(),
               ),
             ),
+            const SizedBox(height: 12),
+
+            // Glider selector
+            _buildGliderSelector(lang),
             const SizedBox(height: 24),
 
             // Save button
