@@ -30,7 +30,9 @@ exports.createPendingFlight = onDocumentCreated(
       console.log("Flight log created:", {uid, logId});
 
       // Only create pending entry for students
-      if (data.license_type !== "student") return;
+      // Case-insensitive: end user app stores "Student" (capital S)
+      const licenseType = (data.license_type || "").toLowerCase();
+      if (licenseType !== "student") return;
 
       const schoolId = data.thisflight_school_id ||
         data.mainschool_id || data.school_id;
@@ -40,6 +42,15 @@ exports.createPendingFlight = onDocumentCreated(
       }
 
       const db = admin.firestore();
+
+      // Fetch user profile for student name
+      const userDoc = await db.collection("users").doc(uid).get();
+      const userData = userDoc.exists ? userDoc.data() : {};
+      const studentName = userData.nickname ||
+        `${userData.forename || ""} ${userData.familyname || ""}`.trim() ||
+        "Unknown Student";
+      const mainSchoolId = userData.mainschool_id || null;
+
       const pendingRef = db.collection("schools")
           .doc(schoolId)
           .collection("pendingFlights")
@@ -48,11 +59,16 @@ exports.createPendingFlight = onDocumentCreated(
       await pendingRef.set({
         flightId: logId,
         student_uid: uid,
+        studentUid: uid,
+        studentName: studentName,
         school_id: schoolId,
+        schoolId: schoolId,
+        mainSchoolId: mainSchoolId,
         date: data.date || null,
         takeoffName: data.takeoffName || "",
         landingName: data.landingName || "",
         flightTimeMinutes: data.flightTimeMinutes || 0,
+        airtimeMinutes: data.flightTimeMinutes || 0,
         altitudeDifference: data.altitudeDifference || 0,
         status: "pending",
         created_at: data.created_at ||
@@ -93,6 +109,7 @@ exports.onFlightLogUpdated = onDocumentUpdated(
         takeoffName: after.takeoffName || "",
         landingName: after.landingName || "",
         flightTimeMinutes: after.flightTimeMinutes || 0,
+        airtimeMinutes: after.flightTimeMinutes || 0,
         altitudeDifference: after.altitudeDifference || 0,
         updated_at: admin.firestore.FieldValue.serverTimestamp(),
       });
@@ -213,6 +230,7 @@ async function updateDashboardCache(schoolId) {
 
 /**
  * Verify caller is admin of the school.
+ * Checks: custom claims, role field, and adminAt array.
  * @param {object} auth - The auth context from the request.
  * @param {string} schoolId - The school document ID.
  * @return {object} The user data if authorized.
@@ -224,6 +242,16 @@ async function verifySchoolAdmin(auth, schoolId) {
         "Must be authenticated",
     );
   }
+
+  // Check custom claims first (superadmin)
+  const isSuperadminClaim = auth.token?.admin === true;
+  if (isSuperadminClaim) {
+    const db = admin.firestore();
+    const userDoc = await db.collection("users")
+        .doc(auth.uid).get();
+    return userDoc.exists ? userDoc.data() : {};
+  }
+
   const db = admin.firestore();
   const userDoc = await db.collection("users")
       .doc(auth.uid).get();
@@ -233,16 +261,16 @@ async function verifySchoolAdmin(auth, schoolId) {
   }
 
   const userData = userDoc.data();
-  const role = userData.role || userData.license || "";
-  const userSchool = userData.mainSchoolId ||
-    userData.school_id || "";
+  const role = (userData.role || userData.license || "").toLowerCase();
+  const adminAt = userData.adminAt || [];
 
-  // Allow superadmin or school admin/instructor
-  const isAdmin = role === "admin" || role === "superadmin" ||
+  // Allow if: role-based admin/instructor, or schoolId in adminAt array
+  const isRoleAdmin = role === "admin" || role === "superadmin" ||
     role === "instructor";
-  const belongsToSchool = userSchool === schoolId;
+  const isInAdminAt = Array.isArray(adminAt) &&
+    adminAt.includes(schoolId);
 
-  if (!isAdmin || (!belongsToSchool && role !== "superadmin")) {
+  if (!isRoleAdmin && !isInAdminAt) {
     throw new HttpsError(
         "permission-denied",
         "Not authorized for this school",
@@ -279,7 +307,8 @@ exports.acceptPendingFlightCallable = onCall(
       }
 
       const pendingData = pendingDoc.data();
-      const studentUid = pendingData.student_uid;
+      const studentUid = pendingData.student_uid ||
+        pendingData.studentUid;
 
       // Update status in student's flightlog
       const flightRef = db.collection("users")
@@ -335,7 +364,7 @@ exports.acceptAllPendingFlights = onCall(
 
       for (const doc of pendingSnap.docs) {
         const data = doc.data();
-        const studentUid = data.student_uid;
+        const studentUid = data.student_uid || data.studentUid;
 
         // Update student's flightlog
         const flightRef = db.collection("users")
@@ -370,7 +399,7 @@ exports.acceptAllPendingFlights = onCall(
  */
 exports.declinePendingFlight = onCall(
     async (request) => {
-      const {schoolId, flightId} = request.data;
+      const {schoolId, flightId, reason} = request.data;
       if (!schoolId || !flightId) {
         throw new HttpsError(
             "invalid-argument",
@@ -391,9 +420,34 @@ exports.declinePendingFlight = onCall(
         throw new HttpsError("not-found", "Flight not found");
       }
 
-      // Delete the pending entry (flight stays in
-      // student's log with pending status)
-      await pendingRef.delete();
+      const pendingData = pendingDoc.data();
+      const studentUid = pendingData.student_uid ||
+        pendingData.studentUid;
+      const adminUid = request.auth.uid;
+
+      const batch = db.batch();
+
+      // Delete from pendingFlights
+      batch.delete(pendingRef);
+
+      // Update the flight status in the student's flightlog
+      if (studentUid) {
+        const flightRef = db.collection("users")
+            .doc(studentUid)
+            .collection("flightlog")
+            .doc(flightId);
+        batch.update(flightRef, {
+          status: "declined",
+          status_declined_by: adminUid,
+          status_declined_at:
+            admin.firestore.FieldValue.serverTimestamp(),
+          status_declined_reason: reason || "No reason provided",
+          updated_at:
+            admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
 
       console.log(`Flight declined: ${schoolId}/${flightId}`);
       return {success: true, flightId};
