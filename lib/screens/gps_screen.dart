@@ -155,8 +155,12 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
               // Show web warning if on web platform
               if (kIsWeb) _buildWebWarning(context, lang),
               _buildGpsStatusCard(context, trackingService, gpsSensorService, lang),
-              // Show permission card if needed (only on mobile)
-              if (!kIsWeb && !gpsSensorService.hasLocationPermission && gpsSensorService.errorMessage != null)
+              // Show permission card if any required permission is missing (mobile only)
+              if (!kIsWeb && (
+                !gpsSensorService.hasLocationPermission ||
+                !gpsSensorService.hasBackgroundPermission ||
+                !gpsSensorService.hasBatteryOptimizationExemption
+              ))
                 _buildPermissionCard(context, gpsSensorService, lang),
               _buildStatusCard(context, trackingService, lang),
               if (trackingService.isInFlight)
@@ -214,6 +218,11 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
     String lang,
   ) {
     final theme = Theme.of(context);
+
+    final missingLocation = !gpsSensorService.hasLocationPermission;
+    final missingBackground = !gpsSensorService.hasBackgroundPermission;
+    final missingBattery = !gpsSensorService.hasBatteryOptimizationExemption;
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       color: Colors.red.shade900,
@@ -222,13 +231,14 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header
             Row(
               children: [
-                const Icon(Icons.location_off, color: Colors.white),
+                const Icon(Icons.warning_amber, color: Colors.white),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _t('Permission_Required', lang),
+                    'Permissions Required for Background GPS',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -237,53 +247,117 @@ class _GpsScreenState extends State<GpsScreen> with WidgetsBindingObserver {
                 ),
               ],
             ),
-            if (gpsSensorService.errorMessage != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'GPS will stop when the screen turns off until these are fixed.',
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
+            ),
+            const SizedBox(height: 12),
+
+            // ── Location permission ────────────────────────────────────
+            if (missingLocation) ...[  
+              _buildPermissionRow(
+                icon: Icons.location_off,
+                title: 'Location Access',
+                subtitle: 'Required to record your position.',
+                buttonLabel: 'Grant',
+                onTap: () async {
+                  await gpsSensorService.checkAndRequestPermissions();
+                },
+              ),
               const SizedBox(height: 8),
-              Text(
-                gpsSensorService.errorMessage!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.white70,
-                ),
+            ],
+
+            // ── Background location ────────────────────────────────────
+            if (!missingLocation && missingBackground) ...[  
+              _buildPermissionRow(
+                icon: Icons.location_searching,
+                title: 'Background Location ("Allow all the time")',
+                subtitle:
+                    'Without this, GPS stops when the screen turns off.'
+                    ' Go to Settings → Location → Allow all the time.',
+                buttonLabel: 'Open Settings',
+                onTap: () async {
+                  await gpsSensorService.openAppSettings();
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+
+            // ── Battery optimization ───────────────────────────────────
+            if (missingBattery) ...[  
+              _buildPermissionRow(
+                icon: Icons.battery_alert,
+                title: 'Battery Optimization',
+                subtitle:
+                    'Your phone is stopping the app in the background.'
+                    ' Tap to keep GPS running during flights.',
+                buttonLabel: 'Disable',
+                onTap: () async {
+                  await gpsSensorService.requestBatteryOptimizationExemption();
+                  await gpsSensorService.initPermissionStatus();
+                },
               ),
             ],
-            const SizedBox(height: 12),
-            Row(
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPermissionRow({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String buttonLabel,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: Colors.orange, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await gpsSensorService.checkAndRequestPermissions();
-                    },
-                    icon: const Icon(Icons.check, color: Colors.white),
-                    label: Text(
-                      _t('Grant_Permission', lang),
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white54),
-                    ),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await gpsSensorService.openAppSettings();
-                    },
-                    icon: const Icon(Icons.settings, color: Colors.white),
-                    label: Text(
-                      _t('Open_Settings', lang),
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white54),
-                    ),
-                  ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: onTap,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              side: const BorderSide(color: Colors.white54),
+            ),
+            child: Text(
+              buttonLabel,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

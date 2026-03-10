@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -369,12 +371,17 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBin
       
       final gpsSensorService = context.read<GpsSensorService>();
       final trackingService = context.read<FlightTrackingService>();
+
+      // Always refresh permission state so the UI cards stay accurate
+      await gpsSensorService.initPermissionStatus();
       
       // If GPS stream is already running, still ensure FlightTrackingService is enabled.
       // Fixes emulator/demo case where GPS icon is green but Current Status doesn't update
       // because processPosition short-circuits when tracking is disabled.
       if (gpsSensorService.isTracking) {
         await trackingService.enableTracking();
+        // Still check secondary permissions (battery/background) even if tracking is running
+        await _checkAndPromptMissingPermissions(gpsSensorService);
         return;
       }
       
@@ -389,7 +396,7 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBin
         return;
       }
       
-      // GPS is enabled, start tracking
+      // GPS is enabled, start tracking (this also requests all permissions)
       final success = await gpsSensorService.autoStartTracking();
       if (success) {
         await trackingService.enableTracking();
@@ -397,9 +404,114 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBin
       } else {
         debugPrint('[GpsInit] GPS tracking failed to start (permission issue?)');
       }
+
+      // After tracking attempt, re-read permission state and prompt for anything missing
+      await gpsSensorService.initPermissionStatus();
+      if (mounted) {
+        await _checkAndPromptMissingPermissions(gpsSensorService);
+      }
     } catch (e) {
       debugPrint('[GpsInit] Error initializing GPS: $e');
     }
+  }
+
+  /// Show dialogs for any permissions that are still missing after the initial request.
+  /// Only shown on Android (iOS handles things via plist + system prompts).
+  /// Shown one at a time to avoid dialog stack confusion.
+  Future<void> _checkAndPromptMissingPermissions(GpsSensorService gpsSensorService) async {
+    if (!mounted) return;
+    if (kIsWeb) return;
+    if (!Platform.isAndroid) return;
+
+    final navigator = Navigator.maybeOf(context);
+    if (navigator == null) return; // not ready yet
+
+    // Priority 1: background location (without it GPS stops when screen is off)
+    if (!gpsSensorService.hasBackgroundPermission) {
+      _showBackgroundLocationDialog();
+      return; // one dialog at a time
+    }
+
+    // Priority 2: battery optimization exemption (kills background GPS on most Android OEMs)
+    if (!gpsSensorService.hasBatteryOptimizationExemption) {
+      _showBatteryOptimizationDialog();
+    }
+  }
+
+  void _showBackgroundLocationDialog() {
+    final navigator = Navigator.maybeOf(context);
+    if (navigator == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.location_on, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Background Location'),
+          ],
+        ),
+        content: const Text(
+          'FlightDeck needs "Allow all the time" location access so your flight '  
+          'is tracked even when the screen turns off.\n\n'
+          'Tap "Open Settings", then select Location → Allow all the time.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Later'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Geolocator.openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBatteryOptimizationDialog() {
+    final navigator = Navigator.maybeOf(context);
+    if (navigator == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.battery_saver, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Battery Optimization'),
+          ],
+        ),
+        content: const Text(
+          'Your device is set to optimize battery for FlightDeck. This can stop GPS '
+          'tracking when your screen turns off during a flight.\n\n'
+          'Tap "Disable for FlightDeck" to keep tracking running in the background.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Later'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final gpsSensorService = context.read<GpsSensorService>();
+              await gpsSensorService.requestBatteryOptimizationExemption();
+              await gpsSensorService.initPermissionStatus();
+            },
+            child: const Text('Disable for FlightDeck'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showGpsDisabledDialog() {

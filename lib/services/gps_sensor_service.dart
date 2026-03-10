@@ -28,6 +28,8 @@ class GpsSensorService extends ChangeNotifier {
   bool _hasLocationPermission = false;
   bool _hasBackgroundPermission = false;
   bool _hasSensorPermission = false;
+  // Android: whether battery optimization is disabled (needed for background GPS)
+  bool _hasBatteryOptimizationExemption = true; // defaults true; set correctly by initPermissionStatus()
   Position? _lastPosition;
   AccelerometerEvent? _lastAccelerometer;
   GyroscopeEvent? _lastGyroscope;
@@ -44,6 +46,8 @@ class GpsSensorService extends ChangeNotifier {
   bool get hasLocationPermission => _hasLocationPermission;
   bool get hasBackgroundPermission => _hasBackgroundPermission;
   bool get hasSensorPermission => _hasSensorPermission;
+  /// Android only: true if battery optimization is disabled for this app
+  bool get hasBatteryOptimizationExemption => _hasBatteryOptimizationExemption;
   bool get isSupported => !kIsWeb;
   Position? get lastPosition => _lastPosition;
   AccelerometerEvent? get lastAccelerometer => _lastAccelerometer;
@@ -54,6 +58,33 @@ class GpsSensorService extends ChangeNotifier {
   static bool get platformSupported {
     if (kIsWeb) return false;
     return Platform.isAndroid || Platform.isIOS;
+  }
+
+  /// Silently check all permission statuses without requesting — call on startup
+  /// to seed UI state (e.g., so permission cards appear immediately).
+  Future<void> initPermissionStatus() async {
+    if (!platformSupported) return;
+    try {
+      if (Platform.isAndroid) {
+        final loc = await Permission.location.status;
+        _hasLocationPermission = loc.isGranted;
+
+        final bg = await Permission.locationAlways.status;
+        _hasBackgroundPermission = bg.isGranted;
+
+        final battery = await Permission.ignoreBatteryOptimizations.status;
+        _hasBatteryOptimizationExemption = battery.isGranted;
+      } else if (Platform.isIOS) {
+        final perm = await Geolocator.checkPermission();
+        _hasLocationPermission = perm == LocationPermission.whileInUse ||
+            perm == LocationPermission.always;
+        _hasBackgroundPermission = perm == LocationPermission.always;
+        _hasBatteryOptimizationExemption = true; // not applicable on iOS
+      }
+      notifyListeners();
+    } catch (e) {
+      log('[GpsSensorService] initPermissionStatus error: $e');
+    }
   }
 
   /// Check and request all required permissions
@@ -130,6 +161,18 @@ class GpsSensorService extends ChangeNotifier {
       if (Platform.isAndroid) {
         final notificationStatus = await Permission.notification.request();
         log('[GpsSensorService] Notification permission: $notificationStatus');
+      }
+
+      // Request battery optimization exemption (Android) — critical for background GPS
+      if (Platform.isAndroid) {
+        final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
+        if (!batteryStatus.isGranted) {
+          final result = await Permission.ignoreBatteryOptimizations.request();
+          _hasBatteryOptimizationExemption = result.isGranted;
+          log('[GpsSensorService] Battery optimization exemption: ${result.isGranted}');
+        } else {
+          _hasBatteryOptimizationExemption = true;
+        }
       }
 
       _errorMessage = null;
@@ -499,6 +542,7 @@ class GpsSensorService extends ChangeNotifier {
     _hasLocationPermission = false;
     _hasBackgroundPermission = false;
     _hasSensorPermission = false;
+    _hasBatteryOptimizationExemption = true;
     notifyListeners();
   }
 
