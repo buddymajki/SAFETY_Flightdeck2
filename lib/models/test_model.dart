@@ -185,12 +185,12 @@ class TestMetadata {
 class TestContent {
   final Map<String, List<Question>> questions;
   final Map<String, dynamic>? metadata;
-  final String? disclaimer;
+  final Map<String, String> disclaimers; // language code -> disclaimer text
 
   TestContent({
     required this.questions,
     this.metadata,
-    this.disclaimer,
+    this.disclaimers = const {},
   });
 
   /// Parse from JSON structure
@@ -199,7 +199,7 @@ class TestContent {
   /// e.g. "assets/tests/1" will turn "pgschem.png" into "assets/tests/1/pgschem.png"
   factory TestContent.fromJson(Map<String, dynamic> json, {String? assetBasePath}) {
     final Map<String, List<Question>> questions = {};
-    String? disclaimer;
+    final Map<String, String> disclaimers = {};
 
     json.forEach((key, value) {
       if (value is List) {
@@ -207,8 +207,8 @@ class TestContent {
         for (final q in value) {
           if (q is Map<String, dynamic>) {
             final question = Question.fromJson(q, assetBasePath: assetBasePath);
-            if (question.id == 'disclaimer' && disclaimer == null) {
-              disclaimer = question.text;
+            if (question.id == 'disclaimer') {
+              disclaimers[key] = question.text;
             } else {
               parsedQuestions.add(question);
             }
@@ -221,7 +221,7 @@ class TestContent {
     return TestContent(
       questions: questions,
       metadata: json['metadata'] as Map<String, dynamic>?,
-      disclaimer: disclaimer,
+      disclaimers: disclaimers,
     );
   }
 }

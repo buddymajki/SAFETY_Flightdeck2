@@ -3,606 +3,788 @@
     {
       "id": "q1",
       "type": "matching",
-      "text": "Name the parts of the illustrated paraglider.",
-      "img_url": "pgschem.png",
+      "text": "Match each aircraft category with the correct priority rule relative to a paraglider.",
       "matchingPairs": [
-        {"left": "A-Lines", "right": "1"},
-        {"left": "B-Lines", "right": "2"},
-        {"left": "C-Lines", "right": "3"},
-        {"left": "Upper sail", "right": "4"},
-        {"left": "Trailing edge", "right": "5"},
-        {"left": "Brake lines (steering lines)", "right": "6"},
-        {"left": "Leading edge", "right": "7"},
-        {"left": "Lower sail", "right": "8"}
+        {"left": "Emergency landing aircraft", "right": "Always has priority; keep clear immediately"},
+        {"left": "Free balloon", "right": "Has priority over a paraglider"},
+        {"left": "Glider / hang glider", "right": "Same class as a paraglider; priority depends on the situation (see VFR)"},
+        {"left": "Motorized aircraft", "right": "Usually must give way to a paraglider, except in an emergency"}
       ],
       "correctAnswer": [
-        {"left": "Leading edge", "right": "1"},
-        {"left": "Trailing edge", "right": "2"},
-        {"left": "Upper sail", "right": "3"},
-        {"left": "Lower sail", "right": "4"},
-        {"left": "A-Lines", "right": "5"},
-        {"left": "B-Lines", "right": "6"},
-        {"left": "C-Lines", "right": "7"},
-        {"left": "Brake lines (steering lines)", "right": "8"}
+        {"left": "Emergency landing aircraft", "right": "Always has priority; keep clear immediately"},
+        {"left": "Free balloon", "right": "Has priority over a paraglider"},
+        {"left": "Glider / hang glider", "right": "Same class as a paraglider; priority depends on the situation (see VFR)"},
+        {"left": "Motorized aircraft", "right": "Usually must give way to a paraglider, except in an emergency"}
       ]
     },
     {
       "id": "q2",
       "type": "single_choice",
-      "text": "What is the check called immediately before takeoff and what is checked?",
+      "text": "You are the first pilot to start circling in a new thermal. What applies?",
       "options": [
-        "Start-check",
-        "Preparation check",
-        "Five-point check",
-        "Readiness control"
+        "You may change direction whenever you find the better core.",
+        "You determine the turning direction, and later pilots must join in the same direction.",
+        "The highest pilot always decides the turning direction.",
+        "All pilots should alternate left and right turns to stay separated."
       ],
-      "correctAnswer": 2
+      "correctAnswer": 1
     },
     {
       "id": "q3",
-      "type": "matching",
-      "text": "I check:",
-      "matchingPairs": [
-        {"left": "Point0", "right": "Lines"},
-		{"left": "Point1", "right": "Wind"},
-        {"left": "Point2", "right": "Reserve parachute"},
-        {"left": "Point3", "right": "Surroundings"},
-        {"left": "Point4", "right": "Pilot"},
-        {"left": "Point5", "right": "Canopy"}      
+      "type": "multiple_choice",
+      "text": "You approach a thermal where other pilots are already circling. Which rules are correct? (Mark all correct answers)",
+      "options": [
+        "Join in the same turning direction as the pilots already in the thermal.",
+        "Pilots already circling in the thermal have priority.",
+        "Keep predictable spacing and avoid sudden changes of circle size or direction.",
+        "Cut straight through the thermal in the opposite direction if the climb is stronger there."
       ],
-      "correctAnswer": [
-        {"left": "Point0", "right": "Reserve parachute"},
-        {"left": "Point1", "right": "Pilot"},
-        {"left": "Point2", "right": "Lines"},
-        {"left": "Point3", "right": "Canopy"},
-        {"left": "Point4", "right": "Wind"},
-        {"left": "Point5", "right": "Surroundings"}
-      ]
+      "correctAnswer": [0, 1, 2]
     },
     {
       "id": "q4",
       "type": "single_choice",
-      "text": "What are the most important preparations immediately prior to takeoff?",
+      "text": "Two paragliders approach each other head-on at a similar altitude in free air. What do they do?",
       "options": [
-        "My radio is switched on and checked and the airspace is clear.",
-        "I have put on my helmet and the wind is from the front.",
-        "I have a clear flight order, have completed the 5-point check, and my radio is switched on and checked.",
-        "My footwear is in order and my radio is switched on and checked."
+        "Both turn left.",
+        "Both turn right.",
+        "The higher pilot continues straight and the lower pilot turns.",
+        "The pilot with more speed continues straight."
       ],
-      "correctAnswer": 2
+      "correctAnswer": 1
     },
     {
       "id": "q5",
       "type": "single_choice",
-      "text": "The helper gives you clearance to take off. You are convinced it cannot go well today, because your gut feeling tells you that you are not in the right state to fly. How do you react?",
+      "text": "Two paragliders converge at the same altitude, but not head-on. Who has priority?",
       "options": [
-        "I suppress my feelings, tell myself not to be a coward, and just try to take off anyway.",
-        "I inform the launch director that today isn't my day and I don't feel ready for a high flight.",
-        "Everyone feels this way before their first high flight! Just do it!",
-        "Such feelings do not exist!"
+        "The glider on the right has priority; the other pilot must give way.",
+        "The glider on the left has priority.",
+        "The faster glider has priority.",
+        "The lower glider always has priority in this situation."
       ],
-      "correctAnswer": 1
+      "correctAnswer": 0
     },
     {
       "id": "q6",
-      "type": "matching",
-      "text": "A takeoff contains 3 phases. Match the names with the actions.",
-      "matchingPairs": [
-        {"left": "Inflation", "right": "The pilot pulls up the glider above the head using the A-lines."},
-        {"left": "Control", "right": "The pilot stops the glider above the head, makes corrections if needed, checks the whole glider and lines."},
-        {"left": "Acceleration", "right": "The pilot leans forward, runs with big steps, increasing speed while keeping the glider above the head until takeoff."}
+      "type": "multiple_choice",
+      "text": "Which rules apply when flying close to a slope? (Mark all correct answers)",
+      "options": [
+        "Overtaking is prohibited.",
+        "The aircraft that has the slope on its right has priority.",
+        "Flying over or under another glider at a similar altitude is prohibited.",
+        "Turns toward the slope are not permitted."
       ],
-      "correctAnswer": [
-        {"left": "Inflation", "right": "The pilot pulls up the glider above the head using the A-lines."},
-        {"left": "Control", "right": "The pilot stops the glider above the head, makes corrections if needed, checks the whole glider and lines."},
-        {"left": "Acceleration", "right": "The pilot leans forward, runs with big steps, increasing speed while keeping the glider above the head until takeoff."}
-      ]
+      "correctAnswer": [0, 1, 2, 3]
     },
     {
       "id": "q7",
-      "type": "multiple_choice",
-      "text": "In which two phases can you do a Start-STOP?",
+      "type": "single_choice",
+      "text": "You get a side collapse in turbulent air. What is the best immediate reaction?",
       "options": [
-        "Inflation",
-        "Control",
-        "Acceleration"
+        "Do nothing and wait several seconds without controlling direction.",
+        "Stop the rotation with the outside brake on the open side, keep course, and pump the collapsed side only if necessary.",
+        "Apply both brakes deeply to stop the glider completely.",
+        "Immediately throw the rescue as the first action."
       ],
-      "correctAnswer": [0, 1]
+      "correctAnswer": 1
     },
     {
       "id": "q8",
       "type": "single_choice",
-      "text": "How should you do a Start-Stop in the control phase?",
+      "text": "You get a front collapse. What is the correct reaction?",
       "options": [
-        "You push down completely both brakes as fast as possible",
-        "You push down one brake completely while the other hand is up and you lead the glider to crash to the pulled-down side",
-        "You put both hands completely up",
-        "You throw your rescue immediately"
+        "Hands up, and allow the glider to reopen.",
+        "Pull both brakes fully down until the wing opens again.",
+        "Turn immediately 180 degrees away from the collapse.",
+        "Shift all your weight backward and do not touch the brakes at all."
       ],
-      "correctAnswer": 1
+      "correctAnswer": 0
     },
     {
       "id": "q9",
       "type": "single_choice",
-      "text": "What do you do if you can't understand your instructor over the radio?",
+      "text": "After a massive collapse you observe a cravat. How do you react?",
       "options": [
-        "I make an emergency landing as quickly as possible.",
-        "I calmly fly to the designated safe area, as explained by the instructor, and wait for the agreed signals (arrow, paddles, etc.).",
-        "I fly to the lee side of the landing field and try to land on my own.",
-        "Radio is not necessary for the first high flight!"
+        "Stabilize direction first (stop rotation with the outside brake, stabilize flying direction), try to clear the cravat with the appropriate technique if trained, and throw the rescue if the situation becomes uncontrollable.",
+        "Ignore the cravat because it will always clear itself automatically.",
+        "Pull both brakes deeply and keep them there until the knot disappears.",
+        "Accelerate fully and fly straight through the problem."
       ],
-      "correctAnswer": 1
+      "correctAnswer": 0
     },
     {
       "id": "q10",
-      "type": "single_choice",
-      "text": "During your first high flight, a part of the right half of your wing collapses. What do you do?",
-      "options": [
-        "I immediately pump out the wing by activating the right brake several times.",
-        "I stabilize the wing by carefully braking on the left and shifting my weight to the left. If necessary, I use the right brake to re-inflate the right side of the wing.",
-        "I shift my weight to the right and use the right brake once or twice to re-inflate the right side.",
-        "I apply both brakes simultaneously about 80% once or twice. This increases the pressure in the wing and opens it."
+      "type": "matching",
+      "text": "Match the glider behavior at a thermal edge with the best immediate reaction.",
+      "matchingPairs": [
+        {"left": "The wing surges forward entering strong lift", "right": "Stop the surge with timely, moderate brake input, once the glider is coming above the head, slowly go up with the hand to the normal 10-20% break position"},
+        {"left": "One side drops at the edge of the thermal", "right": "Stabilize with outside brake input, reopen the collapse"},
+        {"left": "You suddenly hit sink leaving the thermal", "right": "Stay active, maintain safe flying speed, and avoid over-braking"},
+        {"left": "One side climbs strongly in better lift", "right": "Coordinate a smooth turn to stay centered in the lift"}
       ],
-      "correctAnswer": 1
+      "correctAnswer": [
+        {"left": "The wing surges forward entering strong lift", "right": "Stop the surge with timely, moderate brake input, once the glider is coming above the head, slowly go up with the hand to the normal 10-20% break position"},
+        {"left": "One side drops at the edge of the thermal", "right": "Stabilize with outside brake input, reopen the collapse"},
+        {"left": "You suddenly hit sink leaving the thermal", "right": "Stay active, maintain safe flying speed, and avoid over-braking"},
+        {"left": "One side climbs strongly in better lift", "right": "Coordinate a smooth turn to stay centered in the lift"}
+      ]
     },
     {
       "id": "q11",
       "type": "single_choice",
-      "text": "Can you steer a paraglider without brakes?",
+      "text": "How should you thermal close to a slope?",
       "options": [
-        "No",
-        "Yes, by carefully pulling the rear risers on one side, lowering the trailing edge on that side and turning.",
-        "Yes, by pulling the front risers on one side.",
-        "Yes, if the wing has an emergency steering device."
+        "Fly as close to the slope as possible to maximize climb rate.",
+        "Always turn toward the slope because that keeps the thermal tighter.",
+        "Keep generous terrain clearance while flying S pattern in the lifting zone (always turn away from the terrain, leave yourself an escape route away from the slope, and never let the glider drift into the terrain.",
+        "Use big ears in every turn so you do not get too high."
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": "q12",
+      "type": "single_choice",
+      "text": "You are under a cloud and feel cloud suck. What is the best response?",
+      "options": [
+        "Stay in the strongest lift until you are sure it is only temporary.",
+        "Leave the lift immediately toward the safest clear air; if appropriate and trained, use descent techniques such as big ears and speed bar to escape the suction.",
+        "Slow the glider down as much as possible to avoid entering cloud.",
+        "Spiral harder directly under the cloud without checking airspace or orientation."
       ],
       "correctAnswer": 1
     },
     {
+      "id": "q13",
+      "type": "multiple_choice",
+      "text": "Which signs can indicate a parachutal stall? (Mark all correct answers)",
+      "options": [
+        "Very little or no wind noise although the wing looks open.",
+        "High sink rate with a mushy, ineffective feeling on the controls.",
+        "The glider does not accelerate normally and feels stuck above you.",
+        "A strong diving turn with lots of speed and pressure in the brakes."
+      ],
+      "correctAnswer": [0, 1, 2]
+    },
+    {
       "id": "q14",
       "type": "single_choice",
-      "text": "You're flying along a slope toward the landing field, with the slope on your left. Another pilot is approaching at the same height. What do you do?",
+      "text": "How do you normally exit a parachutal stall?",
       "options": [
-        "I keep flying straight, since I have the right of way.",
-        "I swerve to the right, ensuring I pass between the other pilot and the slope, maintaining course toward the landing field.",
-        "I fly closer to the slope because the other pilot has the right of way.",
-        "I brake hard to lose altitude and try to fly under the other pilot."
+        "Increase the angle of attack by pulling more brake symmetrically.",
+        "Reduce the angle of attack according to training and glider manual, for example by releasing brakes fully and, if required, using the approved front-riser or speed-system technique.",
+        "Throw the rescue immediately in every case.",
+        "Turn as tightly as possible to force the wing to fly again."
       ],
       "correctAnswer": 1
     },
     {
       "id": "q15",
-      "type": "single_choice",
-      "text": "On your way to the landing field, you encounter three gliders circling together at the same altitude. What do you do?",
-      "options": [
-        "I fly around the group with sufficient safety margin on the right.",
-        "I try to fly under the group.",
-        "I fly around the group with sufficient safety margin on the left.",
-        "I turn 180° and fly away from the group."
-      ],
-      "correctAnswer": 0
-    },
-    {
-      "id": "q16",
-      "type": "single_choice",
-      "text": "Compared to a powered airplane, a paraglider has...",
-      "options": [
-        "basically no right of way.",
-        "basically right of way, unless the airplane is obviously in an emergency.",
-        "always right of way.",
-        "right of way only when the paraglider is obviously in an emergency."
-      ],
-      "correctAnswer": 1
-    },
-    {
-      "id": "q17",
-      "type": "single_choice",
-      "text": "During your first flight you suddenly stop feeling the wind in your face and it seems you are standing still. What could it be and how do you react?",
-      "options": [
-        "I'm probably flying downwind, so I feel no wind. I do nothing.",
-        "I'm probably flying too slowly and in a stall (parachutal stall). I counteract by turning quickly, doesn't matter which direction.",
-        "I'm probably flying too slowly and in a parachutal stall. I counteract by simultaneously pushing both A-risers (front risers) forward.",
-        "I'm probably flying too slowly and in a stall. I counteract by pulling both brakes 70-80% and then rapidly letting go."
-      ],
-      "correctAnswer": 2
-    },
-    {
-      "id": "q18",
       "type": "multiple_choice",
-      "text": "Where could your reserve parachute be located?",
+      "text": "When should you throw your rescue? (Mark all correct answers)",
       "options": [
-        "In the harness under the pilot on the right side",
-        "In the backpack compartment",
-        "In the front container",
-        "A reserve is not mandatory in training, it's just extra weight"
+        "When you are in an uncontrollable autorotation or spin.",
+        "After a collision or major structural failure.",
+        "When a collapse or cravat remains uncontrollable and altitude is running out.",
+        "After a small front collapse that is already reopening normally."
       ],
-      "correctAnswer": [0, 2]
-    },
-    {
-      "id": "q19",
-      "type": "multiple_choice",
-      "text": "In which case would you throw your reserve parachute?",
-      "options": [
-        "Collision with another aircraft or cable",
-        "To perform a Start-STOP (takeoff abort)",
-        "Uncontrolled situation like twist, autorotation",
-        "If my radio is not working",
-        "Equipment failure (e.g., carabiner breaks / all A lines break after a collapse)",
-        "When I see a cumulonimbus cloud above me"
-      ],
-      "correctAnswer": [0, 2, 4]
-    },
-    {
-      "id": "q20",
-      "type": "single_choice",
-      "text": "What is a landing pattern ('Landevolte')?",
-      "options": [
-        "A defined procedure for approaching a landing field, divided into phases: downwind, base leg, and final.",
-        "The method of approaching a landing with long S-turns.",
-        "This term does not exist in paragliding.",
-        "The method of losing altitude above the landing point with large circles."
-      ],
-      "correctAnswer": 0
-    },
-    {
-      "id": "q21",
-      "type": "matching",
-      "text": "What do the numbers represent on the image?",
-      "img_url": "Linksvolte.png",
-      "matchingPairs": [
-        {"left": "1", "right": "Descending area (Staging room)"},
-        {"left": "2", "right": "Downwind leg"},
-        {"left": "3", "right": "Base leg"},
-        {"left": "4", "right": "Final"},
-        {"left": "5", "right": "LUV side"},
-        {"left": "6", "right": "LEE side"}
-      ],
-      "correctAnswer": [
-        {"left": "1", "right": "Descending area (Staging room)"},
-        {"left": "2", "right": "Downwind leg"},
-        {"left": "3", "right": "Base leg"},
-        {"left": "4", "right": "Final"},
-        {"left": "5", "right": "LUV side"},
-        {"left": "6", "right": "LEE side"}
-      ]
-    },
-    {
-      "id": "q22",
-      "type": "single_choice",
-      "text": "What do you do if you are still too high during the final approach?",
-      "options": [
-        "I sit upright so my legs are ready for landing and fly another S-turn to lose excess height.",
-        "I sit upright and stabilize my flight to go straight, even if I overshoot.",
-        "I stay in the seat and brake hard to increase sink rate.",
-        "I sit upright; whether I fly another S-turn or straight over the landing area depends on the instructor's instructions."
-      ],
-      "correctAnswer": 0
-    },
-    {
-      "id": "q23",
-      "type": "matching",
-      "text": "What is LEE and LUV?",
-      "matchingPairs": [
-        {"left": "LEE side", "right": "This is the side sheltered from the wind, where air flows down and around an obstacle."},
-        {"left": "LUV side", "right": "This is the side of a hill, ridge, or obstacle facing into the wind; airflow here is smoother and more predictable."}
-      ],
-      "correctAnswer": [
-        {"left": "LEE side", "right": "This is the side sheltered from the wind, where air flows down and around an obstacle."},
-        {"left": "LUV side", "right": "This is the side of a hill, ridge, or obstacle facing into the wind; airflow here is smoother and more predictable."}
-      ]
-    },
-    {
-      "id": "q24",
-      "type": "true_false",
-      "text": "The lee side experiences turbulent, sinking, and unpredictable air, known as rotor or turbulence. On the lee side, the risk of sudden collapses, loss of lift, and loss of control is significantly higher. Flying here can be extremely dangerous, especially close to the ground or near obstacles.",
-      "correctAnswer": true
+      "correctAnswer": [0, 1, 2]
     },
     {
       "id": "disclaimer",
       "type": "text",
-      "text": "By signing below, I certify that\n• I have completed the required tasks on the training hill specified in Checklist (Ausbildungsstufe 1)\n\n• I discussed and understand the priority rules during landing approach (Art. 20, Art. 22 Ordinance on the Rules of the Air, VVR, SR 748.121.11)\n    - In principle, the landing site has to be approached with a left approach.\n    - The glider that is closer to the ground always has priority.\n    - The right of way rules for flying in free airspace also apply during the landing approach.\n\n• I discussed and understand the air traffic rules between aircraft (Art.15 Abs.3, Art.17, Art.19 Abs.3 VVR)\n    - Emergency landing aircraft\n    - Free balloons\n    - Gliders/hang gliders\n    - Motorized aircraft\n\n• I discussed and understand the right of way rules between gliders in free airspace (Art. 16 - 18 VVR)\n    - Crossing flight paths: right of way\n    - Flyby: Both swerve to the right\n    - Overtaking: The person being overtaken has priority throughout the manoeuvre\n\n• I discussed and understand the right of way rules between gliders next to a slope (Art. 16 Abs. 2, Art. 18 Abs. 3 VVR1)\n    - Flying over or under at a similar altitude is prohibited\n    - Flyby: The aircraft that has the slope to the right enjoys the right of way\n    - Overtaking is prohibited\n    - Turns against the slope are not permitted\n\n• I discussed and understand the rules of thermalling (Art. 19 VVR)\n    - The first to circle in a \"tube\" determines the direction of rotation.\n    - The hang glider circling in the thermals has priority over passing aircraft.\n\n• I have thoroughly discussed this test with my flight instructor, fully comprehend its contents, I understand how the rescue system operates and did the rescue pulling simulation\n\n• I am confident in my readiness for my first high altitude flight."
+      "text": "By signing below, I certify that\n• I have completed the required tasks specified in Checklist (Ausbildungsstufe 2)\n    - Briefing about emergency landings\n    - Fast direction changes\n    - Narrow turns\n    - Flying the safe speed range of the glider\n    - Side collapses and stabilization\n    - Front collapses and behavior\n    - Big ears\n    - Briefing about back-wind landing\n    - Slope landing\n\n• I discussed and understand the priority rules during landing approach (Art. 20, Art. 22 Ordinance on the Rules of the Air, VVR, SR 748.121.11)\n    - In principle, the landing site has to be approached with a left approach.\n    - The glider that is closer to the ground always has priority.\n    - The right-of-way rules in free airspace also apply during landing approach.\n\n• I discussed and understand the air traffic rules between aircraft (Art. 15 Abs. 3, Art. 17, Art. 19 Abs. 3 VVR)\n    - Emergency landing aircraft\n    - Free balloons\n    - Gliders / hang gliders\n    - Motorized aircraft\n\n• I discussed and understand the right-of-way rules between gliders in free airspace (Art. 16 - 18 VVR)\n    - Crossing flight paths: priority from the right\n    - Head-on encounter: both swerve to the right\n    - Overtaking: the pilot being overtaken has priority throughout the maneuver\n\n• I discussed and understand the right-of-way rules between gliders next to a slope (Art. 16 Abs. 2, Art. 18 Abs. 3 VVR1)\n    - Flying over or under another glider at a similar altitude is prohibited\n    - In a head-on encounter next to a slope, the aircraft with the slope on its right has priority\n    - Overtaking next to a slope is prohibited\n    - Turns against the slope are not permitted\n\n• I discussed and understand the rules of thermalling (Art. 19 VVR)\n    - The first pilot to circle in a thermal determines the turning direction.\n    - The glider already circling in the thermal has priority over passing aircraft.\n\n• I have thoroughly discussed this test with my flight instructor, I understand how the rescue system operates, and I completed a rescue-pull simulation\n\n• I know how to fly actively in moving and turbulent air and how to handle collapses\n\n• I am confident in my readiness for thermalling and dynamic soaring on my own."
     }
   ],
   "de": [
     {
       "id": "q1",
       "type": "matching",
-      "text": "Benenne die Teile des skizzierten Gleitschirmes.",
-      "img_url": "pgschem.png",
+      "text": "Ordne jede Luftfahrzeugkategorie der richtigen Vorrangregel gegenüber einem Gleitschirm zu.",
       "matchingPairs": [
-        {"left": "1", "right": "Untersegel"},
-        {"left": "2", "right": "Austrittskante"},
-        {"left": "3", "right": "Bremsleinen (Steuerleinen)"},
-        {"left": "4", "right": "Eintrittskante"},
-        {"left": "5", "right": "A-Leinen"},
-        {"left": "6", "right": "Obersegel"},
-        {"left": "7", "right": "C-Leinen"},
-        {"left": "8", "right": "B-Leinen"}
+        {"left": "Notlandendes Luftfahrzeug", "right": "Hat immer Vorrang; sofort ausweichen"},
+        {"left": "Freiballon", "right": "Hat Vorrang vor einem Gleitschirm"},
+        {"left": "Segelflugzeug / Hängegleiter", "right": "Gleiche Klasse wie ein Gleitschirm; Vorrang je nach Situation (siehe VFR)"},
+        {"left": "Motorisiertes Luftfahrzeug", "right": "Muss einem Gleitschirm grundsätzlich ausweichen, außer im Notfall"}
       ],
       "correctAnswer": [
-        {"left": "1", "right": "Untersegel"},
-        {"left": "2", "right": "Austrittskante"},
-        {"left": "3", "right": "Bremsleinen (Steuerleinen)"},
-        {"left": "4", "right": "Eintrittskante"},
-        {"left": "5", "right": "A-Leinen"},
-        {"left": "6", "right": "Obersegel"},
-        {"left": "7", "right": "C-Leinen"},
-        {"left": "8", "right": "B-Leinen"}
+        {"left": "Notlandendes Luftfahrzeug", "right": "Hat immer Vorrang; sofort ausweichen"},
+        {"left": "Freiballon", "right": "Hat Vorrang vor einem Gleitschirm"},
+        {"left": "Segelflugzeug / Hängegleiter", "right": "Gleiche Klasse wie ein Gleitschirm; Vorrang je nach Situation (siehe VFR)"},
+        {"left": "Motorisiertes Luftfahrzeug", "right": "Muss einem Gleitschirm grundsätzlich ausweichen, außer im Notfall"}
       ]
     },
     {
       "id": "q2",
       "type": "single_choice",
-      "text": "Wie nennt man den Check unmittelbar vor dem Start und was wird geprüft?",
+      "text": "Du drehst als Erster in einer neuen Thermik auf. Was gilt?",
       "options": [
-        "Start-Check",
-        "Vorbereitungscheck",
-        "Fünf-Punkte-Check",
-        "Bereitschaftskontrolle"
+        "Du darfst die Drehrichtung jederzeit wechseln, wenn der Kern besser scheint.",
+        "Du bestimmst die Drehrichtung, und spaeter eintreffende Piloten schliessen sich derselben Richtung an.",
+        "Der hoechste Pilot bestimmt immer die Drehrichtung.",
+        "Alle Piloten sollten abwechselnd links und rechts drehen, um Abstand zu halten."
       ],
-      "correctAnswer": 2
+      "correctAnswer": 1
     },
     {
       "id": "q3",
-      "type": "matching",
-      "text": "Ich prüfe:",
-      "matchingPairs": [
-        {"left": "Leinen", "right": "Punkt2"},
-        {"left": "Kalotte", "right": "Punkt3"},
-        {"left": "Umbgebung", "right": "Punkt5"},
-        {"left": "Notschirm", "right": "Punkt0"},
-        {"left": "Pilot", "right": "Punkt1"},
-        {"left": "Wind", "right": "Punkt4"}
+      "type": "multiple_choice",
+      "text": "Du naeherst dich einer Thermik, in der bereits andere Piloten kreisen. Welche Regeln sind richtig? (Alle richtigen Antworten markieren)",
+      "options": [
+        "Du steigst in derselben Drehrichtung ein wie die Piloten, die bereits in der Thermik kreisen.",
+        "Piloten, die bereits in der Thermik kreisen, haben Vorrang.",
+        "Du haeltst einen vorhersehbaren Abstand und vermeidest ploetzliche Aenderungen von Kreisgroesse oder Richtung.",
+        "Du darfst die Thermik in Gegenrichtung queren, wenn dort das Steigen staerker ist."
       ],
-      "correctAnswer": [
-        {"left": "Punkt1", "right": "Pilot"},
-        {"left": "Punkt2", "right": "Leinen"},
-        {"left": "Punkt3", "right": "Kalotte"},
-        {"left": "Punkt4", "right": "Wind"},
-        {"left": "Punkt5", "right": "Umbgebung"},
-        {"left": "Punkt0", "right": "Notschirm"}
-      ]
+      "correctAnswer": [0, 1, 2]
     },
     {
       "id": "q4",
       "type": "single_choice",
-      "text": "Welche Vorbereitungen unmittelbar vor dem Start sind die wichtigsten?",
+      "text": "Zwei Gleitschirme naehern sich im freien Luftraum auf aehnlicher Hoehe frontal. Was tun sie?",
       "options": [
-        "Mein Funkgerät ist eingeschaltet und gecheckt und der Flugraum ist frei.",
-        "Ich habe den Helm aufgesetzt und der Wind kommt von vorne.",
-        "Ich habe einen klaren Flugauftrag, den 5-Punkte-Check habe ich durchgeführt und mein Funkgerät ist eingeschaltet und gecheckt.",
-        "Mein Schuhwerk ist in Ordnung und mein Funkgerät ist eingeschaltet und gecheckt."
+        "Beide weichen nach links aus.",
+        "Beide weichen nach rechts aus.",
+        "Der hoehere Pilot fliegt geradeaus weiter und der tiefere weicht aus.",
+        "Der schnellere Pilot fliegt geradeaus weiter."
       ],
-      "correctAnswer": 2
+      "correctAnswer": 1
     },
     {
       "id": "q5",
       "type": "single_choice",
-      "text": "Der Starthelfer gibt Dir den Start frei. Du bist überzeugt, dass das alles nicht gut gehen kann, weil Dir Dein Gefühl sagt, dass Du heute nicht in der Lage bist, alles richtig zu machen. Wie reagierst Du?",
+      "text": "Zwei Gleitschirme kreuzen sich auf gleicher Hoehe, aber nicht frontal. Wer hat Vorrang?",
       "options": [
-        "Ich unterdrücke meine Gefühle, indem ich mir selbst zurede, doch nicht so feige zu sein. Ich nehme mir vor, einfach drauflos zu rennen und starte.",
-        "Ich informiere den Startleiter, dass heute nicht mein Tag ist und dass ich mich noch nicht reif für einen Höhenflug fühle.",
-        "Dieses Gefühl hat jeder vor dem ersten Höhenflug! Augen zu und durch!",
-        "Solche Gefühle gibt’s doch nicht!"
+        "Der Schirm rechts hat Vorrang; der andere Pilot muss ausweichen.",
+        "Der Schirm links hat Vorrang.",
+        "Der schnellere Schirm hat Vorrang.",
+        "Der tiefere Schirm hat in dieser Situation immer Vorrang."
       ],
-      "correctAnswer": 1
+      "correctAnswer": 0
     },
     {
       "id": "q6",
-      "type": "matching",
-      "text": "Ein Start besteht aus 3 Phasen. Ordne die Namen den Handlungen zu.",
-      "matchingPairs": [
-        {"left": "Aufziehen", "right": "Mit den A-Leinen zieht der Pilot die Kappe nach oben über den Kopf."},
-        {"left": "Kontrolle", "right": "Der Pilot stoppt die Kappe über dem Kopf, nimmt Korrekturen vor, kontrolliert die gesamte Kappe und die Leinen."},
-        {"left": "Beschleunigung", "right": "Der Pilot neigt sich nach vorne, läuft mit großen Schritten, erhöht die Geschwindigkeit und hält die Kappe bis zum Abheben über dem Kopf."}
+      "type": "multiple_choice",
+      "text": "Welche Regeln gelten beim Fliegen in Hangnaehe? (Alle richtigen Antworten markieren)",
+      "options": [
+        "Ueberholen ist verboten.",
+        "Das Luftfahrzeug mit dem Hang rechts hat Vorrang.",
+        "Ueber- oder Unterfliegen auf aehnlicher Hoehe ist verboten.",
+        "Wendungen gegen den Hang sind nicht erlaubt."
       ],
-      "correctAnswer": [
-        {"left": "Aufziehen", "right": "Mit den A-Leinen zieht der Pilot die Kappe nach oben über den Kopf."},
-        {"left": "Kontrolle", "right": "Der Pilot stoppt die Kappe über dem Kopf, nimmt Korrekturen vor, kontrolliert die gesamte Kappe und die Leinen."},
-        {"left": "Beschleunigung", "right": "Der Pilot neigt sich nach vorne, läuft mit großen Schritten, erhöht die Geschwindigkeit und hält die Kappe bis zum Abheben über dem Kopf."}
-      ]
+      "correctAnswer": [0, 1, 2, 3]
     },
     {
       "id": "q7",
-      "type": "multiple_choice",
-      "text": "In welchen beiden Phasen kann man einen Start-STOP machen?",
+      "type": "single_choice",
+      "text": "Du bekommst in turbulenter Luft einen einseitigen Einklapper. Was ist die beste unmittelbare Reaktion?",
       "options": [
-        "Aufziehen",
-        "Kontrolle",
-        "Beschleunigung"
+        "Nichts tun und mehrere Sekunden warten, ohne die Richtung zu kontrollieren.",
+        "Die Drehung mit der Außenbremse auf der offenen Seite stoppen, Kurs halten und die eingeklappte Seite nur bei Bedarf pumpen.",
+        "Beide Bremsen tief durchziehen, um den Schirm komplett zu stoppen.",
+        "Sofort als erste Maßnahme den Rettungsschirm werfen."
       ],
-      "correctAnswer": [0, 1]
+      "correctAnswer": 1
     },
     {
       "id": "q8",
       "type": "single_choice",
-      "text": "Wie macht man einen Start-Stop in der Kontrollphase?",
+      "text": "Du bekommst einen Frontklapper. Was ist die richtige Reaktion?",
       "options": [
-        "Man zieht beide Bremsen so schnell wie möglich ganz durch.",
-        "Man zieht eine Bremse komplett ganz nach unten, während die andere Hand ganz oben bleibt und man führt den Schirm „zum Crash“ auf die gezogene Seite.",
-        "Beide Hände sind komplett oben.",
-        "Man wirft sofort den Rettungsschirm."
+        "Hände hoch und den Schirm wieder öffnen lassen.",
+        "Beide Bremsen vollständig durchziehen, bis der Schirm wieder offen ist.",
+        "Sofort 180 Grad von der Klapperseite wegdrehen.",
+        "Das gesamte Gewicht nach hinten verlagern und die Bremsen gar nicht berühren."
       ],
-      "correctAnswer": 1
+      "correctAnswer": 0
     },
     {
       "id": "q9",
       "type": "single_choice",
-      "text": "Was unternimmst Du, wenn Du Deinen Fluglehrer am Funk nicht verstehen kannst?",
+      "text": "Nach einem massiven Einklapper beobachtest du einen Verhänger. Wie reagierst du?",
       "options": [
-        "Ich mache möglichst schnell eine Notlandung.",
-        "Ich fliege ruhig in den Abbauraum, welcher mir vom Fluglehrer erklärt wurde, und warte auf die vereinbarten Zeichen (Pfeil, Kellen, etc.).",
-        "Ich fliege zur Leeseite des Landeplatzes und versuche eigenständig zu landen.",
-        "Ein Funkgerät ist für den ersten Höhenflug absolut nicht notwendig!"
+        "Zuerst die Richtung stabilisieren (Rotation mit der Außenbremse stoppen, Flugrichtung stabilisieren), versuchen, den Verhänger mit der passenden Technik zu lösen, falls trainiert, und den Rettungsschirm werfen, wenn die Situation unkontrollierbar wird.",
+        "Den Verhänger ignorieren, weil er sich immer von selbst löst.",
+        "Beide Bremsen tief durchziehen und unten halten, bis der Knoten verschwindet.",
+        "Voll beschleunigen und geradeaus durch das Problem fliegen."
       ],
-      "correctAnswer": 1
+      "correctAnswer": 0
     },
     {
       "id": "q10",
-      "type": "single_choice",
-      "text": "Während Deines ersten Höhenfluges klappt ein Teil der rechten Hälfte Deines Schirmes ein. Was unternimmst Du?",
-      "options": [
-        "Ich pumpe den Schirm durch mehrmaliges Betätigen der rechten Bremse sofort wieder auf.",
-        "Ich stabilisiere den Schirm durch vorsichtiges Gegenbremsen mit der linken Bremse und verlagere mein Gewicht nach links. Wenn notwendig, betätige ich die rechte Bremse zum Aufpumpen der rechten Schirmhälfte.",
-        "Ich verlagere mein Gewicht nach rechts und betätige die rechte Bremse ein bis zwei Mal, um den Schirm aufzupumpen.",
-        "Ich betätige beide Bremsen gleichzeitig ein bis zwei Mal ca. 80%. Dadurch wird der Staudruck im Schirm erhöht und er öffnet sich wieder."
+      "type": "matching",
+      "text": "Ordne das Schirmverhalten am Thermikrand der besten unmittelbaren Reaktion zu.",
+      "matchingPairs": [
+        {"left": "Der Schirm schießt beim Eintritt in starkes Steigen nach vorne", "right": "Das Vorschiessen mit rechtzeitigem, moderatem Bremseinsatz stoppen, sobald der Schirm über dem Kopf ist, langsam mit der Hand wieder auf die normale 10-20% Bremsposition gehen"},
+        {"left": "Eine Seite fällt am Thermikrand ab", "right": "Mit Außenbremse stabilisieren, Einklapper wieder öffnen"},
+        {"left": "Du gerätst beim Verlassen der Thermik plötzlich in Sinken", "right": "Aktiv bleiben, sichere Fluggeschwindigkeit halten und nicht überbremsen"},
+        {"left": "Eine Seite steigt im besseren Kern deutlich an", "right": "Mit einer sauberen Kurve das Steigen zentrieren"}
       ],
-      "correctAnswer": 1
+      "correctAnswer": [
+        {"left": "Der Schirm schießt beim Eintritt in starkes Steigen nach vorne", "right": "Das Vorschiessen mit rechtzeitigem, moderatem Bremseinsatz stoppen, sobald der Schirm über dem Kopf ist, langsam mit der Hand wieder auf die normale 10-20% Bremsposition gehen"},
+        {"left": "Eine Seite fällt am Thermikrand ab", "right": "Mit Außenbremse stabilisieren, Einklapper wieder öffnen"},
+        {"left": "Du gerätst beim Verlassen der Thermik plötzlich in Sinken", "right": "Aktiv bleiben, sichere Fluggeschwindigkeit halten und nicht überbremsen"},
+        {"left": "Eine Seite steigt im besseren Kern deutlich an", "right": "Mit einer sauberen Kurve das Steigen zentrieren"}
+      ]
     },
     {
       "id": "q11",
       "type": "single_choice",
-      "text": "Kann ein Gleitschirm auch ohne Bremsen gesteuert werden?",
+      "text": "Wie solltest du nahe am Hang thermikfliegen?",
       "options": [
-        "Nein",
-        "Ja, durch vorsichtiges Ziehen an der linken oder rechten hintersten Traggurte. Dadurch wird die Austrittskante auf einer Seite heruntergezogen und der Schirm fliegt eine Kurve nach dieser Seite.",
-        "Ja, durch vorsichtiges Ziehen an der linken oder rechten vordersten Traggurte.",
-        "Ja, wenn der Schirm mit einer Notsteuer-Einrichtung ausgestattet ist."
+        "So nah wie möglich am Hang fliegen, um die Steigrate zu maximieren.",
+        "Immer zum Hang drehen, weil das die Thermik enger hält.",
+        "Großzügigen Abstand zum Gelände halten, S-Kurven im Aufwindbereich fliegen (immer vom Hang wegdrehen, Fluchtweg vom Hang weg lassen und nie den Schirm in den Hang driften lassen).",
+        "In jeder Kurve Ohren anlegen, damit du nicht zu hoch kommst."
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": "q12",
+      "type": "single_choice",
+      "text": "Du bist unter einer Wolke und spuerts deutliches Einsaugen. Was ist die beste Reaktion?",
+      "options": [
+        "Du bleibst im staerksten Steigen, bis du sicher bist, dass es nur kurzzeitig ist.",
+        "Du verlaesst das Steigen sofort in die sicherste klare Luft; wenn passend und trainiert, nutzt du Sinkhilfen wie Ohren anlegen und Beschleuniger, um dem Einsaugen zu entkommen.",
+        "Du fliegst den Schirm so langsam wie moeglich, damit du nicht in die Wolke kommst.",
+        "Du spiralisierst direkt unter der Wolke ohne Luftraum- oder Lagekontrolle."
       ],
       "correctAnswer": 1
     },
     {
+      "id": "q13",
+      "type": "multiple_choice",
+      "text": "Welche Anzeichen koennen auf einen Sackflug hinweisen? (Alle richtigen Antworten markieren)",
+      "options": [
+        "Sehr wenig oder kein Fahrtwind, obwohl der Schirm offen aussieht.",
+        "Hohe Sinkrate bei schwammigem, wenig wirksamem Steuergefuehl.",
+        "Der Schirm beschleunigt nicht normal und fuehlt sich an, als ob er ueber dir festhaengt.",
+        "Ein starker Sturzflug mit viel Geschwindigkeit und hohem Bremsdruck."
+      ],
+      "correctAnswer": [0, 1, 2]
+    },
+    {
       "id": "q14",
       "type": "single_choice",
-      "text": "Dein Flugweg zum Landeplatz führt entlang einem Hang, welchen Du im Flug zur linken Seite hast. Ein anderer Gleitschirm kommt Dir auf ungefähr gleicher Höhe entgegen. Was tust Du?",
+      "text": "Wie leitest du normalerweise die Ausleitung aus einem Sackflug ein?",
       "options": [
-        "Ich fliege ruhig weiter, weil ich vortrittsberechtigt bin.",
-        "Ich weiche nach rechts aus, sodass der Entgegenkommende genug Platz zwischen sich und dem Hang hat. Ich bleibe auf Kurs Richtung Landeplatz.",
-        "Ich fliege näher an den Hang, weil der Entgegenkommende vortrittsberechtigt ist.",
-        "Ich bremse stark, damit ich schneller an Höhe verliere und den anderen unterfliegen kann."
+        "Du erhoehst den Anstellwinkel weiter, indem du symmetrisch mehr bremst.",
+        "Du verringerst den Anstellwinkel gemaess Ausbildung und Schirmhandbuch, zum Beispiel durch vollstaendiges Loesen der Bremsen und - falls erforderlich - mit der freigegebenen Vordergurt- oder Beschleunigertechnik.",
+        "Du wirfst in jedem Fall sofort den Rettungsschirm.",
+        "Du drehst so eng wie moeglich, um den Schirm wieder zum Fliegen zu zwingen."
       ],
       "correctAnswer": 1
     },
     {
       "id": "q15",
-      "type": "single_choice",
-      "text": "Auf dem Flug zum Landeplatz begegnest Du auf ungefähr gleicher Höhe drei Gleitschirmen, welche alle in derselben Richtung Vollkreise fliegen. Was unternimmst Du?",
-      "options": [
-        "Ich umfliege die Gruppe mit genügend Sicherheitsabstand auf der rechten Seite.",
-        "Ich versuche, unter der Gruppe durchzufliegen.",
-        "Ich umfliege die Gruppe mit genügend Sicherheitsabstand auf der linken Seite.",
-        "Ich mache eine 180°-Wende und fliege von der Gruppe weg."
-      ],
-      "correctAnswer": 0
-    },
-    {
-      "id": "q16",
-      "type": "single_choice",
-      "text": "Ein Gleitschirm hat gegenüber einem motorisierten Flächenflugzeug ...",
-      "options": [
-        "grundsätzlich keinen Vortritt.",
-        "grundsätzlich den Vortritt, ausgenommen das Flugzeug befindet sich offensichtlich in einer Notsituation.",
-        "immer den Vortritt.",
-        "nur dann Vortritt, wenn sich der GS offensichtlich in einer Notsituation befindet."
-      ],
-      "correctAnswer": 1
-    },
-    {
-      "id": "q17",
-      "type": "single_choice",
-      "text": "Während Deines ersten Fluges verspürst Du plötzlich keinen Fahrtwind mehr im Gesicht und hast das Gefühl, Dein Schirm steht still. Was kann das sein und wie reagierst Du?",
-      "options": [
-        "Ich fliege wahrscheinlich mit Rückenwind und verspüre keinen Fahrtwind. Ich unternehme nichts.",
-        "Wahrscheinlich bin ich zu langsam geflogen und befinde mich im sogenannten Sackflug. Als Gegenmassnahme fliege ich eine zügige Kurve, egal nach welcher Seite.",
-        "Wahrscheinlich bin ich zu langsam geflogen und befinde mich im sogenannten Sackflug. Als Gegenmassnahme drücke ich gleichzeitig beide A-Gurte nach vorne.",
-        "Wahrscheinlich bin ich zu langsam geflogen und befinde mich im sogenannten Sackflug. Ich ziehe beide Bremsen ca. 70-80% und lasse sie schnell wieder hoch."
-      ],
-      "correctAnswer": 2
-    },
-    {
-      "id": "q18",
       "type": "multiple_choice",
-      "text": "Wo befindet sich Dein Notschirm?",
+      "text": "Wann solltest du den Rettungsschirm werfen? (Alle richtigen Antworten markieren)",
       "options": [
-        "Er kann im Gurtzeug unter dem Piloten auf der rechten Seite sein.",
-        "Er kann im Rucksack-Fach sein.",
-        "Er kann im Frontcontainer sein.",
-        "Ein Rettungsgerät ist während der Ausbildung nicht vorgeschrieben, es ist nur zusätzliches Gewicht."
+        "Wenn du dich in einer unkontrollierbaren Autorotation oder Trudelbewegung befindest.",
+        "Nach einer Kollision oder bei grossem Strukturversagen.",
+        "Wenn ein Einklapper oder Verhaenger unkontrollierbar bleibt und die Hoehe knapp wird.",
+        "Nach einem kleinen Frontklapper, der sich bereits normal wieder oeffnet."
       ],
-      "correctAnswer": [0, 2]
-    },
-    {
-      "id": "q19",
-      "type": "multiple_choice",
-      "text": "In welchem Fall würdest Du den Notschirm werfen?",
-      "options": [
-        "Kollision mit einem anderen Luftfahrzeug oder Seil",
-        "Um einen Start-STOP (Startabbruch) zu machen",
-        "Unkontrollierte Situation wie Verdreher, Autorotation",
-        "Wenn mein Funk nicht funktioniert",
-        "Materialfehler (z.B. Karabiner bricht / alle A-Leinen reißen nach einem Einklapper)",
-        "Wenn ich eine Gewitterwolke (Cumulonimbus) über mir sehe"
-      ],
-      "correctAnswer": [0, 2, 4]
-    },
-    {
-      "id": "q20",
-      "type": "single_choice",
-      "text": "Was ist eine Landevolte?",
-      "options": [
-        "Ein definiertes Verfahren, wie ein Landeplatz anzufliegen ist; die Landevolte kann in die Phasen Gegenanflug, Queranflug und Endanflug unterteilt werden.",
-        "Die Methode, mit langen S-Kurven direkt zur Landung anzusetzen.",
-        "Dieser Begriff existiert nicht in der Gleitschirmfliegerei.",
-        "Die Methode, mit großen Vollkreisen über dem Landepunkt die Höhe abzubauen."
-      ],
-      "correctAnswer": 0
-    },
-    {
-      "id": "q21",
-      "type": "matching",
-      "text": "Was bedeuten die Zahlen auf der Grafik?",
-      "img_url": "Linksvolte.png",
-      "matchingPairs": [
-        {"left": "1", "right": "Abbauraum"},
-        {"left": "2", "right": "Gegenanflug"},
-        {"left": "3", "right": "Queranflug"},
-        {"left": "4", "right": "Endanflug"},
-        {"left": "5", "right": "LUV-Seite"},
-        {"left": "6", "right": "LEE-Seite"}
-      ],
-      "correctAnswer": [
-        {"left": "1", "right": "Abbauraum"},
-        {"left": "2", "right": "Gegenanflug"},
-        {"left": "3", "right": "Queranflug"},
-        {"left": "4", "right": "Endanflug"},
-        {"left": "5", "right": "LUV-Seite"},
-        {"left": "6", "right": "LEE-Seite"}
-      ]
-    },
-    {
-      "id": "q22",
-      "type": "single_choice",
-      "text": "Was machst Du, wenn Du im Endanflug feststellst, dass Du noch zu hoch bist?",
-      "options": [
-        "Ich richte mich im Sitz auf, so dass meine Beine zur Landung bereit sind, und fliege noch eine S-Kurve, um die überschüssige Höhe abzubauen.",
-        "Ich richte mich im Sitz auf, stabilisiere den Flug und nehme in Kauf, dass ich zu lang bin.",
-        "Ich bleibe im Sitz und bremse stark, damit ich schneller sinke.",
-        "Ich richte mich im Sitz auf. Ob ich noch ein S fliege oder geradeaus über den Landepunkt hinaus fliege, hängt von den Anweisungen meines Fluglehrers ab."
-      ],
-      "correctAnswer": 0
-    },
-    {
-      "id": "q23",
-      "type": "matching",
-      "text": "Was ist Lee und Luv?",
-      "matchingPairs": [
-        {"left": "LEE-Seite", "right": "Das ist die windabgewandte Seite (im Windschatten), wo die Luft absteigt und um ein Hindernis herumströmt."},
-        {"left": "LUV-Seite", "right": "Das ist die dem Wind zugewandte Seite eines Hügels, Kamms oder Hindernisses; dort ist die Strömung meist ruhiger und vorhersagbarer."}
-      ],
-      "correctAnswer": [
-        {"left": "LEE-Seite", "right": "Das ist die windabgewandte Seite (im Windschatten), wo die Luft absteigt und um ein Hindernis herumströmt."},
-        {"left": "LUV-Seite", "right": "Das ist die dem Wind zugewandte Seite eines Hügels, Kamms oder Hindernisses; dort ist die Strömung meist ruhiger und vorhersagbarer."}
-      ]
-    },
-    {
-      "id": "q24",
-      "type": "true_false",
-      "text": "Die LEE-Seite ist geprägt von turbulenter, absinkender, unvorhersehbarer Luft (Rotor / Turbulenz). Hier ist die Gefahr von plötzlichen Einklappern, Auftriebsverlust und Kontrollverlust deutlich erhöht. Das Fliegen dort kann insbesondere bodennah oder in Hindernisnähe extrem gefährlich sein.",
-      "correctAnswer": true
+      "correctAnswer": [0, 1, 2]
     },
     {
       "id": "disclaimer",
       "type": "text",
-      "text": "Mit meiner Unterschrift bestätige ich, dass\n• ich die auf dem Übungshang erforderlichen Aufgaben laut Checkliste (Ausbildungsstufe 1) erfüllt habe\n\n• ich die Vorrangregeln beim Landeanflug (Art. 20, Art. 22 Verordnung über die Verkehrsregeln für Luftfahrzeuge, VVR, SR 748.121.11) besprochen habe und verstehe:\n    - Grundsätzlich ist der Landeplatz mit einer Linksvolte anzufliegen.\n    - Der dem Boden nähere Gleitschirm/Pilot hat immer Vorrang.\n    - Die Vortrittsregeln für den freien Luftraum gelten auch im Landeanflug.\n\n• ich die Verkehrsregeln zwischen Luftfahrzeugen (Art.15 Abs.3, Art.17, Art.19 Abs.3 VVR) besprochen habe und verstehe:\n    - Notlandende Luftfahrzeuge\n    - Freiballone\n    - Segelflugzeuge/Hängegleiter\n    - Motorisierte Luftfahrzeuge\n\n• ich die Vortrittsregeln zwischen Gleitschirmen im freien Luftraum (Art. 16 - 18 VVR) besprochen habe und verstehe:\n    - Kreuzen der Flugwege: Rechts hat Vortritt.\n    - Gegenverkehr: Beide weichen nach rechts aus.\n    - Überholen: Der Überholte hat während des gesamten Manövers immer Vorrang.\n\n• ich die Vortrittsregeln zwischen Gleitschirmen am Hang (Art. 16 Abs. 2, Art. 18 Abs. 3 VVR1) besprochen habe und verstehe:\n    - Über- oder Unterfliegen in gleicher Höhe ist verboten\n    - Im Gegenflug am Hang hat derjenige Vorrang, der den Hang rechts hat\n    - Überholen am Hang ist verboten\n    - Wendungen gegen den Hang sind nicht erlaubt\n\n• ich die Thermikregeln (Art. 19 VVR) besprochen habe und verstehe:\n    - Der Erste, der im Aufwind aufdreht, bestimmt die Drehrichtung.\n    - Der in der Thermik kreisende Gleitschirm hat Vorrang gegenüber durchfliegenden Luftfahrzeugen.\n\n• ich diesen Test ausführlich mit meinem Fluglehrer besprochen habe, dessen Inhalt vollständig verstehe, das Rettungssystem verstanden und das Auslöseszenario simuliert habe\n\n• ich mich für meinen ersten Höhenflug bereit fühle."
+      "text": "Mit meiner Unterschrift bestaetige ich, dass\n• ich die in der Checkliste (Ausbildungsstufe 2) geforderten Aufgaben absolviert habe\n    - Briefing zu Notlandungen\n    - Schnelle Richtungswechsel\n    - Enge Kreise\n    - Erfliegen des sicheren Geschwindigkeitsbereichs des Schirms\n    - Einseitige Einklapper und Stabilisierung\n    - Frontklapper und Verhalten\n    - Ohren anlegen\n    - Briefing zur Rueckenwindlandung\n    - Hanglandung\n\n• ich die Vorrangregeln im Landeanflug (Art. 20, Art. 22 VVR, SR 748.121.11) besprochen habe und verstehe\n    - Grundsaetzlich ist der Landeplatz mit einer Linksvolte anzufliegen.\n    - Der bodennaehere Gleitschirm hat immer Vorrang.\n    - Die Vortrittsregeln im freien Luftraum gelten auch im Landeanflug.\n\n• ich die Verkehrsregeln zwischen Luftfahrzeugen (Art. 15 Abs. 3, Art. 17, Art. 19 Abs. 3 VVR) besprochen habe und verstehe\n    - Notlandende Luftfahrzeuge\n    - Freiballone\n    - Segelflugzeuge / Hangegleiter\n    - Motorisierte Luftfahrzeuge\n\n• ich die Vortrittsregeln zwischen Gleitschirmen im freien Luftraum (Art. 16 - 18 VVR) besprochen habe und verstehe\n    - Kreuzende Flugwege: Vorrang von rechts\n    - Begegnung im Gegenverkehr: beide weichen nach rechts aus\n    - Ueberholen: Der Ueberholte hat waehrend des gesamten Manoevers Vorrang\n\n• ich die Vortrittsregeln zwischen Gleitschirmen in Hangnaehe (Art. 16 Abs. 2, Art. 18 Abs. 3 VVR1) besprochen habe und verstehe\n    - Ueber- oder Unterfliegen auf aehnlicher Hoehe ist verboten\n    - Bei einer Begegnung in Hangnaehe hat das Luftfahrzeug mit dem Hang rechts Vorrang\n    - Ueberholen in Hangnaehe ist verboten\n    - Wendungen gegen den Hang sind nicht erlaubt\n\n• ich die Regeln des Thermikfliegens (Art. 19 VVR) besprochen habe und verstehe\n    - Der erste Pilot in der Thermik bestimmt die Drehrichtung.\n    - Der bereits in der Thermik kreisende Schirm hat Vorrang gegenueber durchfliegenden Luftfahrzeugen.\n\n• ich diesen Test ausfuehrlich mit meinem Fluglehrer besprochen habe, die Funktionsweise des Rettungssystems verstehe und eine Rettungsausloesung simuliert habe\n\n• ich weiss, wie ich in bewegter und turbulenter Luft aktiv fliege und Einklapper behandle\n\n• ich mich fuer Thermik- und Dynamikfliegen in eigener Verantwortung bereit fuehle."
+    }
+  ],
+  "it": [
+    {
+      "id": "q1",
+      "type": "matching",
+      "text": "Abbina ogni categoria di aeromobile alla corretta regola di precedenza rispetto a un parapendio.",
+      "matchingPairs": [
+        {"left": "Aeromobile in atterraggio di emergenza", "right": "Ha sempre la precedenza; liberare subito la zona"},
+        {"left": "Pallone libero", "right": "Ha la precedenza su un parapendio"},
+        {"left": "Aliante / deltaplano", "right": "Stessa classe del parapendio; precedenza a seconda della situazione (vedi VFR)"},
+        {"left": "Aeromobile a motore", "right": "Normalmente deve cedere il passo a un parapendio, salvo emergenza"}
+      ],
+      "correctAnswer": [
+        {"left": "Aeromobile in atterraggio di emergenza", "right": "Ha sempre la precedenza; liberare subito la zona"},
+        {"left": "Pallone libero", "right": "Ha la precedenza su un parapendio"},
+        {"left": "Aliante / deltaplano", "right": "Stessa classe del parapendio; precedenza a seconda della situazione (vedi VFR)"},
+        {"left": "Aeromobile a motore", "right": "Normalmente deve cedere il passo a un parapendio, salvo emergenza"}
+      ]
+    },
+    {
+      "id": "q2",
+      "type": "single_choice",
+      "text": "Sei il primo pilota a iniziare a girare in una nuova termica. Cosa vale?",
+      "options": [
+        "Puoi cambiare direzione ogni volta che pensi di trovare un nucleo migliore.",
+        "Determini tu il senso di rotazione e i piloti che arrivano dopo devono inserirsi nello stesso senso.",
+        "Decide sempre il pilota piu alto.",
+        "I piloti dovrebbero alternare destra e sinistra per restare separati."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q3",
+      "type": "multiple_choice",
+      "text": "Ti avvicini a una termica dove altri piloti stanno gia girando. Quali regole sono corrette? (Segna tutte le risposte corrette)",
+      "options": [
+        "Ti inserisci nello stesso senso di rotazione dei piloti gia presenti nella termica.",
+        "I piloti che stanno gia girando nella termica hanno la precedenza.",
+        "Mantieni una spaziatura prevedibile ed eviti cambi improvvisi di raggio o direzione.",
+        "Puoi attraversare la termica in senso opposto se il nucleo e piu forte."
+      ],
+      "correctAnswer": [0, 1, 2]
+    },
+    {
+      "id": "q4",
+      "type": "single_choice",
+      "text": "Due parapendii si avvicinano frontalmente a quota simile in aria libera. Cosa fanno?",
+      "options": [
+        "Entrambi virano a sinistra.",
+        "Entrambi virano a destra.",
+        "Il pilota piu alto continua dritto e quello piu basso vira.",
+        "Continua dritto il pilota piu veloce."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q5",
+      "type": "single_choice",
+      "text": "Due parapendii convergono alla stessa quota, ma non frontalmente. Chi ha la precedenza?",
+      "options": [
+        "Il parapendio alla destra ha la precedenza; l'altro deve cedere.",
+        "Ha la precedenza il parapendio alla sinistra.",
+        "Ha la precedenza il parapendio piu veloce.",
+        "In questa situazione ha sempre la precedenza il parapendio piu basso."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q6",
+      "type": "multiple_choice",
+      "text": "Quali regole valgono volando vicino a un pendio? (Segna tutte le risposte corrette)",
+      "options": [
+        "Il sorpasso e vietato.",
+        "L'aeromobile che ha il pendio alla sua destra ha la precedenza.",
+        "E vietato passare sopra o sotto un altro parapendio a quota simile.",
+        "Le virate verso il pendio non sono consentite."
+      ],
+      "correctAnswer": [0, 1, 2, 3]
+    },
+    {
+      "id": "q7",
+      "type": "single_choice",
+      "text": "Subisci una chiusura laterale in aria turbolenta. Qual è la migliore reazione immediata?",
+      "options": [
+        "Non fare nulla e attendere alcuni secondi senza controllare la direzione.",
+        "Fermare la rotazione con il freno esterno sul lato aperto, mantenere la direzione e pompare il lato chiuso solo se necessario.",
+        "Tirare profondamente entrambi i freni per fermare completamente la vela.",
+        "Lanciare immediatamente la riserva come prima azione."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q8",
+      "type": "single_choice",
+      "text": "Subisci una chiusura frontale. Qual è la reazione corretta?",
+      "options": [
+        "Mani in alto e lasciare che la vela si riapra.",
+        "Tirare completamente entrambi i freni finché la vela non si riapre.",
+        "Virare immediatamente di 180 gradi lontano dalla chiusura.",
+        "Spostare tutto il peso all'indietro e non toccare affatto i freni."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q9",
+      "type": "single_choice",
+      "text": "Dopo una chiusura massiccia osservi una cravatta. Come reagisci?",
+      "options": [
+        "Stabilizzare prima la direzione (fermare la rotazione con il freno esterno, stabilizzare la direzione di volo), provare a liberare la cravatta con la tecnica appropriata se addestrato, e lanciare la riserva se la situazione diventa incontrollabile.",
+        "Ignorare la cravatta perché si libererà sempre da sola.",
+        "Tirare a fondo entrambi i freni e tenerli giù finché il nodo non sparisce.",
+        "Accelerare completamente e attraversare il problema in linea retta."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q10",
+      "type": "matching",
+      "text": "Abbina il comportamento della vela al bordo della termica con la migliore reazione immediata.",
+      "matchingPairs": [
+        {"left": "La vela abbatte in avanti entrando in una forte salita", "right": "Fermare l'abbattuta con un comando moderato e tempestivo; una volta che la vela è sopra la testa, rilasciare lentamente fino alla posizione normale dei freni (10-20%)"},
+        {"left": "Un lato cade al bordo della termica", "right": "Stabilizzare con il freno esterno, riaprire la chiusura"},
+        {"left": "Uscendo dalla termica entri improvvisamente in forte discesa", "right": "Rimanere attivi, mantenere una velocità di volo sicura ed evitare di frenare troppo"},
+        {"left": "Un lato sale fortemente nel nucleo migliore", "right": "Coordinare una virata fluida per centrare la salita"}
+      ],
+      "correctAnswer": [
+        {"left": "La vela abbatte in avanti entrando in una forte salita", "right": "Fermare l'abbattuta con un comando moderato e tempestivo; una volta che la vela è sopra la testa, rilasciare lentamente fino alla posizione normale dei freni (10-20%)"},
+        {"left": "Un lato cade al bordo della termica", "right": "Stabilizzare con il freno esterno, riaprire la chiusura"},
+        {"left": "Uscendo dalla termica entri improvvisamente in forte discesa", "right": "Rimanere attivi, mantenere una velocità di volo sicura ed evitare di frenare troppo"},
+        {"left": "Un lato sale fortemente nel nucleo migliore", "right": "Coordinare una virata fluida per centrare la salita"}
+      ]
+    },
+    {
+      "id": "q11",
+      "type": "single_choice",
+      "text": "Come dovresti veleggiare in termica vicino al pendio?",
+      "options": [
+        "Volare il più vicino possibile al pendio per massimizzare la salita.",
+        "Virare sempre verso il pendio perché così la termica resta più stretta.",
+        "Mantenere un ampio margine dal terreno, volare a S nella zona di salita (sempre virare lontano dal pendio, lasciare una via di fuga lontano dal pendio e non permettere mai alla vela di derivare contro il rilievo).",
+        "Fare le orecchie in ogni virata per non salire troppo."
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": "q12",
+      "type": "single_choice",
+      "text": "Sei sotto una nuvola e senti un forte risucchio verso l'alto. Qual e la risposta migliore?",
+      "options": [
+        "Rimani nella salita piu forte finche non sei sicuro che sia solo temporanea.",
+        "Esci immediatamente dalla salita verso l'aria libera piu sicura; se appropriato e se addestrato, usa tecniche di discesa come orecchie e acceleratore per sfuggire al risucchio.",
+        "Rallenti il piu possibile la vela per evitare di entrare in nube.",
+        "Fai una spirale direttamente sotto la nube senza controllare spazio aereo o orientamento."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q13",
+      "type": "multiple_choice",
+      "text": "Quali segnali possono indicare uno stallo paracadutale? (Segna tutte le risposte corrette)",
+      "options": [
+        "Poco o nessun rumore del vento, anche se la vela sembra aperta.",
+        "Forte tasso di caduta con comandi molli e poco efficaci.",
+        "La vela non accelera normalmente e sembra sospesa sopra di te.",
+        "Una forte picchiata con molta velocita e alta pressione ai freni."
+      ],
+      "correctAnswer": [0, 1, 2]
+    },
+    {
+      "id": "q14",
+      "type": "single_choice",
+      "text": "Come si esce normalmente da uno stallo paracadutale?",
+      "options": [
+        "Aumenti ancora l'angolo d'attacco frenando di piu in modo simmetrico.",
+        "Riduci l'angolo d'attacco secondo addestramento e manuale della vela, ad esempio rilasciando completamente i freni e, se necessario, usando la tecnica approvata con elevatori anteriori o acceleratore.",
+        "Lanci in ogni caso immediatamente la riserva.",
+        "Viri il piu stretto possibile per costringere la vela a volare di nuovo."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q15",
+      "type": "multiple_choice",
+      "text": "Quando dovresti lanciare la riserva? (Segna tutte le risposte corrette)",
+      "options": [
+        "Quando sei in autorotazione o vite incontrollabile.",
+        "Dopo una collisione o in caso di grave cedimento strutturale.",
+        "Quando una chiusura o una cravatta resta incontrollabile e l'altitudine sta finendo.",
+        "Dopo una piccola chiusura frontale che si sta gia riaprendo normalmente."
+      ],
+      "correctAnswer": [0, 1, 2]
+    },
+    {
+      "id": "disclaimer",
+      "type": "text",
+      "text": "Con la mia firma certifico che\n• ho completato i compiti richiesti nella Checklist (Ausbildungsstufe 2)\n    - Briefing sugli atterraggi di emergenza\n    - Rapidi cambi di direzione\n    - Virate strette\n    - Volo nel campo di velocita sicuro della vela\n    - Chiusure laterali e stabilizzazione\n    - Chiusure frontali e comportamento\n    - Orecchie\n    - Briefing sull'atterraggio con vento in coda\n    - Atterraggio in pendio\n\n• ho discusso e compreso le regole di priorita durante l'avvicinamento all'atterraggio (Art. 20, Art. 22 VVR, SR 748.121.11)\n    - In linea di principio, il campo di atterraggio deve essere affrontato con circuito sinistro.\n    - Il parapendio piu vicino al suolo ha sempre la precedenza.\n    - Le regole di precedenza in aria libera valgono anche durante l'avvicinamento all'atterraggio.\n\n• ho discusso e compreso le regole del traffico tra aeromobili (Art. 15 cpv. 3, Art. 17, Art. 19 cpv. 3 VVR)\n    - Aeromobili in atterraggio di emergenza\n    - Palloni liberi\n    - Alianti / deltaplani\n    - Aeromobili a motore\n\n• ho discusso e compreso le regole di precedenza tra parapendii in aria libera (Art. 16 - 18 VVR)\n    - Rotte convergenti: precedenza da destra\n    - Incontro frontale: entrambi deviano a destra\n    - Sorpasso: il pilota sorpassato ha la precedenza per tutta la manovra\n\n• ho discusso e compreso le regole di precedenza tra parapendii vicino a un pendio (Art. 16 cpv. 2, Art. 18 cpv. 3 VVR1)\n    - E vietato passare sopra o sotto a quota simile\n    - In un incontro vicino al pendio ha la precedenza l'aeromobile che ha il pendio alla sua destra\n    - Il sorpasso vicino al pendio e vietato\n    - Le virate contro il pendio non sono consentite\n\n• ho discusso e compreso le regole del volo termico (Art. 19 VVR)\n    - Il primo pilota che gira in termica determina il senso di rotazione.\n    - Il parapendio gia in termica ha la precedenza sugli aeromobili in transito.\n\n• ho discusso a fondo questo test con il mio istruttore di volo, comprendo il funzionamento del sistema di soccorso e ho eseguito una simulazione di estrazione della riserva\n\n• so volare attivamente in aria mobile e turbolenta e gestire le chiusure\n\n• mi sento pronto per volare in termica e in dinamica in autonomia."
+    }
+  ],
+  "fr": [
+    {
+      "id": "q1",
+      "type": "matching",
+      "text": "Associe chaque catégorie d'aéronef à la règle de priorité correcte par rapport à un parapente.",
+      "matchingPairs": [
+        {"left": "Aéronef en atterrissage d'urgence", "right": "A toujours la priorité ; dégager immédiatement"},
+        {"left": "Ballon libre", "right": "A la priorité sur un parapente"},
+        {"left": "Planeur / deltaplane", "right": "Même classe qu'un parapente ; priorité selon la situation (voir VFR)"},
+        {"left": "Aéronef motorisé", "right": "Doit en principe céder le passage à un parapente, sauf urgence"}
+      ],
+      "correctAnswer": [
+        {"left": "Aéronef en atterrissage d'urgence", "right": "A toujours la priorité ; dégager immédiatement"},
+        {"left": "Ballon libre", "right": "A la priorité sur un parapente"},
+        {"left": "Planeur / deltaplane", "right": "Même classe qu'un parapente ; priorité selon la situation (voir VFR)"},
+        {"left": "Aéronef motorisé", "right": "Doit en principe céder le passage à un parapente, sauf urgence"}
+      ]
+    },
+    {
+      "id": "q2",
+      "type": "single_choice",
+      "text": "Tu es le premier pilote a commencer a tourner dans un nouveau thermique. Que s'applique-t-il ?",
+      "options": [
+        "Tu peux changer de sens de rotation a tout moment si le noyau semble meilleur.",
+        "Tu determines le sens de rotation et les pilotes arrivant ensuite doivent s'inserer dans ce meme sens.",
+        "Le pilote le plus haut decide toujours du sens de rotation.",
+        "Tous les pilotes devraient alterner gauche et droite pour garder leurs distances."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q3",
+      "type": "multiple_choice",
+      "text": "Tu approches un thermique dans lequel d'autres pilotes enroulent deja. Quelles regles sont correctes ? (Coche toutes les bonnes reponses)",
+      "options": [
+        "Tu t'inseres dans le meme sens de rotation que les pilotes deja presents.",
+        "Les pilotes qui enroulent deja dans le thermique sont prioritaires.",
+        "Tu gardes un espacement previsible et evites les changements brusques de rayon ou de direction.",
+        "Tu peux traverser le thermique en sens inverse si le noyau y est plus fort."
+      ],
+      "correctAnswer": [0, 1, 2]
+    },
+    {
+      "id": "q4",
+      "type": "single_choice",
+      "text": "Deux parapentes se rapprochent face a face a altitude similaire en espace libre. Que font-ils ?",
+      "options": [
+        "Les deux virent a gauche.",
+        "Les deux virent a droite.",
+        "Le pilote le plus haut continue tout droit et le plus bas s'ecarte.",
+        "Le pilote le plus rapide continue tout droit."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q5",
+      "type": "single_choice",
+      "text": "Deux parapentes convergent a la meme altitude, mais pas face a face. Qui est prioritaire ?",
+      "options": [
+        "Le parapente situe a droite est prioritaire ; l'autre doit ceder le passage.",
+        "Le parapente situe a gauche est prioritaire.",
+        "Le parapente le plus rapide est prioritaire.",
+        "Dans cette situation, le plus bas est toujours prioritaire."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q6",
+      "type": "multiple_choice",
+      "text": "Quelles regles s'appliquent a proximite d'une pente ? (Coche toutes les bonnes reponses)",
+      "options": [
+        "Le depassement est interdit.",
+        "L'aeronef qui a la pente a sa droite est prioritaire.",
+        "Il est interdit de passer au-dessus ou au-dessous d'un autre parapente a altitude similaire.",
+        "Les virages vers la pente ne sont pas autorises."
+      ],
+      "correctAnswer": [0, 1, 2, 3]
+    },
+    {
+      "id": "q7",
+      "type": "single_choice",
+      "text": "Tu subis une fermeture asymétrique en air turbulent. Quelle est la meilleure réaction immédiate ?",
+      "options": [
+        "Ne rien faire et attendre plusieurs secondes sans contrôler la direction.",
+        "Arrêter la rotation avec le frein extérieur du côté ouvert, garder le cap et pomper le côté fermé seulement si nécessaire.",
+        "Enfoncer profondément les deux freins pour arrêter complètement la voile.",
+        "Lancer immédiatement le secours comme première action."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q8",
+      "type": "single_choice",
+      "text": "Tu subis une fermeture frontale. Quelle est la réaction correcte ?",
+      "options": [
+        "Mains en haut et laisser la voile se rouvrir.",
+        "Tirer complètement les deux freins jusqu'à la réouverture de la voile.",
+        "Effectuer immédiatement un virage de 180 degrés pour s'éloigner de la fermeture.",
+        "Transférer tout le poids en arrière et ne pas toucher du tout aux freins."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q9",
+      "type": "single_choice",
+      "text": "Après une fermeture massive, tu observes une cravate. Comment réagis-tu ?",
+      "options": [
+        "Stabiliser d'abord la direction (arrêter la rotation avec le frein extérieur, stabiliser la direction de vol), essayer de dégager la cravate avec la technique appropriée si formé, et lancer le secours si la situation devient incontrôlable.",
+        "Ignorer la cravate car elle se dégagera toujours toute seule.",
+        "Tirer fortement sur les deux freins et les garder en bas jusqu'à disparition du nœud.",
+        "Accélérer à fond et traverser le problème tout droit."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q10",
+      "type": "matching",
+      "text": "Associe le comportement de la voile au bord d'un thermique avec la meilleure réaction immédiate.",
+      "matchingPairs": [
+        {"left": "La voile avance en entrant dans une forte ascendance", "right": "Arrêter l'avancée avec une action modérée et opportune sur les freins, une fois la voile au-dessus de la tête, relâcher lentement jusqu'à la position normale des freins (10-20%)"},
+        {"left": "Un côté chute au bord du thermique", "right": "Stabiliser avec le frein extérieur, rouvrir la fermeture"},
+        {"left": "En sortant du thermique, tu entres brutalement dans du sink", "right": "Rester actif, maintenir une vitesse de vol sûre et éviter de trop freiner"},
+        {"left": "Un côté monte fortement dans le meilleur noyau", "right": "Coordonner un virage fluide pour centrer la montée"}
+      ],
+      "correctAnswer": [
+        {"left": "La voile avance en entrant dans une forte ascendance", "right": "Arrêter l'avancée avec une action modérée et opportune sur les freins, une fois la voile au-dessus de la tête, relâcher lentement jusqu'à la position normale des freins (10-20%)"},
+        {"left": "Un côté chute au bord du thermique", "right": "Stabiliser avec le frein extérieur, rouvrir la fermeture"},
+        {"left": "En sortant du thermique, tu entres brutalement dans du sink", "right": "Rester actif, maintenir une vitesse de vol sûre et éviter de trop freiner"},
+        {"left": "Un côté monte fortement dans le meilleur noyau", "right": "Coordonner un virage fluide pour centrer la montée"}
+      ]
+    },
+    {
+      "id": "q11",
+      "type": "single_choice",
+      "text": "Comment faut-il enrouler près d'une pente ?",
+      "options": [
+        "Voler au plus près de la pente pour maximiser la montée.",
+        "Toujours tourner vers la pente car cela garde le thermique plus serré.",
+        "Garder une marge généreuse avec le relief, voler en S dans la zone ascendante (toujours tourner à l'écart du relief, garder une issue loin de la pente et ne jamais laisser la voile dériver vers le terrain).",
+        "Faire les oreilles à chaque virage pour ne pas monter trop haut."
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": "q12",
+      "type": "single_choice",
+      "text": "Tu es sous un nuage et tu ressens une forte aspiration. Quelle est la meilleure reponse ?",
+      "options": [
+        "Tu restes dans la meilleure montee jusqu'a etre certain que c'est temporaire.",
+        "Tu quittes immediatement la zone ascendante vers l'air clair le plus sur ; si c'est approprie et si tu es forme, tu utilises des techniques de descente comme les oreilles et l'accelerateur pour sortir de l'aspiration.",
+        "Tu ralentis la voile au maximum pour eviter d'entrer dans le nuage.",
+        "Tu engages une spirale directement sous le nuage sans verifier l'espace aerien ni ton orientation."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q13",
+      "type": "multiple_choice",
+      "text": "Quels signes peuvent indiquer une parachutale ? (Coche toutes les bonnes reponses)",
+      "options": [
+        "Tres peu ou pas de bruit de vent alors que la voile semble ouverte.",
+        "Un fort taux de chute avec une sensation molle et peu efficace dans les commandes.",
+        "La voile n'accelere pas normalement et semble suspendue au-dessus de toi.",
+        "Un fort piquer avec beaucoup de vitesse et une forte pression dans les freins."
+      ],
+      "correctAnswer": [0, 1, 2]
+    },
+    {
+      "id": "q14",
+      "type": "single_choice",
+      "text": "Comment sort-on normalement d'une parachutale ?",
+      "options": [
+        "On augmente encore l'angle d'attaque en freinant davantage de maniere symetrique.",
+        "On reduit l'angle d'attaque selon la formation et le manuel de la voile, par exemple en relachant completement les freins et, si necessaire, avec la technique approuvee aux elevateurs avant ou a l'accelerateur.",
+        "On lance le secours dans tous les cas.",
+        "On tourne le plus serre possible pour forcer la voile a revoler."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q15",
+      "type": "multiple_choice",
+      "text": "Quand dois-tu lancer ton secours ? (Coche toutes les bonnes reponses)",
+      "options": [
+        "Lorsque tu es en autorotation ou en vrille incontrôlable.",
+        "Apres une collision ou en cas de rupture structurelle majeure.",
+        "Lorsqu'une fermeture ou une cravate reste incontrôlable et que l'altitude diminue rapidement.",
+        "Apres une petite fermeture frontale qui se rouvre deja normalement."
+      ],
+      "correctAnswer": [0, 1, 2]
+    },
+    {
+      "id": "disclaimer",
+      "type": "text",
+      "text": "Par ma signature, je certifie que\n• j'ai accompli les taches requises dans la checklist (Ausbildungsstufe 2)\n    - Briefing sur les atterrissages d'urgence\n    - Changements rapides de direction\n    - Virages serres\n    - Vol dans la plage de vitesse sure de la voile\n    - Fermetures asymetriques et stabilisation\n    - Fermetures frontales et comportement\n    - Oreilles\n    - Briefing sur l'atterrissage vent arriere\n    - Atterrissage en pente\n\n• j'ai discute et je comprends les regles de priorite a l'approche d'atterrissage (Art. 20, Art. 22 VVR, SR 748.121.11)\n    - En principe, le terrain d'atterrissage doit etre approche avec un circuit main gauche.\n    - Le parapente le plus proche du sol a toujours la priorite.\n    - Les regles de priorite en espace libre s'appliquent aussi pendant l'approche d'atterrissage.\n\n• j'ai discute et je comprends les regles de circulation entre aeronefs (Art. 15 al. 3, Art. 17, Art. 19 al. 3 VVR)\n    - Aeronefs en atterrissage d'urgence\n    - Ballons libres\n    - Planeurs / deltaplanes\n    - Aeronefs motorises\n\n• j'ai discute et je comprends les regles de priorite entre parapentes en espace libre (Art. 16 - 18 VVR)\n    - Trajectoires convergentes : priorite a droite\n    - Rencontre frontale : les deux s'ecartent a droite\n    - Depassement : le pilote depasse reste prioritaire pendant toute la manoeuvre\n\n• j'ai discute et je comprends les regles de priorite entre parapentes a proximite d'une pente (Art. 16 al. 2, Art. 18 al. 3 VVR1)\n    - Il est interdit de passer au-dessus ou au-dessous a altitude similaire\n    - En rencontre a proximite d'une pente, l'aeronef qui a la pente a sa droite est prioritaire\n    - Le depassement pres d'une pente est interdit\n    - Les virages vers la pente ne sont pas autorises\n\n• j'ai discute et je comprends les regles du vol thermique (Art. 19 VVR)\n    - Le premier pilote a enrouler dans un thermique determine le sens de rotation.\n    - Le parapente deja enroule dans le thermique est prioritaire sur les aeronefs de passage.\n\n• j'ai etudie ce test en detail avec mon instructeur, je comprends le fonctionnement du systeme de secours et j'ai effectue une simulation d'extraction du secours\n\n• je sais voler activement en air mobile et turbulent et gerer les fermetures\n\n• je me sens pret pour le vol thermique et dynamique en autonomie."
     }
   ]
 }

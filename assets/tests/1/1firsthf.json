@@ -17,8 +17,8 @@
       ],
       "correctAnswer": [
         {"left": "Leading edge", "right": "1"},
-        {"left": "Trailing edge", "right": "2"},
-        {"left": "Upper sail", "right": "3"},
+        {"left": "Trailing edge", "right": "3"},
+        {"left": "Upper sail", "right": "2"},
         {"left": "Lower sail", "right": "4"},
         {"left": "A-Lines", "right": "5"},
         {"left": "B-Lines", "right": "6"},
@@ -43,20 +43,20 @@
       "type": "matching",
       "text": "I check:",
       "matchingPairs": [
-        {"left": "Point0", "right": "Lines"},
-		{"left": "Point1", "right": "Wind"},
-        {"left": "Point2", "right": "Reserve parachute"},
-        {"left": "Point3", "right": "Surroundings"},
-        {"left": "Point4", "right": "Pilot"},
-        {"left": "Point5", "right": "Canopy"}      
+        {"left": "Point 0", "right": "Lines"},
+		    {"left": "Point 1", "right": "Wind"},
+        {"left": "Point 2", "right": "Reserve parachute"},
+        {"left": "Point 3", "right": "Surroundings"},
+        {"left": "Point 4", "right": "Pilot"},
+        {"left": "Point 5", "right": "Canopy"}      
       ],
       "correctAnswer": [
-        {"left": "Point0", "right": "Reserve parachute"},
-        {"left": "Point1", "right": "Pilot"},
-        {"left": "Point2", "right": "Lines"},
-        {"left": "Point3", "right": "Canopy"},
-        {"left": "Point4", "right": "Wind"},
-        {"left": "Point5", "right": "Surroundings"}
+        {"left": "Point 0", "right": "Reserve parachute"},
+        {"left": "Point 1", "right": "Pilot"},
+        {"left": "Point 2", "right": "Lines"},
+        {"left": "Point 3", "right": "Canopy"},
+        {"left": "Point 4", "right": "Wind"},
+        {"left": "Point 5", "right": "Surroundings"}
       ]
     },
     {
@@ -101,7 +101,7 @@
     {
       "id": "q7",
       "type": "multiple_choice",
-      "text": "In which two phases can you do a Start-STOP?",
+      "text": "During which phase(s) can you do a Start-STOP? (Mark all correct answers)",
       "options": [
         "Inflation",
         "Control",
@@ -127,7 +127,7 @@
       "text": "What do you do if you can't understand your instructor over the radio?",
       "options": [
         "I make an emergency landing as quickly as possible.",
-        "I calmly fly to the designated safe area, as explained by the instructor, and wait for the agreed signals (arrow, paddles, etc.).",
+        "I calmly fly to the designated staging room (descending area), as explained by the instructor, and wait for the agreed signals (arrow, paddles, etc.). In case I do not see the instructor, then slowly get rid off my altitude and land on my own, following the briefed approach (left/right).",
         "I fly to the lee side of the landing field and try to land on my own.",
         "Radio is not necessary for the first high flight!"
       ],
@@ -147,15 +147,16 @@
     },
     {
       "id": "q11",
-      "type": "single_choice",
+      "type": "multiple_choice",
       "text": "Can you steer a paraglider without brakes?",
       "options": [
         "No",
         "Yes, by carefully pulling the rear risers on one side, lowering the trailing edge on that side and turning.",
         "Yes, by pulling the front risers on one side.",
-        "Yes, if the wing has an emergency steering device."
+        "Yes, if the wing has an emergency steering device.",
+        "Yes, with weightshift alone, by shifting your weight to one side, you can turn the glider in that direction."
       ],
-      "correctAnswer": 1
+      "correctAnswer": [1, 4]
     },
     {
       "id": "q14",
@@ -163,7 +164,7 @@
       "text": "You're flying along a slope toward the landing field, with the slope on your left. Another pilot is approaching at the same height. What do you do?",
       "options": [
         "I keep flying straight, since I have the right of way.",
-        "I swerve to the right, ensuring I pass between the other pilot and the slope, maintaining course toward the landing field.",
+        "I swerve to the right, ensuring that the glider can pass between me and the slope, with enough safety margin.",
         "I fly closer to the slope because the other pilot has the right of way.",
         "I brake hard to lose altitude and try to fly under the other pilot."
       ],
@@ -200,7 +201,7 @@
       "options": [
         "I'm probably flying downwind, so I feel no wind. I do nothing.",
         "I'm probably flying too slowly and in a stall (parachutal stall). I counteract by turning quickly, doesn't matter which direction.",
-        "I'm probably flying too slowly and in a parachutal stall. I counteract by simultaneously pushing both A-risers (front risers) forward.",
+        "I'm probably flying too slowly and in a parachutal stall. I counteract by simultaneously pushing both A-risers (front risers) forward. This decreases the angle of attack and helps to recover from the stall.",
         "I'm probably flying too slowly and in a stall. I counteract by pulling both brakes 70-80% and then rapidly letting go."
       ],
       "correctAnswer": 2
@@ -208,7 +209,7 @@
     {
       "id": "q18",
       "type": "multiple_choice",
-      "text": "Where could your reserve parachute be located?",
+      "text": "Where could your reserve parachute be located? (Mark all possible correct answers)",
       "options": [
         "In the harness under the pilot on the right side",
         "In the backpack compartment",
@@ -220,7 +221,7 @@
     {
       "id": "q19",
       "type": "multiple_choice",
-      "text": "In which case would you throw your reserve parachute?",
+      "text": "In which case would you throw your reserve parachute? (Mark all correct answers)",
       "options": [
         "Collision with another aircraft or cable",
         "To perform a Start-STOP (takeoff abort)",
@@ -234,7 +235,7 @@
     {
       "id": "q20",
       "type": "single_choice",
-      "text": "What is a landing pattern ('Landevolte')?",
+      "text": "What is a landing pattern / landing approach ('Landevolte')?",
       "options": [
         "A defined procedure for approaching a landing field, divided into phases: downwind, base leg, and final.",
         "The method of approaching a landing with long S-turns.",
@@ -306,37 +307,37 @@
     {
       "id": "q1",
       "type": "matching",
-      "text": "Benenne die Teile des skizzierten Gleitschirmes.",
+      "text": "Benenne die Teile des abgebildeten Gleitschirms.",
       "img_url": "pgschem.png",
       "matchingPairs": [
-        {"left": "1", "right": "Untersegel"},
-        {"left": "2", "right": "Austrittskante"},
-        {"left": "3", "right": "Bremsleinen (Steuerleinen)"},
-        {"left": "4", "right": "Eintrittskante"},
-        {"left": "5", "right": "A-Leinen"},
-        {"left": "6", "right": "Obersegel"},
-        {"left": "7", "right": "C-Leinen"},
-        {"left": "8", "right": "B-Leinen"}
+        {"left": "A-Leinen", "right": "1"},
+        {"left": "B-Leinen", "right": "2"},
+        {"left": "C-Leinen", "right": "3"},
+        {"left": "Obersegel", "right": "4"},
+        {"left": "Austrittskante", "right": "5"},
+        {"left": "Bremsleinen (Steuerleinen)", "right": "6"},
+        {"left": "Eintrittskante", "right": "7"},
+        {"left": "Untersegel", "right": "8"}
       ],
       "correctAnswer": [
-        {"left": "1", "right": "Untersegel"},
-        {"left": "2", "right": "Austrittskante"},
-        {"left": "3", "right": "Bremsleinen (Steuerleinen)"},
-        {"left": "4", "right": "Eintrittskante"},
-        {"left": "5", "right": "A-Leinen"},
-        {"left": "6", "right": "Obersegel"},
-        {"left": "7", "right": "C-Leinen"},
-        {"left": "8", "right": "B-Leinen"}
+        {"left": "Eintrittskante", "right": "1"},
+        {"left": "Austrittskante", "right": "3"},
+        {"left": "Obersegel", "right": "2"},
+        {"left": "Untersegel", "right": "4"},
+        {"left": "A-Leinen", "right": "5"},
+        {"left": "B-Leinen", "right": "6"},
+        {"left": "C-Leinen", "right": "7"},
+        {"left": "Bremsleinen (Steuerleinen)", "right": "8"}
       ]
     },
     {
       "id": "q2",
       "type": "single_choice",
-      "text": "Wie nennt man den Check unmittelbar vor dem Start und was wird geprüft?",
+      "text": "Wie heisst der Check unmittelbar vor dem Start und was wird dabei gepruft?",
       "options": [
         "Start-Check",
         "Vorbereitungscheck",
-        "Fünf-Punkte-Check",
+        "Funf-Punkte-Check",
         "Bereitschaftskontrolle"
       ],
       "correctAnswer": 2
@@ -344,45 +345,45 @@
     {
       "id": "q3",
       "type": "matching",
-      "text": "Ich prüfe:",
+      "text": "Ich prufe:",
       "matchingPairs": [
-        {"left": "Leinen", "right": "Punkt2"},
-        {"left": "Kalotte", "right": "Punkt3"},
-        {"left": "Umbgebung", "right": "Punkt5"},
-        {"left": "Notschirm", "right": "Punkt0"},
-        {"left": "Pilot", "right": "Punkt1"},
-        {"left": "Wind", "right": "Punkt4"}
+        {"left": "Punkt 0", "right": "Leinen"},
+        {"left": "Punkt 1", "right": "Wind"},
+        {"left": "Punkt 2", "right": "Notschirm"},
+        {"left": "Punkt 3", "right": "Umgebung"},
+        {"left": "Punkt 4", "right": "Pilot"},
+        {"left": "Punkt 5", "right": "Kalotte"}
       ],
       "correctAnswer": [
-        {"left": "Punkt1", "right": "Pilot"},
-        {"left": "Punkt2", "right": "Leinen"},
-        {"left": "Punkt3", "right": "Kalotte"},
-        {"left": "Punkt4", "right": "Wind"},
-        {"left": "Punkt5", "right": "Umbgebung"},
-        {"left": "Punkt0", "right": "Notschirm"}
+        {"left": "Punkt 0", "right": "Notschirm"},
+        {"left": "Punkt 1", "right": "Pilot"},
+        {"left": "Punkt 2", "right": "Leinen"},
+        {"left": "Punkt 3", "right": "Kalotte"},
+        {"left": "Punkt 4", "right": "Wind"},
+        {"left": "Punkt 5", "right": "Umgebung"}
       ]
     },
     {
       "id": "q4",
       "type": "single_choice",
-      "text": "Welche Vorbereitungen unmittelbar vor dem Start sind die wichtigsten?",
+      "text": "Welche Vorbereitungen unmittelbar vor dem Start sind am wichtigsten?",
       "options": [
-        "Mein Funkgerät ist eingeschaltet und gecheckt und der Flugraum ist frei.",
-        "Ich habe den Helm aufgesetzt und der Wind kommt von vorne.",
-        "Ich habe einen klaren Flugauftrag, den 5-Punkte-Check habe ich durchgeführt und mein Funkgerät ist eingeschaltet und gecheckt.",
-        "Mein Schuhwerk ist in Ordnung und mein Funkgerät ist eingeschaltet und gecheckt."
+        "Mein Funkgerat ist eingeschaltet und gepruft und der Luftraum ist frei.",
+        "Ich habe meinen Helm aufgesetzt und der Wind kommt von vorne.",
+        "Ich habe einen klaren Flugauftrag, den 5-Punkte-Check abgeschlossen und mein Funkgerat ist eingeschaltet und gepruft.",
+        "Mein Schuhwerk ist in Ordnung und mein Funkgerat ist eingeschaltet und gepruft."
       ],
       "correctAnswer": 2
     },
     {
       "id": "q5",
       "type": "single_choice",
-      "text": "Der Starthelfer gibt Dir den Start frei. Du bist überzeugt, dass das alles nicht gut gehen kann, weil Dir Dein Gefühl sagt, dass Du heute nicht in der Lage bist, alles richtig zu machen. Wie reagierst Du?",
+      "text": "Der Starthelfer gibt dir die Freigabe zum Start. Du bist uberzeugt, dass es heute nicht gut gehen kann, weil dir dein Bauchgefuhl sagt, dass du nicht im richtigen Zustand zum Fliegen bist. Wie reagierst du?",
       "options": [
-        "Ich unterdrücke meine Gefühle, indem ich mir selbst zurede, doch nicht so feige zu sein. Ich nehme mir vor, einfach drauflos zu rennen und starte.",
-        "Ich informiere den Startleiter, dass heute nicht mein Tag ist und dass ich mich noch nicht reif für einen Höhenflug fühle.",
-        "Dieses Gefühl hat jeder vor dem ersten Höhenflug! Augen zu und durch!",
-        "Solche Gefühle gibt’s doch nicht!"
+        "Ich unterdrucke meine Gefuhle, sage mir, ich soll nicht feige sein, und versuche trotzdem zu starten.",
+        "Ich informiere den Startleiter, dass heute nicht mein Tag ist und ich mich fur einen Hohenflug nicht bereit fuhle.",
+        "So fuhlt sich jeder vor dem ersten Hohenflug! Mach es einfach!",
+        "Solche Gefuhle gibt es nicht!"
       ],
       "correctAnswer": 1
     },
@@ -391,20 +392,20 @@
       "type": "matching",
       "text": "Ein Start besteht aus 3 Phasen. Ordne die Namen den Handlungen zu.",
       "matchingPairs": [
-        {"left": "Aufziehen", "right": "Mit den A-Leinen zieht der Pilot die Kappe nach oben über den Kopf."},
-        {"left": "Kontrolle", "right": "Der Pilot stoppt die Kappe über dem Kopf, nimmt Korrekturen vor, kontrolliert die gesamte Kappe und die Leinen."},
-        {"left": "Beschleunigung", "right": "Der Pilot neigt sich nach vorne, läuft mit großen Schritten, erhöht die Geschwindigkeit und hält die Kappe bis zum Abheben über dem Kopf."}
+        {"left": "Aufziehen", "right": "Der Pilot zieht den Schirm mit den A-Leinen uber den Kopf."},
+        {"left": "Kontrolle", "right": "Der Pilot stoppt den Schirm uber dem Kopf, korrigiert wenn notig und kontrolliert den gesamten Schirm und die Leinen."},
+        {"left": "Beschleunigung", "right": "Der Pilot neigt sich nach vorne, lauft mit grossen Schritten an, erhoht die Geschwindigkeit und halt den Schirm bis zum Abheben uber dem Kopf."}
       ],
       "correctAnswer": [
-        {"left": "Aufziehen", "right": "Mit den A-Leinen zieht der Pilot die Kappe nach oben über den Kopf."},
-        {"left": "Kontrolle", "right": "Der Pilot stoppt die Kappe über dem Kopf, nimmt Korrekturen vor, kontrolliert die gesamte Kappe und die Leinen."},
-        {"left": "Beschleunigung", "right": "Der Pilot neigt sich nach vorne, läuft mit großen Schritten, erhöht die Geschwindigkeit und hält die Kappe bis zum Abheben über dem Kopf."}
+        {"left": "Aufziehen", "right": "Der Pilot zieht den Schirm mit den A-Leinen uber den Kopf."},
+        {"left": "Kontrolle", "right": "Der Pilot stoppt den Schirm uber dem Kopf, korrigiert wenn notig und kontrolliert den gesamten Schirm und die Leinen."},
+        {"left": "Beschleunigung", "right": "Der Pilot neigt sich nach vorne, lauft mit grossen Schritten an, erhoht die Geschwindigkeit und halt den Schirm bis zum Abheben uber dem Kopf."}
       ]
     },
     {
       "id": "q7",
       "type": "multiple_choice",
-      "text": "In welchen beiden Phasen kann man einen Start-STOP machen?",
+      "text": "In welcher(n) Phase(n) kannst du einen Start-STOP machen? (Alle richtigen Antworten markieren)",
       "options": [
         "Aufziehen",
         "Kontrolle",
@@ -415,141 +416,142 @@
     {
       "id": "q8",
       "type": "single_choice",
-      "text": "Wie macht man einen Start-Stop in der Kontrollphase?",
+      "text": "Wie fuhrst du in der Kontrollphase einen Start-STOP aus?",
       "options": [
-        "Man zieht beide Bremsen so schnell wie möglich ganz durch.",
-        "Man zieht eine Bremse komplett ganz nach unten, während die andere Hand ganz oben bleibt und man führt den Schirm „zum Crash“ auf die gezogene Seite.",
-        "Beide Hände sind komplett oben.",
-        "Man wirft sofort den Rettungsschirm."
+        "Du ziehst beide Bremsen so schnell wie moglich ganz nach unten.",
+        "Du ziehst eine Bremse ganz nach unten, wahrend die andere Hand ganz oben bleibt, und fuhrst den Schirm auf die gezogene Seite zum Absturz.",
+        "Du nimmst beide Hande ganz nach oben.",
+        "Du wirfst sofort den Rettungsschirm."
       ],
       "correctAnswer": 1
     },
     {
       "id": "q9",
       "type": "single_choice",
-      "text": "Was unternimmst Du, wenn Du Deinen Fluglehrer am Funk nicht verstehen kannst?",
+      "text": "Was machst du, wenn du deinen Fluglehrer uber Funk nicht verstehen kannst?",
       "options": [
-        "Ich mache möglichst schnell eine Notlandung.",
-        "Ich fliege ruhig in den Abbauraum, welcher mir vom Fluglehrer erklärt wurde, und warte auf die vereinbarten Zeichen (Pfeil, Kellen, etc.).",
-        "Ich fliege zur Leeseite des Landeplatzes und versuche eigenständig zu landen.",
-        "Ein Funkgerät ist für den ersten Höhenflug absolut nicht notwendig!"
+        "Ich mache so schnell wie moglich eine Notlandung.",
+        "Ich fliege ruhig in den vereinbarten Abbauraum, wie vom Fluglehrer erklart, und warte auf die besprochenen Signale (Pfeil, Kellen usw.). Wenn ich den Fluglehrer nicht sehe, baue ich langsam Hohe ab und lande selbststandig gemass dem besprochenen Anflug (links/rechts).",
+        "Ich fliege auf die Lee-Seite des Landeplatzes und versuche selbststandig zu landen.",
+        "Ein Funkgerat ist fur den ersten Hohenflug nicht notwendig!"
       ],
       "correctAnswer": 1
     },
     {
       "id": "q10",
       "type": "single_choice",
-      "text": "Während Deines ersten Höhenfluges klappt ein Teil der rechten Hälfte Deines Schirmes ein. Was unternimmst Du?",
+      "text": "Wahrend deines ersten Hohenfluges klappt ein Teil der rechten Schirmhalfte ein. Was tust du?",
       "options": [
-        "Ich pumpe den Schirm durch mehrmaliges Betätigen der rechten Bremse sofort wieder auf.",
-        "Ich stabilisiere den Schirm durch vorsichtiges Gegenbremsen mit der linken Bremse und verlagere mein Gewicht nach links. Wenn notwendig, betätige ich die rechte Bremse zum Aufpumpen der rechten Schirmhälfte.",
-        "Ich verlagere mein Gewicht nach rechts und betätige die rechte Bremse ein bis zwei Mal, um den Schirm aufzupumpen.",
-        "Ich betätige beide Bremsen gleichzeitig ein bis zwei Mal ca. 80%. Dadurch wird der Staudruck im Schirm erhöht und er öffnet sich wieder."
+        "Ich pumpe den Schirm sofort durch mehrmaliges Betatigen der rechten Bremse wieder auf.",
+        "Ich stabilisiere den Schirm durch vorsichtiges Bremsen links und Gewichtsverlagerung nach links. Falls notig, benutze ich die rechte Bremse, um die rechte Seite wieder zu offnen.",
+        "Ich verlagere mein Gewicht nach rechts und betatige die rechte Bremse ein- bis zweimal, um die rechte Seite wieder zu offnen.",
+        "Ich ziehe beide Bremsen gleichzeitig ein- bis zweimal etwa 80 %. Dadurch erhoht sich der Druck im Schirm und er offnet wieder."
       ],
       "correctAnswer": 1
     },
     {
       "id": "q11",
-      "type": "single_choice",
-      "text": "Kann ein Gleitschirm auch ohne Bremsen gesteuert werden?",
+      "type": "multiple_choice",
+      "text": "Kann man einen Gleitschirm ohne Bremsen steuern?",
       "options": [
         "Nein",
-        "Ja, durch vorsichtiges Ziehen an der linken oder rechten hintersten Traggurte. Dadurch wird die Austrittskante auf einer Seite heruntergezogen und der Schirm fliegt eine Kurve nach dieser Seite.",
-        "Ja, durch vorsichtiges Ziehen an der linken oder rechten vordersten Traggurte.",
-        "Ja, wenn der Schirm mit einer Notsteuer-Einrichtung ausgestattet ist."
+        "Ja, durch vorsichtiges Ziehen an den hinteren Tragurten auf einer Seite; dadurch wird dort die Austrittskante abgesenkt und der Schirm dreht in diese Richtung.",
+        "Ja, durch Ziehen an den vorderen Tragurten auf einer Seite.",
+        "Ja, wenn der Schirm eine Notsteuer-Einrichtung hat.",
+        "Ja, nur mit Gewichtsverlagerung; durch Verlagerung des Gewichts auf eine Seite kann der Schirm in diese Richtung gedreht werden."
       ],
-      "correctAnswer": 1
+      "correctAnswer": [1, 4]
     },
     {
       "id": "q14",
       "type": "single_choice",
-      "text": "Dein Flugweg zum Landeplatz führt entlang einem Hang, welchen Du im Flug zur linken Seite hast. Ein anderer Gleitschirm kommt Dir auf ungefähr gleicher Höhe entgegen. Was tust Du?",
+      "text": "Du fliegst entlang eines Hanges zum Landeplatz, der Hang ist links von dir. Ein anderer Pilot kommt dir auf gleicher Hohe entgegen. Was tust du?",
       "options": [
-        "Ich fliege ruhig weiter, weil ich vortrittsberechtigt bin.",
-        "Ich weiche nach rechts aus, sodass der Entgegenkommende genug Platz zwischen sich und dem Hang hat. Ich bleibe auf Kurs Richtung Landeplatz.",
-        "Ich fliege näher an den Hang, weil der Entgegenkommende vortrittsberechtigt ist.",
-        "Ich bremse stark, damit ich schneller an Höhe verliere und den anderen unterfliegen kann."
+        "Ich fliege geradeaus weiter, weil ich Vortritt habe.",
+        "Ich weiche nach rechts aus und stelle sicher, dass der andere Pilot mit ausreichendem Sicherheitsabstand zwischen mir und dem Hang durchfliegen kann.",
+        "Ich fliege naher an den Hang, weil der andere Pilot Vortritt hat.",
+        "Ich bremse stark, um Hohe zu verlieren, und versuche unter dem anderen Piloten durchzufliegen."
       ],
       "correctAnswer": 1
     },
     {
       "id": "q15",
       "type": "single_choice",
-      "text": "Auf dem Flug zum Landeplatz begegnest Du auf ungefähr gleicher Höhe drei Gleitschirmen, welche alle in derselben Richtung Vollkreise fliegen. Was unternimmst Du?",
+      "text": "Auf dem Weg zum Landeplatz triffst du auf drei Gleitschirme, die auf gleicher Hohe gemeinsam kreisen. Was tust du?",
       "options": [
-        "Ich umfliege die Gruppe mit genügend Sicherheitsabstand auf der rechten Seite.",
+        "Ich umfliege die Gruppe mit ausreichendem Sicherheitsabstand rechts.",
         "Ich versuche, unter der Gruppe durchzufliegen.",
-        "Ich umfliege die Gruppe mit genügend Sicherheitsabstand auf der linken Seite.",
-        "Ich mache eine 180°-Wende und fliege von der Gruppe weg."
+        "Ich umfliege die Gruppe mit ausreichendem Sicherheitsabstand links.",
+        "Ich drehe 180° und fliege von der Gruppe weg."
       ],
       "correctAnswer": 0
     },
     {
       "id": "q16",
       "type": "single_choice",
-      "text": "Ein Gleitschirm hat gegenüber einem motorisierten Flächenflugzeug ...",
+      "text": "Ein Gleitschirm hat gegenuber einem motorisierten Flugzeug ...",
       "options": [
-        "grundsätzlich keinen Vortritt.",
-        "grundsätzlich den Vortritt, ausgenommen das Flugzeug befindet sich offensichtlich in einer Notsituation.",
-        "immer den Vortritt.",
-        "nur dann Vortritt, wenn sich der GS offensichtlich in einer Notsituation befindet."
+        "grundsatzlich kein Vortritt.",
+        "grundsatzlich Vortritt, ausser das Flugzeug befindet sich offensichtlich in einer Notsituation.",
+        "immer Vortritt.",
+        "nur dann Vortritt, wenn sich der Gleitschirm offensichtlich in einer Notsituation befindet."
       ],
       "correctAnswer": 1
     },
     {
       "id": "q17",
       "type": "single_choice",
-      "text": "Während Deines ersten Fluges verspürst Du plötzlich keinen Fahrtwind mehr im Gesicht und hast das Gefühl, Dein Schirm steht still. Was kann das sein und wie reagierst Du?",
+      "text": "Wahrend deines ersten Fluges spurst du plotzlich keinen Fahrtwind mehr im Gesicht und es scheint, als wurdest du stillstehen. Was konnte das sein und wie reagierst du?",
       "options": [
-        "Ich fliege wahrscheinlich mit Rückenwind und verspüre keinen Fahrtwind. Ich unternehme nichts.",
-        "Wahrscheinlich bin ich zu langsam geflogen und befinde mich im sogenannten Sackflug. Als Gegenmassnahme fliege ich eine zügige Kurve, egal nach welcher Seite.",
-        "Wahrscheinlich bin ich zu langsam geflogen und befinde mich im sogenannten Sackflug. Als Gegenmassnahme drücke ich gleichzeitig beide A-Gurte nach vorne.",
-        "Wahrscheinlich bin ich zu langsam geflogen und befinde mich im sogenannten Sackflug. Ich ziehe beide Bremsen ca. 70-80% und lasse sie schnell wieder hoch."
+        "Ich fliege wahrscheinlich mit Ruckenwind und spure deshalb keinen Fahrtwind. Ich tue nichts.",
+        "Ich fliege wahrscheinlich zu langsam und befinde mich im Sackflug. Ich wirke dagegen, indem ich schnell eine Kurve fliege, egal in welche Richtung.",
+        "Ich fliege wahrscheinlich zu langsam und befinde mich im Sackflug. Ich wirke dagegen, indem ich gleichzeitig beide A-Gurte nach vorne drucke. Dadurch verringert sich der Anstellwinkel und der Schirm kann sich erholen.",
+        "Ich fliege wahrscheinlich zu langsam und befinde mich im Sackflug. Ich ziehe beide Bremsen 70-80 % und lasse sie dann schnell wieder los."
       ],
       "correctAnswer": 2
     },
     {
       "id": "q18",
       "type": "multiple_choice",
-      "text": "Wo befindet sich Dein Notschirm?",
+      "text": "Wo konnte sich dein Rettungsschirm befinden? (Alle moglichen richtigen Antworten markieren)",
       "options": [
-        "Er kann im Gurtzeug unter dem Piloten auf der rechten Seite sein.",
-        "Er kann im Rucksack-Fach sein.",
-        "Er kann im Frontcontainer sein.",
-        "Ein Rettungsgerät ist während der Ausbildung nicht vorgeschrieben, es ist nur zusätzliches Gewicht."
+        "Im Gurtzeug unter dem Piloten auf der rechten Seite",
+        "Im Rucksackfach",
+        "Im Frontcontainer",
+        "Ein Rettungsschirm ist in der Ausbildung nicht vorgeschrieben, er ist nur zusatzliches Gewicht"
       ],
       "correctAnswer": [0, 2]
     },
     {
       "id": "q19",
       "type": "multiple_choice",
-      "text": "In welchem Fall würdest Du den Notschirm werfen?",
+      "text": "In welchem Fall wurdest du deinen Rettungsschirm werfen? (Alle richtigen Antworten markieren)",
       "options": [
-        "Kollision mit einem anderen Luftfahrzeug oder Seil",
+        "Kollision mit einem anderen Luftfahrzeug oder einem Seil",
         "Um einen Start-STOP (Startabbruch) zu machen",
-        "Unkontrollierte Situation wie Verdreher, Autorotation",
+        "Unkontrollierte Situation wie Verhanger, Verdreher oder Autorotation",
         "Wenn mein Funk nicht funktioniert",
-        "Materialfehler (z.B. Karabiner bricht / alle A-Leinen reißen nach einem Einklapper)",
-        "Wenn ich eine Gewitterwolke (Cumulonimbus) über mir sehe"
+        "Materialversagen (z. B. Karabinerbruch / alle A-Leinen reissen nach einem Einklapper)",
+        "Wenn ich uber mir eine Cumulonimbus-Wolke sehe"
       ],
       "correctAnswer": [0, 2, 4]
     },
     {
       "id": "q20",
       "type": "single_choice",
-      "text": "Was ist eine Landevolte?",
+      "text": "Was ist eine Landevolte / ein Landeanflug?",
       "options": [
-        "Ein definiertes Verfahren, wie ein Landeplatz anzufliegen ist; die Landevolte kann in die Phasen Gegenanflug, Queranflug und Endanflug unterteilt werden.",
-        "Die Methode, mit langen S-Kurven direkt zur Landung anzusetzen.",
-        "Dieser Begriff existiert nicht in der Gleitschirmfliegerei.",
-        "Die Methode, mit großen Vollkreisen über dem Landepunkt die Höhe abzubauen."
+        "Ein definiertes Verfahren fur den Anflug auf einen Landeplatz, eingeteilt in Gegenanflug, Queranflug und Endanflug.",
+        "Die Methode, eine Landung mit langen S-Kurven anzufliegen.",
+        "Diesen Begriff gibt es im Gleitschirmfliegen nicht.",
+        "Die Methode, uber dem Landepunkt mit grossen Kreisen Hohe abzubauen."
       ],
       "correctAnswer": 0
     },
     {
       "id": "q21",
       "type": "matching",
-      "text": "Was bedeuten die Zahlen auf der Grafik?",
+      "text": "Was bedeuten die Zahlen auf dem Bild?",
       "img_url": "Linksvolte.png",
       "matchingPairs": [
         {"left": "1", "right": "Abbauraum"},
@@ -571,38 +573,646 @@
     {
       "id": "q22",
       "type": "single_choice",
-      "text": "Was machst Du, wenn Du im Endanflug feststellst, dass Du noch zu hoch bist?",
+      "text": "Was tust du, wenn du im Endanflug feststellst, dass du noch zu hoch bist?",
       "options": [
-        "Ich richte mich im Sitz auf, so dass meine Beine zur Landung bereit sind, und fliege noch eine S-Kurve, um die überschüssige Höhe abzubauen.",
-        "Ich richte mich im Sitz auf, stabilisiere den Flug und nehme in Kauf, dass ich zu lang bin.",
-        "Ich bleibe im Sitz und bremse stark, damit ich schneller sinke.",
-        "Ich richte mich im Sitz auf. Ob ich noch ein S fliege oder geradeaus über den Landepunkt hinaus fliege, hängt von den Anweisungen meines Fluglehrers ab."
+        "Ich richte mich im Gurtzeug auf, sodass meine Beine zur Landung bereit sind, und fliege noch eine S-Kurve, um die uberschussige Hohe abzubauen.",
+        "Ich richte mich auf und stabilisiere den Flug, auch wenn ich dadurch zu weit fliege.",
+        "Ich bleibe sitzen und bremse stark, um schneller zu sinken.",
+        "Ich richte mich auf; ob ich noch eine S-Kurve fliege oder geradeaus uber den Landebereich hinausfliege, hangt von den Anweisungen des Fluglehrers ab."
       ],
       "correctAnswer": 0
     },
     {
       "id": "q23",
       "type": "matching",
-      "text": "Was ist Lee und Luv?",
+      "text": "Was ist LEE und LUV?",
       "matchingPairs": [
-        {"left": "LEE-Seite", "right": "Das ist die windabgewandte Seite (im Windschatten), wo die Luft absteigt und um ein Hindernis herumströmt."},
-        {"left": "LUV-Seite", "right": "Das ist die dem Wind zugewandte Seite eines Hügels, Kamms oder Hindernisses; dort ist die Strömung meist ruhiger und vorhersagbarer."}
+        {"left": "LEE-Seite", "right": "Das ist die dem Wind abgewandte Seite, auf der die Luft hinter und um ein Hindernis herum absinkt."},
+        {"left": "LUV-Seite", "right": "Das ist die einem Hugel, Grat oder Hindernis zugewandte Windseite; die Stromung ist dort ruhiger und besser vorhersehbar."}
       ],
       "correctAnswer": [
-        {"left": "LEE-Seite", "right": "Das ist die windabgewandte Seite (im Windschatten), wo die Luft absteigt und um ein Hindernis herumströmt."},
-        {"left": "LUV-Seite", "right": "Das ist die dem Wind zugewandte Seite eines Hügels, Kamms oder Hindernisses; dort ist die Strömung meist ruhiger und vorhersagbarer."}
+        {"left": "LEE-Seite", "right": "Das ist die dem Wind abgewandte Seite, auf der die Luft hinter und um ein Hindernis herum absinkt."},
+        {"left": "LUV-Seite", "right": "Das ist die einem Hugel, Grat oder Hindernis zugewandte Windseite; die Stromung ist dort ruhiger und besser vorhersehbar."}
       ]
     },
     {
       "id": "q24",
       "type": "true_false",
-      "text": "Die LEE-Seite ist geprägt von turbulenter, absinkender, unvorhersehbarer Luft (Rotor / Turbulenz). Hier ist die Gefahr von plötzlichen Einklappern, Auftriebsverlust und Kontrollverlust deutlich erhöht. Das Fliegen dort kann insbesondere bodennah oder in Hindernisnähe extrem gefährlich sein.",
+      "text": "Die Lee-Seite ist von turbulenter, absinkender und unvorhersehbarer Luft gepragt, bekannt als Rotor oder Turbulenz. Auf der Lee-Seite ist das Risiko von plotzlichen Einklappern, Auftriebsverlust und Kontrollverlust deutlich hoher. Das Fliegen dort kann besonders in Bodennhe oder in der Nahe von Hindernissen extrem gefahrlich sein.",
       "correctAnswer": true
     },
     {
       "id": "disclaimer",
       "type": "text",
-      "text": "Mit meiner Unterschrift bestätige ich, dass\n• ich die auf dem Übungshang erforderlichen Aufgaben laut Checkliste (Ausbildungsstufe 1) erfüllt habe\n\n• ich die Vorrangregeln beim Landeanflug (Art. 20, Art. 22 Verordnung über die Verkehrsregeln für Luftfahrzeuge, VVR, SR 748.121.11) besprochen habe und verstehe:\n    - Grundsätzlich ist der Landeplatz mit einer Linksvolte anzufliegen.\n    - Der dem Boden nähere Gleitschirm/Pilot hat immer Vorrang.\n    - Die Vortrittsregeln für den freien Luftraum gelten auch im Landeanflug.\n\n• ich die Verkehrsregeln zwischen Luftfahrzeugen (Art.15 Abs.3, Art.17, Art.19 Abs.3 VVR) besprochen habe und verstehe:\n    - Notlandende Luftfahrzeuge\n    - Freiballone\n    - Segelflugzeuge/Hängegleiter\n    - Motorisierte Luftfahrzeuge\n\n• ich die Vortrittsregeln zwischen Gleitschirmen im freien Luftraum (Art. 16 - 18 VVR) besprochen habe und verstehe:\n    - Kreuzen der Flugwege: Rechts hat Vortritt.\n    - Gegenverkehr: Beide weichen nach rechts aus.\n    - Überholen: Der Überholte hat während des gesamten Manövers immer Vorrang.\n\n• ich die Vortrittsregeln zwischen Gleitschirmen am Hang (Art. 16 Abs. 2, Art. 18 Abs. 3 VVR1) besprochen habe und verstehe:\n    - Über- oder Unterfliegen in gleicher Höhe ist verboten\n    - Im Gegenflug am Hang hat derjenige Vorrang, der den Hang rechts hat\n    - Überholen am Hang ist verboten\n    - Wendungen gegen den Hang sind nicht erlaubt\n\n• ich die Thermikregeln (Art. 19 VVR) besprochen habe und verstehe:\n    - Der Erste, der im Aufwind aufdreht, bestimmt die Drehrichtung.\n    - Der in der Thermik kreisende Gleitschirm hat Vorrang gegenüber durchfliegenden Luftfahrzeugen.\n\n• ich diesen Test ausführlich mit meinem Fluglehrer besprochen habe, dessen Inhalt vollständig verstehe, das Rettungssystem verstanden und das Auslöseszenario simuliert habe\n\n• ich mich für meinen ersten Höhenflug bereit fühle."
+      "text": "Mit meiner Unterschrift bestatige ich, dass\n• ich die in der Checkliste (Ausbildungsstufe 1) geforderten Aufgaben am Ubungshang erfullt habe\n\n• ich die Vorrangregeln beim Landeanflug (Art. 20, Art. 22 Verordnung uber die Verkehrsregeln fur Luftfahrzeuge, VVR, SR 748.121.11) besprochen habe und verstehe\n    - Grundsatzlich ist der Landeplatz mit einer Linksvolte anzufliegen.\n    - Der bodennahere Gleitschirm hat immer Vorrang.\n    - Die Vortrittsregeln fur den freien Luftraum gelten auch im Landeanflug.\n\n• ich die Verkehrsregeln zwischen Luftfahrzeugen (Art. 15 Abs. 3, Art. 17, Art. 19 Abs. 3 VVR) besprochen habe und verstehe\n    - Notlandende Luftfahrzeuge\n    - Freiballone\n    - Segelflugzeuge / Hangegleiter\n    - Motorisierte Luftfahrzeuge\n\n• ich die Vortrittsregeln zwischen Gleitschirmen im freien Luftraum (Art. 16 - 18 VVR) besprochen habe und verstehe\n    - Kreuzende Flugwege: rechts hat Vortritt.\n    - Begegnung im Gegenverkehr: beide weichen nach rechts aus.\n    - Uberholen: Der Uberholte hat wahrend des gesamten Manoevers Vorrang.\n\n• ich die Vortrittsregeln zwischen Gleitschirmen in Hangnahe (Art. 16 Abs. 2, Art. 18 Abs. 3 VVR1) besprochen habe und verstehe\n    - Uber- oder Unterfliegen auf ahnlicher Hohe ist verboten\n    - Bei Gegenverkehr am Hang hat das Luftfahrzeug mit dem Hang rechts Vortritt\n    - Uberholen am Hang ist verboten\n    - Wendungen gegen den Hang sind nicht erlaubt\n\n• ich die Regeln des Thermikfliegens (Art. 19 VVR) besprochen habe und verstehe\n    - Wer zuerst in einem Aufwind kreist, bestimmt die Drehrichtung.\n    - Der in der Thermik kreisende Gleitschirm hat Vorrang gegenuber durchfliegenden Luftfahrzeugen.\n\n• ich diesen Test ausfuhrlich mit meinem Fluglehrer besprochen habe, seinen Inhalt vollstandig verstehe, das Rettungssystem verstanden und die Rettungsauslosung simuliert habe\n\n• ich mich fur meinen ersten Hohenflug bereit fuhle."
+    }
+  ],
+  "it": [
+    {
+      "id": "q1",
+      "type": "matching",
+      "text": "Indica le parti del parapendio illustrato.",
+      "img_url": "pgschem.png",
+      "matchingPairs": [
+        {"left": "Linee A", "right": "1"},
+        {"left": "Linee B", "right": "2"},
+        {"left": "Linee C", "right": "3"},
+        {"left": "Estradosso", "right": "4"},
+        {"left": "Bordo d'uscita", "right": "5"},
+        {"left": "Linee dei freni (linee di comando)", "right": "6"},
+        {"left": "Bordo d'attacco", "right": "7"},
+        {"left": "Intradosso", "right": "8"}
+      ],
+      "correctAnswer": [
+        {"left": "Bordo d'attacco", "right": "1"},
+        {"left": "Bordo d'uscita", "right": "3"},
+        {"left": "Estradosso", "right": "2"},
+        {"left": "Intradosso", "right": "4"},
+        {"left": "Linee A", "right": "5"},
+        {"left": "Linee B", "right": "6"},
+        {"left": "Linee C", "right": "7"},
+        {"left": "Linee dei freni (linee di comando)", "right": "8"}
+      ]
+    },
+    {
+      "id": "q2",
+      "type": "single_choice",
+      "text": "Come si chiama il controllo immediatamente prima del decollo e cosa viene controllato?",
+      "options": [
+        "Controllo di decollo",
+        "Controllo di preparazione",
+        "Controllo a cinque punti",
+        "Controllo di prontezza"
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": "q3",
+      "type": "matching",
+      "text": "Controllo:",
+      "matchingPairs": [
+        {"left": "Punto 0", "right": "Linee"},
+        {"left": "Punto 1", "right": "Vento"},
+        {"left": "Punto 2", "right": "Paracadute di riserva"},
+        {"left": "Punto 3", "right": "Dintorni"},
+        {"left": "Punto 4", "right": "Pilota"},
+        {"left": "Punto 5", "right": "Vela"}
+      ],
+      "correctAnswer": [
+        {"left": "Punto 0", "right": "Paracadute di riserva"},
+        {"left": "Punto 1", "right": "Pilota"},
+        {"left": "Punto 2", "right": "Linee"},
+        {"left": "Punto 3", "right": "Vela"},
+        {"left": "Punto 4", "right": "Vento"},
+        {"left": "Punto 5", "right": "Dintorni"}
+      ]
+    },
+    {
+      "id": "q4",
+      "type": "single_choice",
+      "text": "Quali sono le preparazioni piu importanti immediatamente prima del decollo?",
+      "options": [
+        "La mia radio e accesa e controllata e lo spazio aereo e libero.",
+        "Ho indossato il casco e il vento viene da davanti.",
+        "Ho un ordine di volo chiaro, ho completato il controllo a 5 punti e la mia radio e accesa e controllata.",
+        "Le mie calzature sono in ordine e la mia radio e accesa e controllata."
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": "q5",
+      "type": "single_choice",
+      "text": "L'assistente al decollo ti da il via libera. Sei convinto che oggi non andra bene, perche il tuo istinto ti dice che non sei nello stato giusto per volare. Come reagisci?",
+      "options": [
+        "Ignoro le mie sensazioni, mi dico di non essere codardo e provo comunque a decollare.",
+        "Informo il responsabile del decollo che oggi non e la mia giornata e che non mi sento pronto per un volo in quota.",
+        "Tutti si sentono cosi prima del primo volo in quota! Fallo e basta!",
+        "Queste sensazioni non esistono!"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q6",
+      "type": "matching",
+      "text": "Un decollo contiene 3 fasi. Abbina i nomi alle azioni.",
+      "matchingPairs": [
+        {"left": "Gonfiaggio", "right": "Il pilota alza il parapendio sopra la testa usando le linee A."},
+        {"left": "Controllo", "right": "Il pilota ferma il parapendio sopra la testa, corregge se necessario e controlla tutta la vela e le linee."},
+        {"left": "Accelerazione", "right": "Il pilota si inclina in avanti, corre con passi grandi, aumenta la velocita mantenendo il parapendio sopra la testa fino al decollo."}
+      ],
+      "correctAnswer": [
+        {"left": "Gonfiaggio", "right": "Il pilota alza il parapendio sopra la testa usando le linee A."},
+        {"left": "Controllo", "right": "Il pilota ferma il parapendio sopra la testa, corregge se necessario e controlla tutta la vela e le linee."},
+        {"left": "Accelerazione", "right": "Il pilota si inclina in avanti, corre con passi grandi, aumenta la velocita mantenendo il parapendio sopra la testa fino al decollo."}
+      ]
+    },
+    {
+      "id": "q7",
+      "type": "multiple_choice",
+      "text": "Durante quale/i fase/i puoi fare uno Start-STOP? (Segna tutte le risposte corrette)",
+      "options": [
+        "Gonfiaggio",
+        "Controllo",
+        "Accelerazione"
+      ],
+      "correctAnswer": [0, 1]
+    },
+    {
+      "id": "q8",
+      "type": "single_choice",
+      "text": "Come si esegue uno Start-STOP nella fase di controllo?",
+      "options": [
+        "Si abbassano completamente entrambe le mani dei freni il piu velocemente possibile",
+        "Si abbassa completamente un freno mentre l'altra mano resta in alto e si guida il parapendio verso il lato tirato fino a farlo cadere",
+        "Si alzano completamente entrambe le mani",
+        "Si lancia immediatamente il paracadute di riserva"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q9",
+      "type": "single_choice",
+      "text": "Cosa fai se non riesci a capire il tuo istruttore via radio?",
+      "options": [
+        "Effettuo un atterraggio di emergenza il piu rapidamente possibile.",
+        "Volo con calma verso la zona di perdita quota designata, come spiegato dall'istruttore, e aspetto i segnali concordati (freccia, palette, ecc.). Se non vedo l'istruttore, perdo lentamente quota e atterro da solo seguendo l'avvicinamento concordato (sinistra/destra).",
+        "Volo sul lato sottovento del campo di atterraggio e provo ad atterrare da solo.",
+        "La radio non e necessaria per il primo volo in quota!"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q10",
+      "type": "single_choice",
+      "text": "Durante il tuo primo volo in quota, una parte della semiala destra collassa. Cosa fai?",
+      "options": [
+        "Riapro subito la vela pompando piu volte con il freno destro.",
+        "Stabilizzo la vela frenando con cautela a sinistra e spostando il peso a sinistra. Se necessario, uso il freno destro per riaprire il lato destro.",
+        "Sposto il peso a destra e uso una o due volte il freno destro per riaprire il lato destro.",
+        "Tiro entrambi i freni contemporaneamente circa all'80% una o due volte. Cosi aumento la pressione nella vela e la riapro."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q11",
+      "type": "multiple_choice",
+      "text": "Si puo governare un parapendio senza freni?",
+      "options": [
+        "No",
+        "Si, tirando con cautela i riser posteriori da un lato, abbassando il bordo d'uscita su quel lato e facendo virare la vela.",
+        "Si, tirando i riser anteriori da un lato.",
+        "Si, se la vela ha un sistema di emergenza per la direzione.",
+        "Si, solo con lo spostamento del peso; spostando il peso su un lato si puo far virare il parapendio in quella direzione."
+      ],
+      "correctAnswer": [1, 4]
+    },
+    {
+      "id": "q14",
+      "type": "single_choice",
+      "text": "Stai volando lungo un pendio verso il campo di atterraggio, con il pendio alla tua sinistra. Un altro pilota si avvicina alla tua stessa quota. Cosa fai?",
+      "options": [
+        "Continuo diritto, perche ho la precedenza.",
+        "Devio a destra assicurandomi che il parapendio possa passare tra me e il pendio con sufficiente margine di sicurezza.",
+        "Mi avvicino al pendio perche l'altro pilota ha la precedenza.",
+        "Freno energicamente per perdere quota e provo a passare sotto l'altro pilota."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q15",
+      "type": "single_choice",
+      "text": "Sulla via verso il campo di atterraggio incontri tre parapendii che girano insieme alla stessa quota. Cosa fai?",
+      "options": [
+        "Aggiro il gruppo a destra con sufficiente margine di sicurezza.",
+        "Cerco di passare sotto il gruppo.",
+        "Aggiro il gruppo a sinistra con sufficiente margine di sicurezza.",
+        "Faccio una virata di 180° e mi allontano dal gruppo."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q16",
+      "type": "single_choice",
+      "text": "Rispetto a un aereo a motore, un parapendio ha...",
+      "options": [
+        "in linea di principio nessuna precedenza.",
+        "in linea di principio la precedenza, salvo che l'aereo sia evidentemente in emergenza.",
+        "sempre la precedenza.",
+        "la precedenza solo quando il parapendio e evidentemente in emergenza."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q17",
+      "type": "single_choice",
+      "text": "Durante il tuo primo volo improvvisamente non senti piu il vento sul viso e ti sembra di essere fermo. Cosa potrebbe essere e come reagisci?",
+      "options": [
+        "Probabilmente sto volando con vento in coda, quindi non sento il vento. Non faccio nulla.",
+        "Probabilmente sto volando troppo lentamente e sono in stallo paracadutale. Reagisco facendo rapidamente una virata, non importa in quale direzione.",
+        "Probabilmente sto volando troppo lentamente e sono in stallo paracadutale. Reagisco spingendo in avanti contemporaneamente entrambi i riser A. Cosi riduco l'angolo di attacco e aiuto la vela a uscire dallo stallo.",
+        "Probabilmente sto volando troppo lentamente e sono in stallo. Reagisco tirando entrambi i freni al 70-80% e poi lasciandoli rapidamente."
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": "q18",
+      "type": "multiple_choice",
+      "text": "Dove potrebbe trovarsi il tuo paracadute di riserva? (Segna tutte le risposte corrette possibili)",
+      "options": [
+        "Nell'imbrago sotto il pilota sul lato destro",
+        "Nel compartimento dello zaino",
+        "Nel contenitore frontale",
+        "La riserva non e obbligatoria in addestramento, e solo peso extra"
+      ],
+      "correctAnswer": [0, 2]
+    },
+    {
+      "id": "q19",
+      "type": "multiple_choice",
+      "text": "In quale caso lanceresti il tuo paracadute di riserva? (Segna tutte le risposte corrette)",
+      "options": [
+        "Collisione con un altro aeromobile o con un cavo",
+        "Per eseguire uno Start-STOP (interruzione del decollo)",
+        "Situazione incontrollata come twist o autorotazione",
+        "Se la mia radio non funziona",
+        "Guasto dell'attrezzatura (ad es. si rompe un moschettone / si rompono tutte le linee A dopo un collasso)",
+        "Quando vedo sopra di me una nube cumulonembo"
+      ],
+      "correctAnswer": [0, 2, 4]
+    },
+    {
+      "id": "q20",
+      "type": "single_choice",
+      "text": "Che cos'e il circuito di atterraggio / avvicinamento?",
+      "options": [
+        "Una procedura definita per avvicinarsi al campo di atterraggio, divisa in sottovento, base e finale.",
+        "Il metodo di avvicinamento con lunghe S.",
+        "Questo termine non esiste nel parapendio.",
+        "Il metodo per perdere quota sopra il punto di atterraggio con grandi cerchi."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q21",
+      "type": "matching",
+      "text": "Cosa rappresentano i numeri nell'immagine?",
+      "img_url": "Linksvolte.png",
+      "matchingPairs": [
+        {"left": "1", "right": "Zona di perdita quota"},
+        {"left": "2", "right": "Sottovento"},
+        {"left": "3", "right": "Base"},
+        {"left": "4", "right": "Finale"},
+        {"left": "5", "right": "Lato LUV"},
+        {"left": "6", "right": "Lato LEE"}
+      ],
+      "correctAnswer": [
+        {"left": "1", "right": "Zona di perdita quota"},
+        {"left": "2", "right": "Sottovento"},
+        {"left": "3", "right": "Base"},
+        {"left": "4", "right": "Finale"},
+        {"left": "5", "right": "Lato LUV"},
+        {"left": "6", "right": "Lato LEE"}
+      ]
+    },
+    {
+      "id": "q22",
+      "type": "single_choice",
+      "text": "Cosa fai se durante il finale ti accorgi di essere ancora troppo alto?",
+      "options": [
+        "Mi metto eretto nel seggiolino in modo che le gambe siano pronte per l'atterraggio e faccio ancora una S per perdere quota in eccesso.",
+        "Mi metto eretto e stabilizzo il volo per proseguire dritto, anche se vado lungo.",
+        "Resto seduto e freno forte per aumentare il tasso di discesa.",
+        "Mi metto eretto; se faccio ancora una S o proseguo dritto oltre l'area di atterraggio dipende dalle istruzioni dell'istruttore."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q23",
+      "type": "matching",
+      "text": "Che cosa sono LEE e LUV?",
+      "matchingPairs": [
+        {"left": "Lato LEE", "right": "E il lato riparato dal vento, dove l'aria scende e gira attorno a un ostacolo."},
+        {"left": "Lato LUV", "right": "E il lato di un colle, cresta o ostacolo esposto al vento; qui il flusso d'aria e piu regolare e prevedibile."}
+      ],
+      "correctAnswer": [
+        {"left": "Lato LEE", "right": "E il lato riparato dal vento, dove l'aria scende e gira attorno a un ostacolo."},
+        {"left": "Lato LUV", "right": "E il lato di un colle, cresta o ostacolo esposto al vento; qui il flusso d'aria e piu regolare e prevedibile."}
+      ]
+    },
+    {
+      "id": "q24",
+      "type": "true_false",
+      "text": "Il lato lee e caratterizzato da aria turbolenta, discendente e imprevedibile, nota come rotore o turbolenza. Sul lato lee il rischio di collassi improvvisi, perdita di portanza e perdita di controllo e significativamente piu alto. Volare qui puo essere estremamente pericoloso, soprattutto vicino al suolo o agli ostacoli.",
+      "correctAnswer": true
+    },
+    {
+      "id": "disclaimer",
+      "type": "text",
+      "text": "Con la mia firma certifico che\n• ho completato i compiti richiesti sul pendio scuola indicati nella checklist (livello di formazione 1)\n\n• ho discusso e compreso le regole di priorita durante l'avvicinamento all'atterraggio (art. 20, art. 22 Ordinanza sulle regole dell'aria, VVR, SR 748.121.11)\n    - In linea di principio, il campo di atterraggio deve essere avvicinato con circuito sinistro.\n    - Il parapendio piu vicino al suolo ha sempre la priorita.\n    - Le regole di precedenza nello spazio aereo libero valgono anche durante l'avvicinamento all'atterraggio.\n\n• ho discusso e compreso le regole del traffico tra aeromobili (art. 15 cpv. 3, art. 17, art. 19 cpv. 3 VVR)\n    - Aeromobili in atterraggio di emergenza\n    - Palloni liberi\n    - Alianti / deltaplani\n    - Aeromobili a motore\n\n• ho discusso e compreso le regole di precedenza tra parapendii nello spazio aereo libero (art. 16 - 18 VVR)\n    - Rotte che si incrociano: ha la precedenza chi arriva da destra.\n    - Incrocio frontale: entrambi deviano a destra.\n    - Sorpasso: chi viene sorpassato ha la priorita durante tutta la manovra.\n\n• ho discusso e compreso le regole di precedenza tra parapendii vicino a un pendio (art. 16 cpv. 2, art. 18 cpv. 3 VVR1)\n    - E vietato passare sopra o sotto a quota simile\n    - In caso di incrocio frontale vicino al pendio ha la precedenza l'aeromobile che ha il pendio alla sua destra\n    - Il sorpasso vicino al pendio e vietato\n    - Non sono consentite virate contro il pendio\n\n• ho discusso e compreso le regole del volo termico (art. 19 VVR)\n    - Il primo che gira in una termica determina il senso di rotazione.\n    - Il parapendio che gira in termica ha la priorita sugli aeromobili in transito.\n\n• ho discusso approfonditamente questo test con il mio istruttore di volo, ne comprendo pienamente il contenuto, ho compreso il funzionamento del sistema di soccorso e ho eseguito la simulazione di estrazione della riserva\n\n• mi sento pronto per il mio primo volo in quota."
+    }
+  ],
+  "fr": [
+    {
+      "id": "q1",
+      "type": "matching",
+      "text": "Nomme les parties du parapente illustre.",
+      "img_url": "pgschem.png",
+      "matchingPairs": [
+        {"left": "Lignes A", "right": "1"},
+        {"left": "Lignes B", "right": "2"},
+        {"left": "Lignes C", "right": "3"},
+        {"left": "Voile superieure", "right": "4"},
+        {"left": "Bord de fuite", "right": "5"},
+        {"left": "Lignes de frein (lignes de commande)", "right": "6"},
+        {"left": "Bord d'attaque", "right": "7"},
+        {"left": "Voile inferieure", "right": "8"}
+      ],
+      "correctAnswer": [
+        {"left": "Bord d'attaque", "right": "1"},
+        {"left": "Bord de fuite", "right": "3"},
+        {"left": "Voile superieure", "right": "2"},
+        {"left": "Voile inferieure", "right": "4"},
+        {"left": "Lignes A", "right": "5"},
+        {"left": "Lignes B", "right": "6"},
+        {"left": "Lignes C", "right": "7"},
+        {"left": "Lignes de frein (lignes de commande)", "right": "8"}
+      ]
+    },
+    {
+      "id": "q2",
+      "type": "single_choice",
+      "text": "Comment s'appelle le controle immediatement avant le decollage et que verifie-t-on ?",
+      "options": [
+        "Controle de depart",
+        "Controle de preparation",
+        "Controle en cinq points",
+        "Controle de disponibilite"
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": "q3",
+      "type": "matching",
+      "text": "Je verifie :",
+      "matchingPairs": [
+        {"left": "Point 0", "right": "Suspentes"},
+        {"left": "Point 1", "right": "Vent"},
+        {"left": "Point 2", "right": "Parachute de secours"},
+        {"left": "Point 3", "right": "Environnement"},
+        {"left": "Point 4", "right": "Pilote"},
+        {"left": "Point 5", "right": "Voile"}
+      ],
+      "correctAnswer": [
+        {"left": "Point 0", "right": "Parachute de secours"},
+        {"left": "Point 1", "right": "Pilote"},
+        {"left": "Point 2", "right": "Suspentes"},
+        {"left": "Point 3", "right": "Voile"},
+        {"left": "Point 4", "right": "Vent"},
+        {"left": "Point 5", "right": "Environnement"}
+      ]
+    },
+    {
+      "id": "q4",
+      "type": "single_choice",
+      "text": "Quelles sont les preparations les plus importantes immediatement avant le decollage ?",
+      "options": [
+        "Ma radio est allumee et verifiee et l'espace aerien est libre.",
+        "J'ai mis mon casque et le vent vient de face.",
+        "J'ai une consigne de vol claire, j'ai effectue le controle en 5 points et ma radio est allumee et verifiee.",
+        "Mes chaussures sont adaptees et ma radio est allumee et verifiee."
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": "q5",
+      "type": "single_choice",
+      "text": "L'assistant de decollage t'autorise a partir. Tu es convaincu que cela ne se passera pas bien aujourd'hui, car ton instinct te dit que tu n'es pas dans le bon etat pour voler. Comment reagis-tu ?",
+      "options": [
+        "Je refoule mes sensations, je me dis de ne pas etre lache et j'essaie quand meme de decoller.",
+        "J'informe le responsable du decollage qu'aujourd'hui n'est pas mon jour et que je ne me sens pas pret pour un vol en altitude.",
+        "Tout le monde ressent cela avant son premier grand vol ! Fais-le simplement !",
+        "De tels sentiments n'existent pas !"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q6",
+      "type": "matching",
+      "text": "Un decollage comporte 3 phases. Associe les noms aux actions.",
+      "matchingPairs": [
+        {"left": "Gonflage", "right": "Le pilote monte la voile au-dessus de la tete a l'aide des lignes A."},
+        {"left": "Controle", "right": "Le pilote arrete la voile au-dessus de la tete, corrige si necessaire et verifie toute la voile et les suspentes."},
+        {"left": "Acceleration", "right": "Le pilote se penche en avant, court a grandes foulees, augmente sa vitesse tout en gardant la voile au-dessus de la tete jusqu'au decollage."}
+      ],
+      "correctAnswer": [
+        {"left": "Gonflage", "right": "Le pilote monte la voile au-dessus de la tete a l'aide des lignes A."},
+        {"left": "Controle", "right": "Le pilote arrete la voile au-dessus de la tete, corrige si necessaire et verifie toute la voile et les suspentes."},
+        {"left": "Acceleration", "right": "Le pilote se penche en avant, court a grandes foulees, augmente sa vitesse tout en gardant la voile au-dessus de la tete jusqu'au decollage."}
+      ]
+    },
+    {
+      "id": "q7",
+      "type": "multiple_choice",
+      "text": "Pendant quelle(s) phase(s) peux-tu faire un Start-STOP ? (Coche toutes les bonnes reponses)",
+      "options": [
+        "Gonflage",
+        "Controle",
+        "Acceleration"
+      ],
+      "correctAnswer": [0, 1]
+    },
+    {
+      "id": "q8",
+      "type": "single_choice",
+      "text": "Comment effectues-tu un Start-STOP pendant la phase de controle ?",
+      "options": [
+        "Tu abaisses completement les deux freins aussi vite que possible",
+        "Tu abaisses completement un frein pendant que l'autre main reste en haut et tu amènes la voile a tomber du cote tire",
+        "Tu mets completement les deux mains en haut",
+        "Tu lances immediatement le parachute de secours"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q9",
+      "type": "single_choice",
+      "text": "Que fais-tu si tu ne comprends pas ton instructeur a la radio ?",
+      "options": [
+        "J'effectue un atterrissage d'urgence aussi vite que possible.",
+        "Je vole calmement vers la zone de perte d'altitude definie, comme expliquee par l'instructeur, et j'attends les signaux convenus (fleche, palettes, etc.). Si je ne vois pas l'instructeur, je perds lentement de l'altitude et j'atterris seul en suivant l'approche briefee (gauche/droite).",
+        "Je vole du cote sous le vent du terrain d'atterrissage et j'essaie d'atterrir seul.",
+        "La radio n'est pas necessaire pour le premier grand vol !"
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q10",
+      "type": "single_choice",
+      "text": "Pendant ton premier grand vol, une partie de la demi-aile droite se ferme. Que fais-tu ?",
+      "options": [
+        "Je regonfle immediatement la voile en pompant plusieurs fois avec le frein droit.",
+        "Je stabilise la voile en freinant prudemment a gauche et en deplacant mon poids a gauche. Si necessaire, j'utilise le frein droit pour rouvrir le cote droit.",
+        "Je deplace mon poids a droite et j'utilise une ou deux fois le frein droit pour rouvrir le cote droit.",
+        "J'actionne les deux freins en meme temps a environ 80 % une ou deux fois. Cela augmente la pression dans la voile et l'ouvre a nouveau."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q11",
+      "type": "multiple_choice",
+      "text": "Peut-on piloter un parapente sans freins ?",
+      "options": [
+        "Non",
+        "Oui, en tirant prudemment les elevateurs arriere d'un cote, ce qui abaisse le bord de fuite de ce cote et fait tourner la voile.",
+        "Oui, en tirant les elevateurs avant d'un cote.",
+        "Oui, si la voile possede un dispositif de pilotage de secours.",
+        "Oui, uniquement avec le transfert de poids ; en deplacant son poids d'un cote, on peut faire tourner la voile dans cette direction."
+      ],
+      "correctAnswer": [1, 4]
+    },
+    {
+      "id": "q14",
+      "type": "single_choice",
+      "text": "Tu voles le long d'une pente vers le terrain d'atterrissage, avec la pente a ta gauche. Un autre pilote approche a la meme hauteur. Que fais-tu ?",
+      "options": [
+        "Je continue tout droit, car j'ai la priorite.",
+        "Je m'ecarte vers la droite en veillant a ce que l'autre parapente puisse passer entre moi et la pente avec une marge de securite suffisante.",
+        "Je me rapproche de la pente parce que l'autre pilote a la priorite.",
+        "Je freine fort pour perdre de l'altitude et j'essaie de passer sous l'autre pilote."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q15",
+      "type": "single_choice",
+      "text": "En route vers le terrain d'atterrissage, tu rencontres trois parapentes qui enroulent ensemble a la meme altitude. Que fais-tu ?",
+      "options": [
+        "Je contourne le groupe par la droite avec une marge de securite suffisante.",
+        "J'essaie de passer sous le groupe.",
+        "Je contourne le groupe par la gauche avec une marge de securite suffisante.",
+        "Je fais un virage a 180° et je m'eloigne du groupe."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q16",
+      "type": "single_choice",
+      "text": "Par rapport a un avion a moteur, un parapente a...",
+      "options": [
+        "en principe aucune priorite.",
+        "en principe la priorite, sauf si l'avion est manifestement en situation d'urgence.",
+        "toujours la priorite.",
+        "la priorite seulement lorsque le parapente est manifestement en situation d'urgence."
+      ],
+      "correctAnswer": 1
+    },
+    {
+      "id": "q17",
+      "type": "single_choice",
+      "text": "Pendant ton premier vol, tu ne sens soudain plus le vent sur ton visage et tu as l'impression d'etre immobile. De quoi peut-il s'agir et comment reagis-tu ?",
+      "options": [
+        "Je vole probablement vent arriere, donc je ne sens pas le vent. Je ne fais rien.",
+        "Je vole probablement trop lentement et je suis en parachutale. Je reagis en tournant rapidement, peu importe le cote.",
+        "Je vole probablement trop lentement et je suis en parachutale. Je reagis en poussant simultanement les deux elevateurs A vers l'avant. Cela diminue l'angle d'attaque et aide a sortir de la parachutale.",
+        "Je vole probablement trop lentement et je suis en decrochage. Je reagis en tirant les deux freins a 70-80 %, puis en les relachant rapidement."
+      ],
+      "correctAnswer": 2
+    },
+    {
+      "id": "q18",
+      "type": "multiple_choice",
+      "text": "Ou pourrait se trouver ton parachute de secours ? (Coche toutes les bonnes reponses possibles)",
+      "options": [
+        "Dans la sellette sous le pilote du cote droit",
+        "Dans le compartiment du sac a dos",
+        "Dans le container ventral",
+        "Un secours n'est pas obligatoire en formation, ce n'est qu'un poids supplementaire"
+      ],
+      "correctAnswer": [0, 2]
+    },
+    {
+      "id": "q19",
+      "type": "multiple_choice",
+      "text": "Dans quel cas lancerais-tu ton parachute de secours ? (Coche toutes les bonnes reponses)",
+      "options": [
+        "Collision avec un autre aeronef ou un cable",
+        "Pour effectuer un Start-STOP (abandon du decollage)",
+        "Situation non controlee comme twist ou autorotation",
+        "Si ma radio ne fonctionne pas",
+        "Defaillance du materiel (par ex. rupture d'un mousqueton / rupture de toutes les lignes A apres une fermeture)",
+        "Quand je vois un cumulonimbus au-dessus de moi"
+      ],
+      "correctAnswer": [0, 2, 4]
+    },
+    {
+      "id": "q20",
+      "type": "single_choice",
+      "text": "Qu'est-ce qu'un circuit d'atterrissage / une approche d'atterrissage ?",
+      "options": [
+        "Une procedure definie pour approcher un terrain d'atterrissage, divisee en vent arriere, base et finale.",
+        "La methode d'approche avec de longs S.",
+        "Ce terme n'existe pas en parapente.",
+        "La methode pour perdre de l'altitude au-dessus du point d'atterrissage avec de grands cercles."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q21",
+      "type": "matching",
+      "text": "Que representent les numeros sur l'image ?",
+      "img_url": "Linksvolte.png",
+      "matchingPairs": [
+        {"left": "1", "right": "Zone de perte d'altitude"},
+        {"left": "2", "right": "Vent arriere"},
+        {"left": "3", "right": "Base"},
+        {"left": "4", "right": "Finale"},
+        {"left": "5", "right": "Cote LUV"},
+        {"left": "6", "right": "Cote LEE"}
+      ],
+      "correctAnswer": [
+        {"left": "1", "right": "Zone de perte d'altitude"},
+        {"left": "2", "right": "Vent arriere"},
+        {"left": "3", "right": "Base"},
+        {"left": "4", "right": "Finale"},
+        {"left": "5", "right": "Cote LUV"},
+        {"left": "6", "right": "Cote LEE"}
+      ]
+    },
+    {
+      "id": "q22",
+      "type": "single_choice",
+      "text": "Que fais-tu si, pendant la finale, tu constates que tu es encore trop haut ?",
+      "options": [
+        "Je me redresse dans la sellette pour avoir les jambes pretes pour l'atterrissage et j'effectue encore un S pour perdre l'altitude excedentaire.",
+        "Je me redresse et je stabilise mon vol pour continuer tout droit, meme si je depasse.",
+        "Je reste assis et je freine fortement pour augmenter le taux de chute.",
+        "Je me redresse ; faire encore un S ou voler tout droit au-dela de la zone d'atterrissage depend des instructions de l'instructeur."
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "id": "q23",
+      "type": "matching",
+      "text": "Qu'est-ce que le LEE et le LUV ?",
+      "matchingPairs": [
+        {"left": "Cote LEE", "right": "C'est le cote abrite du vent, ou l'air descend et contourne un obstacle."},
+        {"left": "Cote LUV", "right": "C'est le cote d'une colline, d'une crete ou d'un obstacle expose au vent ; l'ecoulement de l'air y est plus regulier et plus previsible."}
+      ],
+      "correctAnswer": [
+        {"left": "Cote LEE", "right": "C'est le cote abrite du vent, ou l'air descend et contourne un obstacle."},
+        {"left": "Cote LUV", "right": "C'est le cote d'une colline, d'une crete ou d'un obstacle expose au vent ; l'ecoulement de l'air y est plus regulier et plus previsible."}
+      ]
+    },
+    {
+      "id": "q24",
+      "type": "true_false",
+      "text": "Le cote sous le vent est caracterise par un air turbulent, descendant et imprevisible, connu sous le nom de rotor ou turbulence. Du cote lee, le risque de fermetures soudaines, de perte de portance et de perte de controle est nettement plus eleve. Voler ici peut etre extremement dangereux, surtout pres du sol ou d'obstacles.",
+      "correctAnswer": true
+    },
+    {
+      "id": "disclaimer",
+      "type": "text",
+      "text": "Par ma signature ci-dessous, je certifie que\n• j'ai realise les taches requises sur la pente ecole specifiees dans la checklist (niveau de formation 1)\n\n• j'ai discute et compris les regles de priorite pendant l'approche d'atterrissage (art. 20, art. 22 Ordonnance sur les regles de l'air, VVR, SR 748.121.11)\n    - En principe, le terrain d'atterrissage doit etre approche avec un circuit main gauche.\n    - Le parapente le plus proche du sol a toujours la priorite.\n    - Les regles de priorite en espace aerien libre s'appliquent aussi pendant l'approche d'atterrissage.\n\n• j'ai discute et compris les regles de circulation entre aeronefs (art. 15 al. 3, art. 17, art. 19 al. 3 VVR)\n    - Aeronefs en atterrissage d'urgence\n    - Ballons libres\n    - Planeurs / deltaplanes\n    - Aeronefs motorises\n\n• j'ai discute et compris les regles de priorite entre parapentes en espace aerien libre (art. 16 - 18 VVR)\n    - Trajectoires convergentes : priorite a droite.\n    - Croisement frontal : les deux s'ecartent a droite.\n    - Depassement : le pilote depasse conserve la priorite pendant toute la manoeuvre.\n\n• j'ai discute et compris les regles de priorite entre parapentes a proximite d'une pente (art. 16 al. 2, art. 18 al. 3 VVR1)\n    - Il est interdit de passer au-dessus ou au-dessous a altitude similaire\n    - En croisement frontal pres d'une pente, l'aeronef qui a la pente a sa droite est prioritaire\n    - Le depassement pres de la pente est interdit\n    - Les virages vers la pente ne sont pas autorises\n\n• j'ai discute et compris les regles du vol thermique (art. 19 VVR)\n    - Le premier a enrouler dans un thermique determine le sens de rotation.\n    - Le parapente qui enroule dans le thermique est prioritaire sur les aeronefs de passage.\n\n• j'ai discute en detail de ce test avec mon instructeur de vol, j'en comprends pleinement le contenu, je comprends le fonctionnement du systeme de secours et j'ai effectue la simulation d'extraction du secours\n\n• je me sens pret pour mon premier grand vol."
     }
   ]
 }

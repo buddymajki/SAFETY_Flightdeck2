@@ -60,6 +60,11 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
 
     // Filter out disclaimer question (id="disclaimer") - display it separately
     questions = questions.where((q) => q.id != 'disclaimer').toList();
+    
+    // Get disclaimer in the current language (with fallback to English or any available)
+    String? disclaimer = widget.testContent.disclaimers[lang]
+      ?? widget.testContent.disclaimers['en']
+      ?? (widget.testContent.disclaimers.isNotEmpty ? widget.testContent.disclaimers.values.first : null);
 
     // Calculate score percentage
     int correctCount = 0;
@@ -396,7 +401,7 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
             },
           ),
           // Disclaimer (if present in test)
-          if (widget.testContent.disclaimer != null && widget.testContent.disclaimer!.isNotEmpty)
+          if (disclaimer != null && disclaimer.isNotEmpty)
             Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(20),
@@ -508,7 +513,7 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
                     constraints: const BoxConstraints(maxHeight: 200),
                     child: SingleChildScrollView(
                       child: Text(
-                        widget.testContent.disclaimer!,
+                        disclaimer,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.black87,
                           fontWeight: FontWeight.w500,
@@ -604,9 +609,14 @@ class _TestReviewScreenState extends State<TestReviewScreen> {
   }
 
   Widget _buildSignButton() {
+    // Get disclaimer in the current language (with fallback)
+    final lang = context.read<AppConfigService>().currentLanguageCode;
+    String? disclaimer = widget.testContent.disclaimers[lang]
+      ?? widget.testContent.disclaimers['en']
+      ?? (widget.testContent.disclaimers.isNotEmpty ? widget.testContent.disclaimers.values.first : null);
+    
     // Check if both checkboxes are needed (when there's a disclaimer)
-    final hasDisclaimer = widget.testContent.disclaimer != null && 
-                          widget.testContent.disclaimer!.isNotEmpty;
+    final hasDisclaimer = disclaimer != null && disclaimer.isNotEmpty;
     final allAccepted = hasDisclaimer 
         ? (_understood && _acceptedGTC) 
         : _understood;

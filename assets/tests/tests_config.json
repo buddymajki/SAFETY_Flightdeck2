@@ -9,7 +9,7 @@
         "de": "Erste Höhenflug Prüfung"
       },
       "passThreshold": 80,
-      "retryDelayDays": 10,
+      "retryDelayDays": 2,
       "triggers": [
         {
           "type": "category_percent",
@@ -24,11 +24,13 @@
       "folder": "2",
       "jsonFile": "thermal.json",
       "name": {
-        "en": "Thermal Flight Test",
-        "de": "Thermikflug Prüfung"
+        "en": "Thermal / Dynamic Soaring Flight Test",
+        "de": "Thermik- / Dynamikflug Prüfung",
+        "it": "Test di volo in termica / soaring dinamico",
+        "fr": "Test de vol thermique / soaring dynamique"
       },
       "passThreshold": 80,
-      "retryDelayDays": 10,
+      "retryDelayDays": 2,
       "triggers": [
         {
           "type": "category_percent",
@@ -39,7 +41,7 @@
         {
           "type": "flights_count",
           "operator": ">=",
-          "value": 20
+          "value": 0
         }
       ]
     }

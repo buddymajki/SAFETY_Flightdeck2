@@ -1226,13 +1226,21 @@ class _TestTakingScreenState extends State<TestTakingScreen> {
 
   Future<void> _submitTest() async {
     // Show disclaimer if available
-    if (_testContent?.disclaimer != null && _testContent!.disclaimer!.isNotEmpty) {
-      final accepted = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => _DisclaimerDialog(disclaimer: _testContent!.disclaimer!),
-      );
-      if (accepted != true) return;
+    if (_testContent != null && _testContent!.disclaimers.isNotEmpty) {
+      // Get disclaimer in the current language (with fallback)
+      final lang = context.read<AppConfigService>().currentLanguageCode;
+      String? disclaimer = _testContent!.disclaimers[lang]
+        ?? _testContent!.disclaimers['en']
+        ?? (_testContent!.disclaimers.isNotEmpty ? _testContent!.disclaimers.values.first : null);
+      
+      if (disclaimer != null && disclaimer.isNotEmpty) {
+        final accepted = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => _DisclaimerDialog(disclaimer: disclaimer),
+        );
+        if (accepted != true) return;
+      }
     }
 
     setState(() { _isSubmitting = true; });
@@ -1448,6 +1456,7 @@ class _QuestionWidget extends StatefulWidget {
 class _QuestionWidgetState extends State<_QuestionWidget> {
   TextEditingController? _textController;
   List<String>? _shuffledMatchingPairs;
+  String? _expandedMatchingLeftItem;
 
   @override
   void initState() {
@@ -1478,6 +1487,7 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
     }
     // Re-shuffle matching pairs when navigating to a different matching question
     if (widget.question.id != oldWidget.question.id) {
+      _expandedMatchingLeftItem = null;
       if (widget.question.type == QuestionType.matching && !widget.readOnly) {
         _shuffledMatchingPairs = List<String>.from(widget.question.matchingPairs)..shuffle();
       } else if (widget.question.type == QuestionType.matching && widget.readOnly) {
@@ -1805,80 +1815,144 @@ class _QuestionWidgetState extends State<_QuestionWidget> {
           final used = matches.entries.where((e) => e.key != leftItem).map((e) => e.value).toSet();
           final current = matches[leftItem];
           final availableOptions = rightItems.where((opt) => opt == current || !used.contains(opt)).toSet().toList();
-          // Ensure current value exists in available options; if not, treat as unselected for display
           final displayValue = (current != null && availableOptions.contains(current)) ? current : null;
+          final isExpanded = _expandedMatchingLeftItem == leftItem;
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color.fromARGB(255, 255, 255, 255), width: 2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(leftItem,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600, color: const Color.fromARGB(255, 255, 255, 255))),
-                      ),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.arrow_forward, size: 20, color: Color.fromARGB(255, 255, 255, 255)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String?>(
-                    decoration: InputDecoration(
-                      isDense: false,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: current != null ? const Color.fromARGB(255, 105, 167, 225) : Colors.white.withValues(alpha: 0.5), width: 2)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: current != null ? const Color.fromARGB(255, 105, 167, 225) : Colors.white.withValues(alpha: 0.5), width: 2)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color.fromARGB(255, 105, 167, 225), width: 2)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                      filled: true,
-                      fillColor: current != null ? const Color.fromARGB(255, 105, 167, 225).withValues(alpha: 0.15) : Colors.transparent,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: widget.readOnly
+                    ? null
+                    : () {
+                        setState(() {
+                          _expandedMatchingLeftItem = isExpanded ? null : leftItem;
+                        });
+                      },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.04),
+                    border: Border.all(
+                      color: isExpanded
+                          ? const Color.fromARGB(255, 105, 167, 225)
+                          : current != null
+                              ? Colors.white70
+                              : Colors.white.withValues(alpha: 0.28),
+                      width: isExpanded ? 1.8 : 1.2,
                     ),
-                    isExpanded: true,
-                    hint: Text('Select', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.7))),
-                    initialValue: displayValue,
-                    items: [
-                      if (displayValue != null)
-                        DropdownMenuItem<String?>(
-                          value: null,
-                          child: Row(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  leftItem,
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  displayValue ?? 'Tap to choose answer',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: displayValue != null
+                                        ? Colors.white.withValues(alpha: 0.92)
+                                        : Colors.white.withValues(alpha: 0.58),
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          if (!widget.readOnly && displayValue != null)
+                            IconButton(
+                              onPressed: () {
+                                final newMatches = Map<String, String>.from(matches);
+                                newMatches.remove(leftItem);
+                                setState(() {
+                                  _expandedMatchingLeftItem = null;
+                                });
+                                widget.onAnswerChanged(newMatches);
+                              },
+                              tooltip: 'Clear selection',
+                              icon: Icon(Icons.close, color: Colors.red.shade300, size: 20),
+                              visualDensity: VisualDensity.compact,
+                            )
+                          else
+                            Icon(
+                              isExpanded ? Icons.expand_less : Icons.arrow_forward,
+                              size: 20,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                        ],
+                      ),
+                      if (!widget.readOnly && isExpanded) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Column(
                             children: [
-                              Icon(Icons.close, size: 16, color: Colors.red.shade300),
-                              const SizedBox(width: 8),
-                              Text('Clear selection',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.red.shade300, fontWeight: FontWeight.w500, fontStyle: FontStyle.italic, fontSize: 12)),
+                              ...availableOptions.map((pair) {
+                                final isSelected = pair == displayValue;
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color.fromARGB(255, 105, 167, 225).withValues(alpha: 0.18)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: RadioListTile<String>(
+                                    value: pair,
+                                    groupValue: displayValue,
+                                    activeColor: const Color.fromARGB(255, 105, 167, 225),
+                                    controlAffinity: ListTileControlAffinity.leading,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    title: Text(
+                                      pair,
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                    onChanged: (value) {
+                                      final newMatches = Map<String, String>.from(matches);
+                                      if (value != null) {
+                                        newMatches[leftItem] = value;
+                                      }
+                                      setState(() {
+                                        _expandedMatchingLeftItem = null;
+                                      });
+                                      widget.onAnswerChanged(newMatches);
+                                    },
+                                  ),
+                                );
+                              }),
                             ],
                           ),
                         ),
-                      ...availableOptions.map((pair) => DropdownMenuItem<String?>(
-                        value: pair,
-                        child: Text(pair,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color.fromARGB(255, 255, 255, 255), fontWeight: FontWeight.w500, fontSize: 12),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      )),
+                      ],
                     ],
-                    dropdownColor: const Color.fromARGB(255, 40, 60, 90),
-                    isDense: true,
-                    menuMaxHeight: 300,
-                    onChanged: widget.readOnly ? null : (value) {
-                      final newMatches = Map<String, String>.from(matches);
-                      if (value == null) { newMatches.remove(leftItem); } else { newMatches[leftItem] = value; }
-                      widget.onAnswerChanged(newMatches);
-                    },
                   ),
-                ],
+                ),
               ),
             ),
           );

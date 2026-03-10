@@ -8,12 +8,12 @@
 /// 2. Run: dart bin/update_version.dart
 /// 3. Build: flutter build apk --release
 /// 
-/// Current version: 1.0.41 (build 10041)
+/// Current version: 1.0.42 (build 10042)
 
 class AppVersionService {
   // ===== AUTO-GENERATED FROM pubspec.yaml =====
-  static const String _appVersion = '1.0.41';
-  static const String _buildNumber = '10041';
+  static const String _appVersion = '1.0.42';
+  static const String _buildNumber = '10042';
   // ============================================
 
   /// Get app version (e.g., "1.0.3")
