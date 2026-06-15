@@ -1443,11 +1443,24 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              isEdit ? _t('Edit_Flight', lang) : _t('Add_New_Flight', lang),
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            // Header with title and a close button so users can exit the
+            // sheet without relying on swipe-to-dismiss (unreliable on iOS).
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    isEdit ? _t('Edit_Flight', lang) : _t('Add_New_Flight', lang),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  tooltip: _t('Cancel', lang),
+                  onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -1822,6 +1835,16 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                                 ? _t('Save_GPS_Flight', lang)
                                 : _t('Save', lang)),
                       ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Cancel button - lets the user leave the form without saving
+            TextButton(
+              onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(_t('Cancel', lang)),
               ),
             ),
           ],

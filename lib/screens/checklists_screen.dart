@@ -17,13 +17,10 @@ class ChecklistsScreen extends StatefulWidget {
 
 class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProviderStateMixin {
   late TabController _tabController;
-  late ScrollController _tabScrollController;
   List<String> _categoryIds = [];
   int _selectedTabIndex = 0;
   late SharedPreferences _prefs;
   late Future<void> _loadIndexFuture;
-  bool _canScrollLeft = false;
-  bool _canScrollRight = false;
   bool _isDisposed = false;
 
   @override
@@ -54,8 +51,6 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
   void initState() {
     super.initState();
     _tabController = TabController(length: 0, vsync: this);
-    _tabScrollController = ScrollController();
-    _tabScrollController.addListener(_updateScrollIndicators);
     _loadIndexFuture = _loadTabIndex();
   }
 
@@ -71,25 +66,8 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
-        // Also scroll the tab bar to show the selected tab
-        _scrollTabIntoView(targetIndex);
       }
     });
-  }
-
-  /// Scroll the tab bar to show the target tab index
-  void _scrollTabIntoView(int tabIndex) {
-    if (!_tabScrollController.hasClients) return;
-    
-    // Approximate position: each tab is roughly 100-120 pixels wide (including padding)
-    final estimatedTabWidth = 110.0;
-    final targetScroll = (tabIndex * estimatedTabWidth) - 50; // Center it roughly
-    
-    _tabScrollController.animateTo(
-      targetScroll.clamp(0, _tabScrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
   }
 
   Future<void> _saveTabIndex(int index) async {
@@ -112,7 +90,6 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
     _isDisposed = true;
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
-    _tabScrollController.dispose();
     super.dispose();
   }
 
@@ -174,36 +151,35 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
           // TabBar with floating chevron buttons
           Stack(
             children: [
-              SingleChildScrollView(
-                controller: _tabScrollController,
-                scrollDirection: Axis.horizontal,
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  tabAlignment: TabAlignment.start,
-                  padding: EdgeInsets.zero,
-                  labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  labelColor: theme.colorScheme.onSurface,
-                  unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
-                  unselectedLabelStyle: theme.textTheme.labelMedium,
-                  indicatorColor: theme.colorScheme.primary,
-                    tabs: [
-                      for (final categoryId in categoryIds)
-                        _buildTab(context, categoryId, itemsByCategory[categoryId]!, user, lang),
-                    ],
-                  ),
-                ),
-              // Left chevron - floating button
-              if (_shouldShowLeftScroll())
+              // TabBar handles its own horizontal scrolling (isScrollable: true).
+              // It must NOT be wrapped in another horizontal scrollable, otherwise
+              // the nested scroll view swallows tab taps on iOS (only swipe works).
+              TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                indicatorSize: TabBarIndicatorSize.label,
+                tabAlignment: TabAlignment.start,
+                padding: EdgeInsets.zero,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                labelColor: theme.colorScheme.onSurface,
+                unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+                unselectedLabelStyle: theme.textTheme.labelMedium,
+                indicatorColor: theme.colorScheme.primary,
+                tabs: [
+                  for (final categoryId in categoryIds)
+                    _buildTab(context, categoryId, itemsByCategory[categoryId]!, user, lang),
+                ],
+              ),
+              // Left chevron - jumps to the previous tab
+              if (_selectedTabIndex > 0)
                 Positioned(
                   left: 8,
                   top: 0,
                   bottom: 0,
                   child: Center(
                     child: GestureDetector(
-                      onTap: _scrollTabsLeft,
+                      onTap: _goToPreviousTab,
                       child: Container(
                         width: 32,
                         height: 32,
@@ -227,15 +203,15 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                     ),
                   ),
                 ),
-              // Right chevron - floating button
-              if (_shouldShowRightScroll())
+              // Right chevron - jumps to the next tab
+              if (_selectedTabIndex < categoryIds.length - 1)
                 Positioned(
                   right: 8,
                   top: 0,
                   bottom: 0,
                   child: Center(
                     child: GestureDetector(
-                      onTap: _scrollTabsRight,
+                      onTap: _goToNextTab,
                       child: Container(
                         width: 32,
                         height: 32,
@@ -281,56 +257,20 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
     );
   }
 
-  /// Update scroll indicators based on actual scroll position
-  void _updateScrollIndicators() {
-    if (!_tabScrollController.hasClients) {
-      setState(() {
-        _canScrollLeft = false;
-        _canScrollRight = false;
-      });
-      return;
+  /// Move selection to the previous tab. The scrollable TabBar
+  /// automatically scrolls the newly selected tab into view.
+  void _goToPreviousTab() {
+    if (_tabController.index > 0) {
+      _tabController.animateTo(_tabController.index - 1);
     }
-
-    final maxScroll = _tabScrollController.position.maxScrollExtent;
-    final currentScroll = _tabScrollController.offset;
-
-    setState(() {
-      _canScrollLeft = currentScroll > 10; // Small threshold to avoid jitter
-      _canScrollRight = (maxScroll - currentScroll) > 10;
-    });
   }
 
-  /// Scroll tabs to the left by one tab width
-  void _scrollTabsLeft() {
-    if (!_tabScrollController.hasClients) return;
-    final scrollAmount = 120.0; // Approximate tab width
-    _tabScrollController.animateTo(
-      (_tabScrollController.offset - scrollAmount).clamp(0, _tabScrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  /// Scroll tabs to the right by one tab width
-  void _scrollTabsRight() {
-    if (!_tabScrollController.hasClients) return;
-    final scrollAmount = 120.0; // Approximate tab width
-    _tabScrollController.animateTo(
-      (_tabScrollController.offset + scrollAmount).clamp(0, _tabScrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  /// Check if there are more tabs to the left to scroll
-  bool _shouldShowLeftScroll() {
-    return _canScrollLeft;
-  }
-
-  /// Check if there are more tabs to the right to scroll
-  /// Only show if there is actual scroll space remaining
-  bool _shouldShowRightScroll() {
-    return _canScrollRight;
+  /// Move selection to the next tab. The scrollable TabBar
+  /// automatically scrolls the newly selected tab into view.
+  void _goToNextTab() {
+    if (_tabController.index < _tabController.length - 1) {
+      _tabController.animateTo(_tabController.index + 1);
+    }
   }
 
 
