@@ -19,22 +19,31 @@ class UpdateInfo {
   final String version;
   final String changelog;
   final bool isForceUpdate;
+
+  /// Build number from Firestore (`buildNumber`), when the release script wrote
+  /// one. Null for older documents that only carry a version string.
+  final int? buildNumber;
   // final String downloadUrl;  // <-- kommentálva: régebben GitHub/Google Drive APK URL volt
 
   UpdateInfo({
     required this.version,
     required this.changelog,
     required this.isForceUpdate,
+    this.buildNumber,
     // required this.downloadUrl,
   });
 
   factory UpdateInfo.fromFirestore(DocumentSnapshot doc) {
     // doc['field'] throws StateError when the field is missing; read the map instead.
     final data = (doc.data() as Map<String, dynamic>?) ?? const <String, dynamic>{};
+    final rawBuild = data['buildNumber'];
     return UpdateInfo(
       version: (data['version'] ?? '').toString(),
       changelog: (data['changelog'] ?? '').toString(),
       isForceUpdate: data['isForceUpdate'] == true,
+      buildNumber: rawBuild is num
+          ? rawBuild.toInt()
+          : (rawBuild != null ? int.tryParse(rawBuild.toString()) : null),
       // downloadUrl: data['downloadUrl'] ?? '',
     );
   }
@@ -75,6 +84,9 @@ class UpdateService extends ChangeNotifier {
 
   /// Aktuális app verzió
   String get appVersion => AppVersionService.getVersionSync();
+
+  /// Aktuális build szám
+  int get appBuildNumber => AppVersionService.getBuildNumberSync();
 
   // ============================================================
   // AKTÍV: Firestore alapú verzió-ellenőrzés
@@ -145,9 +157,13 @@ class UpdateService extends ChangeNotifier {
       }
 
       _updateInfo = UpdateInfo.fromFirestore(doc);
-      debugPrint('[Update] Firestore version: ${_updateInfo!.version} (from ${doc.id}), current: $appVersion');
+      debugPrint(
+        '[Update] Firestore version: ${_updateInfo!.version}'
+        '${_updateInfo!.buildNumber != null ? ' (build ${_updateInfo!.buildNumber})' : ''}'
+        ' from ${doc.id}, current: $appVersion (build $appBuildNumber)',
+      );
 
-      final hasUpdate = _compareVersions(_updateInfo!.version, appVersion) > 0;
+      final hasUpdate = _isNewer(_updateInfo!);
 
       _isChecking = false;
       notifyListeners();
@@ -354,18 +370,44 @@ class UpdateService extends ChangeNotifier {
   // ============================================================
 
   /// Verzió összehasonlítás ("1.0.0" formátum)
-  int _compareVersions(String newVersion, String currentVersion) {
-    final newParts = newVersion.split('.');
-    final currentParts = currentVersion.split('.');
+  /// True when the published release is newer than the running build.
+  ///
+  /// The build number is authoritative when both sides have one: two releases
+  /// can share a version string (a rebuilt hotfix) while the build number still
+  /// moves. Documents written before the release script published
+  /// `buildNumber` fall back to comparing the version string.
+  bool _isNewer(UpdateInfo remote) {
+    final remoteBuild = remote.buildNumber;
+    if (remoteBuild != null && remoteBuild > 0 && appBuildNumber > 0) {
+      return remoteBuild > appBuildNumber;
+    }
+    return _compareVersions(remote.version, appVersion) > 0;
+  }
 
-    for (int i = 0; i < 3; i++) {
-      final newPart = int.tryParse(i < newParts.length ? newParts[i] : '0') ?? 0;
-      final currentPart = int.tryParse(i < currentParts.length ? currentParts[i] : '0') ?? 0;
+  /// Compares dotted version strings ("v1.0.43", "1.0.43+10043", "1.2" …).
+  /// Returns 1 when [newVersion] is newer, -1 when older, 0 when equal.
+  int _compareVersions(String newVersion, String currentVersion) {
+    final newParts = _versionParts(newVersion);
+    final currentParts = _versionParts(currentVersion);
+    final length = newParts.length > currentParts.length
+        ? newParts.length
+        : currentParts.length;
+
+    for (int i = 0; i < length; i++) {
+      final newPart = i < newParts.length ? newParts[i] : 0;
+      final currentPart = i < currentParts.length ? currentParts[i] : 0;
 
       if (newPart > currentPart) return 1;
       if (newPart < currentPart) return -1;
     }
     return 0;
+  }
+
+  /// "v1.0.43+10043" / "1.0.43-beta.2" -> [1, 0, 43]
+  List<int> _versionParts(String version) {
+    final core = version.trim().replaceFirst(RegExp(r'^[vV]'), '').split(RegExp(r'[+\-]')).first;
+    final parts = core.split('.').map((p) => int.tryParse(p.trim()) ?? 0).toList();
+    return parts.isEmpty ? <int>[0] : parts;
   }
 
   void clear() {

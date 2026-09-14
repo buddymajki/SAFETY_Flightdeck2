@@ -75,36 +75,31 @@ if ($platform -eq "android" -or $platform -eq "both") {
     if ($LASTEXITCODE -ne 0) { Err "Firebase App Distribution upload failed" }
     Success "APK uploaded to Firebase App Distribution"
 
+    # A Firestore-írás NEM opcionális: ha ez kimarad, a telepített appok
+    # sosem kapnak frissítés-értesítést (az app_updates dokumentum a jelzés).
     Log "Updating Firestore app_updates/android..."
-    try {
-        node bin/update_firestore.js $ver "$notes" $forceStr "android"
-        if ($LASTEXITCODE -ne 0) { throw "node script failed" }
-        Success "Firestore updated: app_updates/android -> version=$ver"
-    } catch {
-        Write-Host "[WARN] Firestore update failed: $_" -ForegroundColor Yellow
-        Write-Host "       Manually update Firestore: app_updates/android -> version: $ver" -ForegroundColor Yellow
+    node bin/update_firestore.js $ver "$notes" $forceStr "android"
+    if ($LASTEXITCODE -ne 0) {
+        Err "Firestore update failed for app_updates/android. The APK is already uploaded to App Distribution, but nobody will be prompted to update. Run: firebase login; then: node bin/update_firestore.js $ver `"$notes`" $forceStr android"
     }
+    Success "Firestore updated: app_updates/android -> version=$ver"
 
     Log "Updating Firestore app_updates/latest..."
-    try {
-        node bin/update_firestore.js $ver "$notes" $forceStr "latest"
-        if ($LASTEXITCODE -ne 0) { throw "node script failed" }
-        Success "Firestore updated: app_updates/latest -> version=$ver"
-    } catch {
-        Write-Host "[WARN] Firestore latest update failed: $_" -ForegroundColor Yellow
+    node bin/update_firestore.js $ver "$notes" $forceStr "latest"
+    if ($LASTEXITCODE -ne 0) {
+        Err "Firestore update failed for app_updates/latest. Run: node bin/update_firestore.js $ver `"$notes`" $forceStr latest"
     }
+    Success "Firestore updated: app_updates/latest -> version=$ver"
 }
 
 if ($platform -eq "ios" -or $platform -eq "both") {
     Log "Updating Firestore app_updates/ios..."
-    try {
-        node bin/update_firestore.js $ver "$notes" $forceStr "ios"
-        if ($LASTEXITCODE -ne 0) { throw "node script failed" }
-        Success "Firestore updated: app_updates/ios -> version=$ver"
-    } catch {
-        Write-Host "[WARN] Firestore update failed: $_" -ForegroundColor Yellow
-        Write-Host "       Manually update Firestore: app_updates/ios -> version: $ver" -ForegroundColor Yellow
+    node bin/update_firestore.js $ver "$notes" $forceStr "ios"
+    if ($LASTEXITCODE -ne 0) {
+        Err "Firestore update failed for app_updates/ios. Run: node bin/update_firestore.js $ver `"$notes`" $forceStr ios"
     }
+    Success "Firestore updated: app_updates/ios -> version=$ver"
+
     
     Log "NOTE: iOS release to TestFlight typically requires macOS/Xcode."
     Log "Please ensure you build and upload the iOS app to TestFlight manually, or it won't be available."
@@ -114,7 +109,9 @@ if ($platform -eq "ios" -or $platform -eq "both") {
 # 5. Git commit + tag + push
 # ---------------------------------------------------------------
 Log "Committing and pushing to git..."
-git add .
+# Csak a release által érintett fájlok (a `git add .` bármilyen félkész
+# munkát és véletlenül bent maradt titkot is felvinne).
+git add pubspec.yaml lib/services/app_version_service.dart metadata.json
 git commit -m "Release v$ver"
 if ($LASTEXITCODE -ne 0) { Err "git commit failed" }
 

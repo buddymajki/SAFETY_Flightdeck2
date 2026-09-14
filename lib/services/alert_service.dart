@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -152,6 +153,33 @@ class AlertService extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final AirspaceService _airspaceService = AirspaceService();
   final ConnectivityService _connectivityService = ConnectivityService();
+
+  // SharedPreferences keys. Both queues are per-pilot: two pilots sharing a
+  // phone must not see - or sync - each other's alerts.
+  static const String _localAlertsKey = 'local_alerts';
+  static const String _pendingOpsKey = 'pending_firestore_ops';
+
+  /// `<base>_<uid>`, or the bare key while nobody is signed in.
+  String _scopedKey(String base) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    return uid == null ? base : '${base}_$uid';
+  }
+
+  /// Reads a scoped list, adopting the pre-scoping device-wide list once so an
+  /// upgrading user does not lose an unsynced queue.
+  Future<List<String>> _readScoped(SharedPreferences prefs, String base) async {
+    final key = _scopedKey(base);
+    final scoped = prefs.getStringList(key);
+    if (scoped != null) return scoped;
+
+    final legacy = prefs.getStringList(base);
+    if (legacy == null || key == base) return legacy ?? <String>[];
+
+    await prefs.setStringList(key, legacy);
+    await prefs.remove(base);
+    log('[AlertService] Migrated ${legacy.length} entries from $base to $key');
+    return legacy;
+  }
 
   // Local queue for offline alerts (the primary source of truth)
   List<AlertRecord> _localAlerts = [];
@@ -1111,7 +1139,7 @@ class AlertService extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final alertsJson = _localAlerts.map((a) => jsonEncode(a.toJson())).toList();
-      await prefs.setStringList('local_alerts', alertsJson);
+      await prefs.setStringList(_scopedKey(_localAlertsKey), alertsJson);
     } catch (e) {
       log('[AlertService] Error saving local alerts: $e');
     }
@@ -1121,7 +1149,7 @@ class AlertService extends ChangeNotifier {
   Future<void> _loadLocalAlerts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final alertsJson = prefs.getStringList('local_alerts') ?? [];
+      final alertsJson = await _readScoped(prefs, _localAlertsKey);
 
       _localAlerts = alertsJson
           .map((json) => AlertRecord.fromJson(jsonDecode(json)))
@@ -1139,7 +1167,7 @@ class AlertService extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final opsJson = _pendingOperations.map((op) => jsonEncode(op.toJson())).toList();
-      await prefs.setStringList('pending_firestore_ops', opsJson);
+      await prefs.setStringList(_scopedKey(_pendingOpsKey), opsJson);
     } catch (e) {
       log('[AlertService] Error saving pending operations: $e');
     }
@@ -1149,7 +1177,7 @@ class AlertService extends ChangeNotifier {
   Future<void> _loadPendingOperations() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final opsJson = prefs.getStringList('pending_firestore_ops') ?? [];
+      final opsJson = await _readScoped(prefs, _pendingOpsKey);
       
       _pendingOperations = opsJson
           .map((json) => _PendingFirestoreOperation.fromJson(jsonDecode(json)))

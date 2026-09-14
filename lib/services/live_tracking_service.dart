@@ -75,6 +75,11 @@ class _PendingPositionUpdate {
 /// - Upload Throttling: minUploadInterval (12s) and minDistanceMeters (50m)
 /// - These settings balance real-time safety, cost efficiency, and battery life
 class LiveTrackingService extends ChangeNotifier {
+  // 'live_tracking_enabled' stays device-wide (it is a phone setting); the
+  // queued positions and the recovered flight state belong to one pilot.
+  // 'live_tracking_enabled' stays device-wide (it is a phone setting); the
+  // queued positions and the recovered flight state belong to one pilot, so
+  // they are stored under '<key>_<uid>'.
   static const String _enabledKey = 'live_tracking_enabled';
   static const String _pendingPositionsKey = 'pending_position_updates';
   static const String _lastFlightStateKey = 'last_flight_state';
@@ -106,6 +111,12 @@ class LiveTrackingService extends ChangeNotifier {
   TrackPoint? _lastUploadedPosition;
   DateTime? _flightStartTime;
   String? _takeoffSiteName;
+
+  /// `<base>_<uid>`, or the bare key while nobody is signed in.
+  String _scopedKey(String base) {
+    final uid = _auth.currentUser?.uid;
+    return uid == null ? base : '${base}_$uid';
+  }
 
   // Offline queue
   List<_PendingPositionUpdate> _pendingPositions = [];
@@ -181,6 +192,15 @@ class LiveTrackingService extends ChangeNotifier {
     });
   }
 
+  // Per-position tracing fires at the GPS rate (about 1 Hz for a whole
+  // flight). Even in release builds debugPrint formats the string and hands
+  // it to the platform logger, so it is gated behind an explicit flag.
+  static const bool verbosePositionLog = false;
+
+  void _trace(String message) {
+    if (kDebugMode && verbosePositionLog) debugPrint(message);
+  }
+
   /// Load settings from SharedPreferences
   Future<void> _loadSettings() async {
     try {
@@ -206,7 +226,18 @@ class LiveTrackingService extends ChangeNotifier {
   Future<void> _loadPendingPositions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final positionsJson = prefs.getStringList(_pendingPositionsKey) ?? [];
+      final key = _scopedKey(_pendingPositionsKey);
+      var positionsJson = prefs.getStringList(key);
+      if (positionsJson == null && key != _pendingPositionsKey) {
+        // Adopt the pre-scoping device-wide queue once, so an upgrading pilot
+        // does not lose positions that never reached Firestore.
+        positionsJson = prefs.getStringList(_pendingPositionsKey) ?? [];
+        if (positionsJson.isNotEmpty) {
+          await prefs.setStringList(key, positionsJson);
+        }
+        await prefs.remove(_pendingPositionsKey);
+      }
+      positionsJson ??= <String>[];
       
       _pendingPositions = positionsJson
           .map((json) => _PendingPositionUpdate.fromJson(jsonDecode(json)))
@@ -224,7 +255,7 @@ class LiveTrackingService extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final positionsJson = _pendingPositions.map((p) => jsonEncode(p.toJson())).toList();
-      await prefs.setStringList(_pendingPositionsKey, positionsJson);
+      await prefs.setStringList(_scopedKey(_pendingPositionsKey), positionsJson);
     } catch (e) {
       log('[LiveTrackingService] Error saving pending positions: $e');
     }
@@ -234,7 +265,7 @@ class LiveTrackingService extends ChangeNotifier {
   Future<void> _loadLastFlightState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final stateJson = prefs.getString(_lastFlightStateKey);
+      final stateJson = prefs.getString(_scopedKey(_lastFlightStateKey));
       
       if (stateJson != null) {
         final state = jsonDecode(stateJson) as Map<String, dynamic>;
@@ -264,7 +295,7 @@ class LiveTrackingService extends ChangeNotifier {
         'savedAt': DateTime.now().toIso8601String(),
       };
       
-      await prefs.setString(_lastFlightStateKey, jsonEncode(state));
+      await prefs.setString(_scopedKey(_lastFlightStateKey), jsonEncode(state));
     } catch (e) {
       log('[LiveTrackingService] Error saving flight state: $e');
     }
@@ -274,7 +305,7 @@ class LiveTrackingService extends ChangeNotifier {
   Future<void> _clearFlightState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_lastFlightStateKey);
+      await prefs.remove(_scopedKey(_lastFlightStateKey));
     } catch (e) {
       log('[LiveTrackingService] Error clearing flight state: $e');
     }
@@ -567,17 +598,14 @@ class LiveTrackingService extends ChangeNotifier {
   /// - Safety checks (airspace/altitude violations) run on EVERY position
   /// - Position uploads to Firestore are THROTTLED (only every 12s or 50m movement)
   Future<void> processPosition(TrackPoint position) async {
-    // Debug: Always log when this is called
-    debugPrint(
-        '🔵 [LiveTracking] processPosition called - enabled: $_isEnabled, active: $_isActive');
+    _trace('🔵 [LiveTracking] processPosition called - enabled: $_isEnabled, active: $_isActive');
 
     if (!_isEnabled || !_isActive) {
       if (!_isActive) {
         // Silently skip if not active (expected behavior)
         return;
       }
-      debugPrint(
-          '🔴 [LiveTracking] Skipping - enabled: $_isEnabled, active: $_isActive');
+      _trace('🔴 [LiveTracking] Skipping - enabled: $_isEnabled, active: $_isActive');
       return;
     }
 
@@ -607,10 +635,10 @@ class LiveTrackingService extends ChangeNotifier {
     final shouldUpload = _shouldUploadPosition(position);
     
     if (shouldUpload) {
-      debugPrint('🟢 [LiveTracking] Uploading position - Online: ${_connectivityService.isOnline}');
+      _trace('🟢 [LiveTracking] Uploading position - Online: ${_connectivityService.isOnline}');
       await _uploadPosition(position);
     } else {
-      debugPrint('⏸️ [LiveTracking] Throttled - skipping upload (checked safety already)');
+      _trace('⏸️ [LiveTracking] Throttled - skipping upload (checked safety already)');
     }
   }
   
@@ -628,7 +656,7 @@ class LiveTrackingService extends ChangeNotifier {
     // Check time threshold
     final timeSinceLastUpload = DateTime.now().difference(_lastUploadTime!);
     if (timeSinceLastUpload >= minUploadInterval) {
-      debugPrint('⏰ [LiveTracking] Time threshold met (${timeSinceLastUpload.inSeconds}s >= ${minUploadInterval.inSeconds}s)');
+      _trace('⏰ [LiveTracking] Time threshold met (${timeSinceLastUpload.inSeconds}s >= ${minUploadInterval.inSeconds}s)');
       return true;
     }
     
@@ -641,7 +669,7 @@ class LiveTrackingService extends ChangeNotifier {
     );
     
     if (distanceMeters >= minDistanceMeters) {
-      debugPrint('📏 [LiveTracking] Distance threshold met (${distanceMeters.toStringAsFixed(0)}m >= ${minDistanceMeters.toStringAsFixed(0)}m)');
+      _trace('📏 [LiveTracking] Distance threshold met (${distanceMeters.toStringAsFixed(0)}m >= ${minDistanceMeters.toStringAsFixed(0)}m)');
       return true;
     }
     

@@ -381,6 +381,9 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final calendarService = context.watch<CalendarService>();
+    // Past events are not prefetched by the service; ask for this one's
+    // registrations the first time its card is shown.
+    calendarService.ensureRegistrationsLoaded(event.id);
     final isRegistered = calendarService.isRegistered(event.id);
     final regCount = calendarService.registrationCount(event.id);
     final timeFormat = DateFormat('HH:mm');

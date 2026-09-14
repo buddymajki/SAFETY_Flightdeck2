@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -261,6 +262,13 @@ class StatsUpdateWatcher extends StatefulWidget {
 class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBindingObserver {
   bool _gpsInitialized = false;
   bool _callbacksWired = false;
+
+  /// Watches for the session ending outside the app - the account disabled or
+  /// deleted in the Firebase console, the password changed on another device,
+  /// the refresh token revoked. Without this the app kept showing cached data
+  /// and every Firestore call failed silently until the next restart.
+  StreamSubscription<User?>? _authSubscription;
+  String? _lastKnownUid;
   // The background-location / battery dialogs are shown at most once per app session;
   // before this they re-appeared on every resume after the user tapped "Later".
   bool _missingPermissionPromptShown = false;
@@ -269,11 +277,51 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBin
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    _lastKnownUid = FirebaseAuth.instance.currentUser?.uid;
+    _authSubscription =
+        FirebaseAuth.instance.authStateChanges().listen(_handleAuthStateChange);
+  }
+
+  void _handleAuthStateChange(User? user) {
+    final previousUid = _lastKnownUid;
+    _lastKnownUid = user?.uid;
+
+    if (!mounted) return;
+
+    // A different account signed in (account switch): let the normal login
+    // flow drive navigation, the providers are keyed by uid already.
+    if (user != null) return;
+
+    // Nobody was signed in to begin with (cold start on the login screen).
+    if (previousUid == null) return;
+
+    debugPrint('[Auth] Session ended for $previousUid - returning to login');
+    _resetUserScopedServices();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    });
+  }
+
+  /// Drops every cached per-user value so the next account starts clean.
+  void _resetUserScopedServices() {
+    try {
+      context.read<UserDataService>().resetService();
+      context.read<GlobalDataService>().resetService();
+      context.read<FlightService>().resetService();
+      context.read<StatsService>().resetService();
+      unawaited(context.read<ProfileService>().resetService());
+    } catch (e) {
+      debugPrint('[Auth] resetService after session end failed: $e');
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _authSubscription?.cancel();
     _cleanupGpsCallbacks();
     super.dispose();
   }

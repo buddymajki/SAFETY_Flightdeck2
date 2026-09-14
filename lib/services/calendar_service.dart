@@ -27,6 +27,10 @@ class CalendarService extends ChangeNotifier {
   /// Map of eventId → whether the current user is registered
   final Map<String, bool> _myRegistrations = {};
 
+  /// Events whose registrations have been fetched, and those being fetched now.
+  final Set<String> _loadedRegistrations = {};
+  final Set<String> _loadingRegistrations = {};
+
   StreamSubscription? _eventsSubscription;
 
   /// Initialize with school ID and current user UID.
@@ -62,9 +66,14 @@ class CalendarService extends ChangeNotifier {
           .where((e) => e.isActive) // Only show active events
           .toList();
 
-      // Load registrations for each event
+      // Registrations live in a subcollection, so each event costs its own
+      // query and a school can have hundreds of events. Prefetch only what the
+      // calendar shows first (upcoming events); older events load on demand
+      // through ensureRegistrationsLoaded().
+      final horizon = DateTime.now().subtract(const Duration(days: 1));
       for (final event in _events) {
-        _loadRegistrations(event.id);
+        if (event.startTime.isBefore(horizon)) continue;
+        unawaited(ensureRegistrationsLoaded(event.id));
       }
 
       notifyListeners();
@@ -73,8 +82,15 @@ class CalendarService extends ChangeNotifier {
     });
   }
 
+  /// Loads an event's registrations once. Safe to call from build().
+  Future<void> ensureRegistrationsLoaded(String eventId) async {
+    if (_loadedRegistrations.contains(eventId)) return;
+    await _loadRegistrations(eventId);
+  }
+
   Future<void> _loadRegistrations(String eventId) async {
     if (_schoolId == null) return;
+    if (!_loadingRegistrations.add(eventId)) return; // already in flight
 
     try {
       final snap = await _fs
@@ -92,9 +108,12 @@ class CalendarService extends ChangeNotifier {
       _myRegistrations[eventId] =
           _registrations[eventId]?.any((r) => r.uid == _uid && r.isRegistered) ?? false;
 
+      _loadedRegistrations.add(eventId);
       notifyListeners();
     } catch (e) {
       debugPrint('[CalendarService] Error loading registrations for $eventId: $e');
+    } finally {
+      _loadingRegistrations.remove(eventId);
     }
   }
 
@@ -137,7 +156,10 @@ class CalendarService extends ChangeNotifier {
   }
 
   /// Register the current user for an event.
-  Future<void> register(String eventId, {required String name, String email = '', String? note}) async {
+  /// Registers the current user. Only the display name is stored: the school
+  /// admin can reach the student through their uid, so the registration list
+  /// does not need to carry e-mail addresses.
+  Future<void> register(String eventId, {required String name, String? note}) async {
     if (_schoolId == null || _uid == null) return;
 
     await _fs
@@ -150,13 +172,13 @@ class CalendarService extends ChangeNotifier {
         .set({
       'uid': _uid,
       'name': name,
-      'email': email,
       'registeredAt': FieldValue.serverTimestamp(),
       'status': 'registered',
       'note': note,
     });
 
     _myRegistrations[eventId] = true;
+    _loadedRegistrations.remove(eventId);
     await _loadRegistrations(eventId);
     notifyListeners();
   }
@@ -175,6 +197,7 @@ class CalendarService extends ChangeNotifier {
         .update({'status': 'cancelled'});
 
     _myRegistrations[eventId] = false;
+    _loadedRegistrations.remove(eventId);
     await _loadRegistrations(eventId);
     notifyListeners();
   }
@@ -185,6 +208,8 @@ class CalendarService extends ChangeNotifier {
     _events = [];
     _registrations.clear();
     _myRegistrations.clear();
+    _loadedRegistrations.clear();
+    _loadingRegistrations.clear();
     _schoolId = null;
     _uid = null;
     _initialized = false;

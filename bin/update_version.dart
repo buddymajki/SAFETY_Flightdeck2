@@ -88,6 +88,11 @@ class AppVersionService {
   static String getVersionSync() {
     return _appVersion;
   }
+
+  /// Build number as an int, for update comparisons (0 if unparseable)
+  static int getBuildNumberSync() {
+    return int.tryParse(_buildNumber) ?? 0;
+  }
 }
 ''';
 

@@ -351,16 +351,22 @@ void main() {
 
     group('IGC Parsing', () {
       test('should parse valid IGC content', () {
+        // B record: B HHMMSS DDMMmmm N DDDMMmmm E A PPPPP GGGGG
+        //           47deg 00.000' N, 010deg 00.000' E, pressure 100 m, GPS 1234 m
         const igcContent = '''
 AXXX Flight Test
 HFDTE150124
-B120000470000N0100000EA001000012340000
-B120010470036N0100024EA001010012500000
+B1200004700000N01000000EA0010001234
+B1200104700600N01000240EA0010101250
 ''';
 
         final points = TracklogParserService.parseIgc(igcContent);
         expect(points.length, equals(2));
-        expect(points[0].altitude, greaterThan(0));
+        expect(points[0].latitude, closeTo(47.0, 0.0001));
+        expect(points[0].longitude, closeTo(10.0, 0.0001));
+        expect(points[0].altitude, equals(1234));
+        expect(points[0].timestamp, equals(DateTime(2024, 1, 15, 12, 0, 0)));
+        expect(points[1].altitude, equals(1250));
       });
 
       test('should handle missing date in IGC', () {
@@ -449,9 +455,15 @@ B120000470000N0100000EA001000012340000
           flightDuration: const Duration(minutes: 30),
         );
 
-        // Find max altitude (should be higher than start due to climb)
+        // The generator simulates a glide (sled ride): it descends from startAlt
+        // to endAlt at the paraglider sink rate and never climbs above launch.
         final maxAlt = tracklog.map((p) => p.altitude).reduce((a, b) => a > b ? a : b);
-        expect(maxAlt, greaterThan(1000));
+        final minAlt = tracklog.map((p) => p.altitude).reduce((a, b) => a < b ? a : b);
+        expect(maxAlt, equals(1000));
+        expect(minAlt, lessThanOrEqualTo(805));
+        expect(maxAlt - minAlt, greaterThan(100));
+        expect(tracklog.first.altitude, equals(1000));
+        expect(tracklog.last.altitude, equals(800));
       });
     });
   });
@@ -628,7 +640,8 @@ B120000470000N0100000EA001000012340000
 
       final service = FlightDetectionService();
       final baseTime = DateTime.now();
-      FlightEvent? takeoffEvent;
+      FlightEvent? takeoffEvent;
+
       for (final p in flightPoints) {
         final point = TrackPoint(
           timestamp: baseTime.add(Duration(seconds: p['time'] as int)),
@@ -637,12 +650,17 @@ B120000470000N0100000EA001000012340000
           altitude: p['alt'] as double,
         );
 
-        final event = service.processTrackPoint(point);
+        final event = service.processTrackPoint(point);
+
         
         if (event != null && event.type == FlightEventType.takeoff) {
-          takeoffEvent = event;
+          takeoffEvent = event;
+
         }
-      }
+      }
+
+
+
       
       expect(takeoffEvent, isNotNull, reason: 'Takeoff should be detected for this real sled ride');
       expect(service.isInFlight, isTrue);
@@ -721,7 +739,8 @@ B120000470000N0100000EA001000012340000
 
       final service = FlightDetectionService();
       final baseTime = DateTime.now();
-      FlightEvent? takeoffEvent;
+      FlightEvent? takeoffEvent;
+
       for (final p in flightPoints) {
         final point = TrackPoint(
           timestamp: baseTime.add(Duration(seconds: p['time'] as int)),
@@ -732,9 +751,12 @@ B120000470000N0100000EA001000012340000
 
         final event = service.processTrackPoint(point);
         if (event != null && event.type == FlightEventType.takeoff) {
-          takeoffEvent = event;
+          takeoffEvent = event;
+
         }
-      }
+      }
+
+
       
       expect(takeoffEvent, isNotNull, reason: 'Takeoff should be detected with 1-second GPS intervals');
       expect(service.isInFlight, isTrue);
@@ -798,7 +820,8 @@ B120000470000N0100000EA001000012340000
       final service = FlightDetectionService();
       final baseTime = DateTime.now();
       FlightEvent? takeoffEvent;
-      FlightEvent? landingEvent;
+      FlightEvent? landingEvent;
+
       for (final p in flightPoints) {
         final point = TrackPoint(
           timestamp: baseTime.add(Duration(seconds: p['time'] as int)),
@@ -810,12 +833,17 @@ B120000470000N0100000EA001000012340000
         final event = service.processTrackPoint(point);
         if (event != null) {
           if (event.type == FlightEventType.takeoff) {
-            takeoffEvent = event;
+            takeoffEvent = event;
+
           } else if (event.type == FlightEventType.landing) {
-            landingEvent = event;
+            landingEvent = event;
+
           }
         }
-      }
+      }
+
+
+
       
       expect(takeoffEvent, isNotNull, reason: 'Takeoff should be detected');
       expect(landingEvent, isNotNull, reason: 'Landing should be detected after 10+ seconds of stationary data');

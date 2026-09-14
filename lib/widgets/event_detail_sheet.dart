@@ -354,7 +354,6 @@ class _EventDetailSheetState extends State<EventDetailSheet> {
       await service.register(
         widget.event.id,
         name: name.isNotEmpty ? name : (profile?.email ?? 'Unknown'),
-        email: profile?.email ?? '',
       );
     } catch (e) {
       if (mounted) {

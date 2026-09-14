@@ -175,6 +175,16 @@ class FlightTrackingService extends ChangeNotifier {
 
   /// Initialize the service with site data from GlobalDataService
   Future<void> initialize(List<Map<String, dynamic>> sites, {String lang = 'en'}) async {
+    // The GPS screen calls this every time it mounts. After the first run only
+    // the site list and the language can still change; re-reading preferences
+    // and notifying again would rebuild the tracking UI on every tab switch
+    // (and could stomp a preference the user just toggled).
+    if (_isInitialized) {
+      updateSites(sites);
+      setLanguage(lang);
+      return;
+    }
+
     _cachedSites = sites;
     _currentLanguage = lang;
     _isInitialized = true;
@@ -190,6 +200,15 @@ class FlightTrackingService extends ChangeNotifier {
     log('[FlightTrackingService] Initialized with ${sites.length} sites, audioFeedback=$_audioFeedbackEnabled');
   }
   
+  // Per-position tracing fires at the GPS rate (about 1 Hz for a whole
+  // flight). Even in release builds debugPrint formats the string and hands
+  // it to the platform logger, so it is gated behind an explicit flag.
+  static const bool verbosePositionLog = false;
+
+  void _trace(String message) {
+    if (kDebugMode && verbosePositionLog) debugPrint(message);
+  }
+
   /// Set the live tracking service for authorities
   /// Call this after creating both services in your app initialization
   void setLiveTrackingService(LiveTrackingService service) {
@@ -312,7 +331,7 @@ class FlightTrackingService extends ChangeNotifier {
 
     // Process through flight detection
     final event = _detectionService.processTrackPoint(trackPoint);
-    debugPrint('🔍 [FlightTracking] Detection result: ${event?.type ?? "null (no event)"}');
+    _trace('🔍 [FlightTracking] Detection result: ${event?.type ?? "null (no event)"}');
 
     if (event != null) {
       debugPrint('🔍 [FlightTracking] Event detected! Type: ${event.type}');
@@ -331,11 +350,11 @@ class FlightTrackingService extends ChangeNotifier {
       }
       
       // Send position to live tracking service
-      debugPrint('🌐 [FlightTracking] In flight, sending position to LiveTrackingService');
-      debugPrint('🌐 [FlightTracking] LiveTrackingService is ${_liveTrackingService == null ? "NULL" : "connected"}');
+      _trace('🌐 [FlightTracking] In flight, sending position to LiveTrackingService');
+      _trace('🌐 [FlightTracking] LiveTrackingService is ${_liveTrackingService == null ? "NULL" : "connected"}');
       await _liveTrackingService?.processPosition(trackPoint);
     } else {
-      debugPrint('⚪ [FlightTracking] Not in flight, skipping live tracking');
+      _trace('⚪ [FlightTracking] Not in flight, skipping live tracking');
     }
 
     // Notify listeners

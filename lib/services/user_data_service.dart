@@ -7,7 +7,9 @@ import 'package:flutter/foundation.dart';
 class UserDataService extends ChangeNotifier {
   String? _uid;
   String? get uid => _uid;
-  List<Map<String, dynamic>> flightlog = const [];
+  // NOTE: the flightlog subcollection is owned by FlightService, which keeps a
+  // realtime stream of it. Reading it here as well doubled the Firestore reads
+  // on every login for a copy nothing consumed.
   List<Map<String, dynamic>> checklistprogress = const [];
   // Map of itemId -> { completed: bool, completedAt: DateTime? }
   Map<String, Map<String, dynamic>> _userChecklistProgress = const {};
@@ -26,15 +28,8 @@ class UserDataService extends ChangeNotifier {
 
       final userRef = fs.collection('users').doc(uid);
 
-      final results = await Future.wait([
-        userRef.collection('flightlog').orderBy('date', descending: true).get(opts),
-        userRef.collection('checklistprogress').doc('progress').get(opts),
-      ]);
-
-      final flightlogSnap = results[0] as QuerySnapshot<Map<String, dynamic>>;
-      flightlog = flightlogSnap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
-
-      final checklistDoc = results[1] as DocumentSnapshot<Map<String, dynamic>>;
+      final checklistDoc =
+          await userRef.collection('checklistprogress').doc('progress').get(opts);
       final progressData = checklistDoc.data() ?? <String, dynamic>{};
       _userChecklistProgress = progressData.map((key, value) {
         if (value is bool) {
@@ -57,7 +52,7 @@ class UserDataService extends ChangeNotifier {
       _initialized = true;
       notifyListeners();
 
-      log('[UserDataService] Loaded for uid=$uid: flightlog=${flightlog.length}, checklist=${checklistprogress.length}');
+      log('[UserDataService] Loaded for uid=$uid: checklist=${_userChecklistProgress.length}');
     } catch (e, st) {
       if (kDebugMode) {
         log('[UserDataService] initializeData error: $e', stackTrace: st);
@@ -66,36 +61,8 @@ class UserDataService extends ChangeNotifier {
     }
   }
 
-  Future<String> saveFlightLog(Map<String, dynamic> flightData) async {
-    final currentUid = _uid ?? FirebaseAuth.instance.currentUser?.uid;
-    if (currentUid == null) {
-      throw StateError('UserDataService has no uid; call initializeData first.');
-    }
-
-    final userRef = FirebaseFirestore.instance.collection('users').doc(currentUid);
-    final now = FieldValue.serverTimestamp();
-
-    final payload = {
-      ...flightData,
-      'createdAt': now,
-      'updatedAt': now,
-    };
-
-    final ref = await userRef.collection('flightlog').add(payload);
-
-    // Update local cache optimistically; next refresh will reconcile timestamps
-    flightlog = [
-      {'id': ref.id, ...flightData},
-      ...flightlog,
-    ];
-    notifyListeners();
-
-    return ref.id;
-  }
-
   void resetService() {
     _uid = null;
-    flightlog = const [];
     checklistprogress = const [];
     _userChecklistProgress = const {};
     _initialized = false;

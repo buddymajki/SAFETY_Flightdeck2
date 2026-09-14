@@ -611,6 +611,12 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
   List<Map<String, dynamic>> _filteredLandingLocations = [];
   bool _takeoffFromDropdown = false; // Track if takeoff was selected from dropdown
   bool _landingFromDropdown = false; // Track if landing was selected from dropdown
+
+  // globalLocations document ids of the picked places. Only set when the place
+  // came from the dropdown; a hand-typed name has no id. The dashboard groups
+  // sites by id when present, by name otherwise.
+  String? _selectedTakeoffId;
+  String? _selectedLandingId;
   String? _selectedGliderId; // Selected user glider ID
 
   // Track previous profile state to detect changes
@@ -713,6 +719,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
         _takeoffController.clear();
         _takeoffAltitudeController.text = '1000';
         _takeoffFromDropdown = false;
+        _selectedTakeoffId = null;
       }
     }
 
@@ -727,6 +734,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
         _landingController.clear();
         _landingAltitudeController.text = '500';
         _landingFromDropdown = false;
+        _selectedLandingId = null;
       }
     }
   }
@@ -831,6 +839,8 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
       _minutes = flight.flightTimeMinutes % 60;
       _takeoffFromDropdown = false;
       _landingFromDropdown = false;
+      _selectedTakeoffId = flight.takeoffId;
+      _selectedLandingId = flight.landingId;
     } else {
       final profile = widget.profileService.userProfile;
       final isStudent = profile?.license?.toLowerCase() == 'student';
@@ -851,6 +861,8 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
       _selectedGliderId = null;
       _takeoffFromDropdown = false;
       _landingFromDropdown = false;
+      _selectedTakeoffId = null;
+      _selectedLandingId = null;
 
       _hours = 0;
       _minutes = 10;
@@ -881,6 +893,41 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
         _landingAltitudeController.text.isNotEmpty &&
         (_hours > 0 || _minutes > 0) &&
         gliderValid;
+  }
+
+  /// Id of the takeoff place to store with the flight.
+  ///
+  /// Prefers the id captured when the pilot picked the place from the dropdown;
+  /// falls back to a name match, so a place typed by hand (or edited back to a
+  /// known name) still links to the site. Null for a free-text place.
+  String? _takeoffIdForCurrentName() => _idForName(
+      _selectedTakeoffId, _takeoffController.text, _filteredTakeoffLocations);
+
+  String? _landingIdForCurrentName() => _idForName(
+      _selectedLandingId, _landingController.text, _filteredLandingLocations);
+
+  String? _idForName(
+    String? selectedId,
+    String rawName,
+    List<Map<String, dynamic>> locations,
+  ) {
+    final name = rawName.trim().toLowerCase();
+    if (name.isEmpty) return null;
+
+    for (final loc in locations) {
+      final id = loc['id']?.toString();
+      if (id == null || id.isEmpty) continue;
+      if ((loc['name'] ?? '').toString().trim().toLowerCase() != name) continue;
+      // Exact id match wins when several sites share a name.
+      if (selectedId != null && selectedId == id) return id;
+    }
+
+    for (final loc in locations) {
+      final id = loc['id']?.toString();
+      if (id == null || id.isEmpty) continue;
+      if ((loc['name'] ?? '').toString().trim().toLowerCase() == name) return id;
+    }
+    return null;
   }
 
   Future<void> _saveFlight() async {
@@ -915,10 +962,10 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
         thisFlightSchoolId: thisFlightSchoolId,
         date: parsedDate.toIso8601String(),
         takeoffName: _takeoffController.text.trim(),
-        takeoffId: null,
+        takeoffId: _takeoffIdForCurrentName(),
         takeoffAltitude: takeoffAlt,
         landingName: _landingController.text.trim(),
-        landingId: null,
+        landingId: _landingIdForCurrentName(),
         landingAltitude: landingAlt,
         altitudeDifference: altDiff,
         flightTimeMinutes: (_hours * 60) + _minutes,
@@ -1081,6 +1128,8 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
           _landingAltitudeController.text = '500';
           _takeoffFromDropdown = false;
           _landingFromDropdown = false;
+          _selectedTakeoffId = null;
+          _selectedLandingId = null;
         });
       },
       fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
@@ -1123,6 +1172,8 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                             _landingAltitudeController.text = '500';
                             _takeoffFromDropdown = false;
                             _landingFromDropdown = false;
+                            _selectedTakeoffId = null;
+                            _selectedLandingId = null;
                           });
                           focusNode.requestFocus();
                         },
@@ -1502,6 +1553,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                         _takeoffController.text = selection['name'] ?? '';
                         _takeoffAltitudeController.text = (selection['altitude']?.toString() ?? '1000');
                         _takeoffFromDropdown = true;
+                        _selectedTakeoffId = selection['id']?.toString();
                       });
                     },
                     fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
@@ -1532,7 +1584,10 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                                 _takeoffController.text = text;
                               }
                               if (_takeoffFromDropdown && mounted) {
-                                setState(() => _takeoffFromDropdown = false);
+                                setState(() {
+                                  _takeoffFromDropdown = false;
+                                  _selectedTakeoffId = null;
+                                });
                               }
                             },
                             decoration: InputDecoration(
@@ -1549,6 +1604,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                                               _takeoffController.clear();
                                               _takeoffAltitudeController.text = '1000';
                                               _takeoffFromDropdown = false;
+                                              _selectedTakeoffId = null;
                                             });
                                             focusNode.requestFocus();
                                           },
@@ -1626,6 +1682,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                         _landingController.text = selection['name'] ?? '';
                         _landingAltitudeController.text = (selection['altitude']?.toString() ?? '500');
                         _landingFromDropdown = true;
+                        _selectedLandingId = selection['id']?.toString();
                       });
                     },
                     fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
@@ -1656,7 +1713,10 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                                 _landingController.text = text;
                               }
                               if (_landingFromDropdown && mounted) {
-                                setState(() => _landingFromDropdown = false);
+                                setState(() {
+                                  _landingFromDropdown = false;
+                                  _selectedLandingId = null;
+                                });
                               }
                             },
                             decoration: InputDecoration(
@@ -1673,6 +1733,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
                                               _landingController.clear();
                                               _landingAltitudeController.text = '500';
                                               _landingFromDropdown = false;
+                                              _selectedLandingId = null;
                                             });
                                             focusNode.requestFocus();
                                           },

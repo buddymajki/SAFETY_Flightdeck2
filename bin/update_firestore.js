@@ -3,16 +3,40 @@
  * Firestore app_updates document frissítő script
  * 
  * Használat:
- *   node bin/update_firestore.js <version> <changelog> [forceUpdate] [platform]
+ *   node bin/update_firestore.js <version> <changelog> [forceUpdate] [platform] [buildNumber]
  * 
  * Példa:
  *   node bin/update_firestore.js "1.0.31" "Bug fixes" false android
  * 
+ * A buildNumber elhagyható: alapból a pubspec.yaml-ból olvassa (version: X.Y.Z+N).
+ * Az app ezt használja a frissítés-ellenőrzéshez (a verzió-sztring csak fallback).
+ * 
  * Előfeltétel: firebase login (Firebase CLI bejelentkezve)
  */
 
-const { execSync } = require('child_process');
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
+
+/// Build number from pubspec.yaml: "version: X.Y.Z+N" -> N,
+/// otherwise derived the same way bin/update_version.dart derives it.
+function buildNumberFromPubspec(version) {
+  try {
+    const pubspec = fs.readFileSync(path.join(__dirname, '..', 'pubspec.yaml'), 'utf8');
+    const withBuild = pubspec.match(/version:\s*([\d.]+)\+(\d+)/);
+    if (withBuild) {
+      if (version && withBuild[1] !== version) {
+        console.warn(`[WARN] pubspec.yaml version is ${withBuild[1]} but this release is ${version}.`);
+        console.warn('       Run `dart bin/update_version.dart` first so the build number matches.');
+      }
+      return parseInt(withBuild[2], 10);
+    }
+  } catch (e) {
+    console.warn(`[WARN] Could not read pubspec.yaml: ${e.message}`);
+  }
+  const parts = String(version || '0').split('.').map((p) => parseInt(p, 10) || 0);
+  return (parts[0] || 0) * 10000 + (parts[1] || 0) * 100 + (parts[2] || 0);
+}
 
 async function main() {
   const version = process.argv[2];
@@ -63,11 +87,16 @@ async function main() {
     process.exit(1);
   }
 
+  const buildNumber = process.argv[6]
+    ? parseInt(process.argv[6], 10)
+    : buildNumberFromPubspec(version);
+
   // Update Firestore document via REST API
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/app_updates/${platform}`;
   const body = JSON.stringify({
     fields: {
       version: { stringValue: version },
+      buildNumber: { integerValue: String(buildNumber) },
       changelog: { stringValue: changelog },
       isForceUpdate: { booleanValue: isForceUpdate },
       updatedAt: { stringValue: new Date().toISOString() },
@@ -76,7 +105,7 @@ async function main() {
 
   try {
     await httpRequest(url, 'PATCH', body, token);
-    console.log(`[OK] Firestore updated: app_updates/${platform} -> version=${version}`);
+    console.log(`[OK] Firestore updated: app_updates/${platform} -> version=${version} (build ${buildNumber})`);
   } catch (e) {
     console.error(`[ERROR] Firestore update failed: ${e.message}`);
     process.exit(1);

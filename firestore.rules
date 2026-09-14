@@ -146,10 +146,17 @@ service cloud.firestore {
       // Only admins or Cloud Functions can create/update/delete events
       allow create, update, delete: if isSchoolAdmin(schoolId);
 
-      // Registrations: students manage their own, everyone can read
+      // Registrations: students manage their own, everyone can read.
+      // The document id IS the student's uid, so a registration can never be
+      // written for somebody else, and the stored uid has to agree with it.
+      // The app shows only the participant's display name; it no longer writes
+      // an e-mail address into this subcollection.
       match /registrations/{uid} {
         allow read: if isAuth();
-        allow create, update, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+                              && request.resource.data.uid == uid
+                              && request.resource.data.status in ['registered', 'cancelled'];
+        allow delete: if isOwner(uid);
       }
     }
 
