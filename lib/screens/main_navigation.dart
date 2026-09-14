@@ -34,6 +34,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   String _currentTitle = 'Dashboard';
   late PageController _pageController;
+  // Test submissions are fetched once per signed-in user, not on every rebuild.
+  String? _submissionsLoadedForUid;
 
   // Dynamic page lists based on license
   // Student: Calendar at index 4, Theory moved to hamburger menu
@@ -424,9 +426,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     // Test notification logic - show badge only if user has actionable tests available
     // First, ensure submissions are loaded so we can check accurately
     final testService = context.watch<TestService>();
-    if (profile != null && profile.uid != null) {
+    if (profile != null && profile.uid != null && _submissionsLoadedForUid != profile.uid) {
+      _submissionsLoadedForUid = profile.uid;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // Load submissions in background if not already loaded
+        // Load submissions in background once for this user (was: on every rebuild)
         testService.loadUserSubmissions(profile.uid!).catchError((e) {
           debugPrint('[MainNavigation] Error loading submissions: $e');
           return <TestSubmission>[];

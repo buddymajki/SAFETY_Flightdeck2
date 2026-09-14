@@ -89,17 +89,24 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  // ConnectivityService is an app-wide singleton (AlertService / LiveTrackingService also
+  // use it). It must be exposed with `.value` so the provider never disposes it when the
+  // widget tree is rebuilt after logout - a disposed singleton was left without a
+  // connectivity stream and threw "used after being disposed".
+  final ConnectivityService _connectivityService = ConnectivityService();
+
+  @override
+  void initState() {
+    super.initState();
+    _connectivityService.initialize();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         // ConnectivityService - initialized early for offline support
-        ChangeNotifierProvider(create: (_) {
-          final service = ConnectivityService();
-          service.initialize();
-          return service;
-        }),
+        ChangeNotifierProvider<ConnectivityService>.value(value: _connectivityService),
         ChangeNotifierProvider(create: (_) => UpdateService()),
         ChangeNotifierProvider(create: (_) => GlobalDataService()),
         ChangeNotifierProvider(create: (_) => CalendarService()),
@@ -254,6 +261,9 @@ class StatsUpdateWatcher extends StatefulWidget {
 class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBindingObserver {
   bool _gpsInitialized = false;
   bool _callbacksWired = false;
+  // The background-location / battery dialogs are shown at most once per app session;
+  // before this they re-appeared on every resume after the user tapped "Later".
+  bool _missingPermissionPromptShown = false;
 
   @override
   void initState() {
@@ -425,15 +435,18 @@ class _StatsUpdateWatcherState extends State<StatsUpdateWatcher> with WidgetsBin
 
     final navigator = Navigator.maybeOf(context);
     if (navigator == null) return; // not ready yet
+    if (_missingPermissionPromptShown) return;
 
     // Priority 1: background location (without it GPS stops when screen is off)
     if (!gpsSensorService.hasBackgroundPermission) {
+      _missingPermissionPromptShown = true;
       _showBackgroundLocationDialog();
       return; // one dialog at a time
     }
 
     // Priority 2: battery optimization exemption (kills background GPS on most Android OEMs)
     if (!gpsSensorService.hasBatteryOptimizationExemption) {
+      _missingPermissionPromptShown = true;
       _showBatteryOptimizationDialog();
     }
   }

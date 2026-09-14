@@ -75,7 +75,9 @@ class Flight {
       landingId: data['landingId'],
       landingAltitude: _parseDouble(data['landingAltitude']),
       altitudeDifference: _parseDouble(data['altitudeDifference']),
-      flightTimeMinutes: data['flightTimeMinutes'] ?? 0,
+      // Migrated flights (migrate_flights.js) stored the airtime under the misspelled
+      // key 'flightTypeMinutes'; read it as a fallback so those flights don't show 0 min.
+      flightTimeMinutes: _parseInt(data['flightTimeMinutes'] ?? data['flightTypeMinutes']),
       comment: data['comment'],
       startTypeId: data['startTypeId'],
       flightTypeId: data['flightTypeId'],
@@ -107,7 +109,7 @@ class Flight {
       landingId: data['landingId'],
       landingAltitude: _parseDouble(data['landingAltitude']),
       altitudeDifference: _parseDouble(data['altitudeDifference']),
-      flightTimeMinutes: data['flightTimeMinutes'] ?? 0,
+      flightTimeMinutes: _parseInt(data['flightTimeMinutes']),
       comment: data['comment'],
       startTypeId: data['startTypeId'],
       flightTypeId: data['flightTypeId'],
@@ -115,8 +117,8 @@ class Flight {
       schoolManeuvers: List<String>.from(data['schoolManeuvers'] ?? []),
       licenseType: data['license_type'] ?? 'student',
       status: data['status'] ?? 'pending',
-      createdAt: data['created_at'] != null ? DateTime.parse(data['created_at']) : null,
-      updatedAt: data['updated_at'] != null ? DateTime.parse(data['updated_at']) : null,
+      createdAt: _parseTimestamp(data['created_at']),
+      updatedAt: _parseTimestamp(data['updated_at']),
       gpsTracked: data['gps_tracked'] ?? false,
       isPendingUpload: data['isPendingUpload'] ?? false,
       gliderId: data['glider_id'],
@@ -208,6 +210,66 @@ class Flight {
     return patch;
   }
 
+  /// Copy with selected fields replaced. Use this instead of rebuilding the object by
+  /// hand, so no field (e.g. gliderId / gpsTracked) is silently dropped.
+  Flight copyWith({
+    String? id,
+    String? studentUid,
+    String? mainSchoolId,
+    String? thisFlightSchoolId,
+    String? date,
+    String? takeoffName,
+    String? takeoffId,
+    double? takeoffAltitude,
+    String? landingName,
+    String? landingId,
+    double? landingAltitude,
+    double? altitudeDifference,
+    int? flightTimeMinutes,
+    String? comment,
+    String? startTypeId,
+    String? flightTypeId,
+    List<String>? advancedManeuvers,
+    List<String>? schoolManeuvers,
+    String? licenseType,
+    String? status,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? gpsTracked,
+    bool? isPendingUpload,
+    String? gliderId,
+    String? gliderDisplayName,
+  }) {
+    return Flight(
+      id: id ?? this.id,
+      studentUid: studentUid ?? this.studentUid,
+      mainSchoolId: mainSchoolId ?? this.mainSchoolId,
+      thisFlightSchoolId: thisFlightSchoolId ?? this.thisFlightSchoolId,
+      date: date ?? this.date,
+      takeoffName: takeoffName ?? this.takeoffName,
+      takeoffId: takeoffId ?? this.takeoffId,
+      takeoffAltitude: takeoffAltitude ?? this.takeoffAltitude,
+      landingName: landingName ?? this.landingName,
+      landingId: landingId ?? this.landingId,
+      landingAltitude: landingAltitude ?? this.landingAltitude,
+      altitudeDifference: altitudeDifference ?? this.altitudeDifference,
+      flightTimeMinutes: flightTimeMinutes ?? this.flightTimeMinutes,
+      comment: comment ?? this.comment,
+      startTypeId: startTypeId ?? this.startTypeId,
+      flightTypeId: flightTypeId ?? this.flightTypeId,
+      advancedManeuvers: advancedManeuvers ?? this.advancedManeuvers,
+      schoolManeuvers: schoolManeuvers ?? this.schoolManeuvers,
+      licenseType: licenseType ?? this.licenseType,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      gpsTracked: gpsTracked ?? this.gpsTracked,
+      isPendingUpload: isPendingUpload ?? this.isPendingUpload,
+      gliderId: gliderId ?? this.gliderId,
+      gliderDisplayName: gliderDisplayName ?? this.gliderDisplayName,
+    );
+  }
+
   /// Check if flight can be edited (not accepted)
   bool canEdit() {
     return status == 'pending';
@@ -231,6 +293,15 @@ class Flight {
     if (value is int) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0.0;
     return 0.0;
+  }
+
+  /// Legacy data stores minutes as int, double or string; never let a type mismatch
+  /// throw inside the flightlog stream (that would blank the whole Flight Book).
+  static int _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value.trim()) ?? (double.tryParse(value.trim())?.round() ?? 0);
+    return 0;
   }
 
   static DateTime? _parseTimestamp(dynamic value) {

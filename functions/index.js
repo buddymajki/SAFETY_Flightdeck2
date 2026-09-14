@@ -147,12 +147,17 @@ exports.onFlightLogDeleted = onDocumentDeleted(
 exports.onUserProfileUpdated = onDocumentUpdated(
     "users/{uid}",
     (event) => {
-      const before = event.data?.before.data();
-      const after = event.data?.after.data();
+      const before = event.data?.before.data() || {};
+      const after = event.data?.after.data() || {};
+      // Log only which fields changed – the profile itself contains personal
+      // data (phone, address, birthday, emergency contact) that must not end
+      // up in Cloud Logging.
+      const changedKeys = Array.from(
+          new Set([...Object.keys(before), ...Object.keys(after)]),
+      ).filter((k) => JSON.stringify(before[k]) !== JSON.stringify(after[k]));
       console.log("User profile updated:", {
         uid: event.params.uid,
-        before,
-        after,
+        changedKeys,
       });
     },
 );

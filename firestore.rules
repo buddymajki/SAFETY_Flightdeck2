@@ -69,10 +69,20 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Fields on users/{uid} that only admins may set. The owner must never be able to
+    // change these, because isSchoolAdmin() and the Cloud Functions derive authorization
+    // from them (self-promotion to school admin was possible before this rule).
+    function ownerTouchesProtectedUserFields() {
+      return request.resource.data.diff(resource == null ? {} : resource.data).affectedKeys()
+               .hasAny(['adminAt', 'role', 'membershipValid', 'insuranceValid']);
+    }
+
     // User Data Access
     match /users/{uid} {
-      // Owner can always read/write their own data
-      allow read, create, update: if isOwner(uid);
+      // Owner can read and maintain their own profile, but not the admin/credential fields
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && !ownerTouchesProtectedUserFields();
+      allow update: if isAdmin();
       allow delete: if isAdmin();
       
       // School admins can read users in their schools
@@ -82,7 +92,12 @@ service cloud.firestore {
 
       // Sub-collections: Owner can always access
       match /flightlog/{document=**} {
-        allow read, create, update, delete: if isOwner(uid);
+        // Owner manages own flights; the approval status is only changed by admins / Cloud Functions
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid) &&
+                        (!('status' in request.resource.data) || request.resource.data.status == 'pending');
+        allow update: if isOwner(uid) &&
+                        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'status_declined_by', 'status_declined_at', 'status_declined_reason']);
         // Admins can read and update for reporting and flight approval
         allow read, update: if isAdmin() || 
                         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
@@ -156,6 +171,13 @@ service cloud.firestore {
       allow write: if false; // Only Cloud Functions can write
     }
 
+    // Test result summaries written by the student app (TestService.saveSchoolTestResult)
+    match /schools/{schoolId}/test_results/{resultId} {
+      allow read: if isSchoolAdmin(schoolId) || (isAuth() && resource.data.user_id == request.auth.uid);
+      allow create, update: if isAuth() && request.resource.data.user_id == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
     // ============================================
     // APP UPDATES (version checking)
     // ============================================
@@ -176,17 +198,18 @@ service cloud.firestore {
       allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
     }
     
-    // Alerts - pilots create alerts, admins can read/update/delete
+    // Alerts - a pilot creates and updates only their own alerts; admins see and manage all
     match /alerts/{alertId} {
-      // Any authenticated user can create an alert
-      allow create: if isAuth();
-      // Any authenticated user can read alerts, admins can read all
-      allow read: if isAuth();
-      // Pilot can update their own alerts (for real-time flight data)
-      // resource.data.uid = existing document's uid (set at creation)
-      // Admins can update/delete any alert (to mark as resolved or clean up)
-      allow update: if isAuth();
-      allow delete: if isAdmin();
+      // The alert must belong to the caller and cannot be created pre-resolved
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid
+                      && request.resource.data.resolved == false;
+      // Pilot reads own alerts (contains name, SHV number, positions); admins read all
+      allow read: if isAuth() && (resource.data.uid == request.auth.uid || isAdmin());
+      // Pilot may update own alert (real-time flight data) but never the ownership or the resolution
+      allow update: if isAuth() && resource.data.uid == request.auth.uid
+                      && !request.resource.data.diff(resource.data).affectedKeys()
+                           .hasAny(['uid', 'resolved', 'resolvedAt', 'resolvedBy', 'resolutionNotes']);
+      allow update, delete: if isAdmin();
     }
   }
 }

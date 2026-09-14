@@ -73,7 +73,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
 
         final isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
-        return Dialog(
+        // A forced update must not be dismissable with the Android back gesture either.
+        return PopScope(
+          canPop: !updateInfo.isForceUpdate,
+          child: Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
           backgroundColor: Theme.of(context).dialogTheme.backgroundColor ?? Theme.of(context).colorScheme.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -159,7 +162,8 @@ class _UpdateDialogState extends State<UpdateDialog> {
                         onPressed: () async {
                           await updateService.openAppUpdateLink();
                           widget.onUpdate();
-                          if (context.mounted) Navigator.of(context).pop();
+                          // Keep a forced-update dialog on screen until the new build is installed.
+                          if (context.mounted && !updateInfo.isForceUpdate) Navigator.of(context).pop();
                         },
                       ),
                     ],
@@ -167,6 +171,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 ),
               ],
             ),
+          ),
           ),
         );
       },

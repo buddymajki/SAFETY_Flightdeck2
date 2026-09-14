@@ -110,13 +110,15 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
   ) {
     final theme = Theme.of(context);
     final dateFormatter = DateFormat('dd.MM.yyyy');
-    final flightDate = DateTime.parse(flight.date);
-    final formattedDate = dateFormatter.format(flightDate);
+    // Legacy flights may carry non-ISO date strings; never let one row crash the whole list
+    final flightDate = DateTime.tryParse(flight.date);
+    final formattedDate = flightDate != null ? dateFormatter.format(flightDate) : flight.date;
     final duration = '${flight.flightTimeMinutes ~/ 60}h ${flight.flightTimeMinutes % 60}m';
 
-    // Status icon - show only if flight was logged as Student (case-sensitive)
+    // Status icon - show only if flight was logged as Student ('Student' and 'student' both exist in data)
     Widget statusIcon = const SizedBox.shrink();
-    if (flight.licenseType == 'Student') {
+    final isStudentFlight = flight.licenseType.toLowerCase() == 'student';
+    if (isStudentFlight) {
       statusIcon = flight.status == 'accepted'
           ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
           : const Icon(Icons.access_time, color: Colors.amber, size: 20);
@@ -146,7 +148,7 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     statusIcon,
-                    if (flight.licenseType == 'Student') const SizedBox(width: 8),
+                    if (isStudentFlight) const SizedBox(width: 8),
                     _buildActionButtons(
                       context,
                       flight,
@@ -296,7 +298,8 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
       builder: (context) {
         final theme = Theme.of(context);
         final dateFormatter = DateFormat('dd.MM.yyyy');
-        final flightDate = DateTime.parse(flight.date);
+        final flightDate = DateTime.tryParse(flight.date);
+        final formattedDate = flightDate != null ? dateFormatter.format(flightDate) : flight.date;
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -319,7 +322,7 @@ class _FlightBookScreenState extends State<FlightBookScreen> {
                   },
                   defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                   children: [
-                    _tableRow('Date', dateFormatter.format(flightDate), theme),
+                    _tableRow('Date', formattedDate, theme),
                     _tableRow('Takeoff', flight.takeoffName, theme),
                     _tableRow('Landing', flight.landingName, theme),
                     _tableRow('Takeoff Alt', '${flight.takeoffAltitude.toStringAsFixed(0)} m', theme),
@@ -801,7 +804,7 @@ class _AddEditFlightFormState extends State<AddEditFlightForm> {
   void _initControllers() {
     if (widget.flight != null) {
       final flight = widget.flight!;
-      final date = DateTime.parse(flight.date);
+      final date = DateTime.tryParse(flight.date) ?? DateTime.now();
       final profile = widget.profileService.userProfile;
       final isStudent = profile?.license?.toLowerCase() == 'student';
       final dateFormat = isStudent ? 'dd.MM' : 'dd.MM.yyyy';

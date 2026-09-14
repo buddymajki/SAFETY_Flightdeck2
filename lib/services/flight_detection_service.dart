@@ -175,6 +175,16 @@ class FlightDetectionService {
   /// Get current flight status
   bool get isInFlight => _isInFlight;
 
+  /// Restore the "airborne" state after an app restart that happened mid-flight.
+  /// Without this the detector would look for a new takeoff (overwriting the
+  /// recovered flight) and would never detect the landing.
+  void markInFlight() {
+    _isInFlight = true;
+    _takeoffConditionsStartTime = null;
+    _takeoffConditionsStartAltitude = null;
+    _lowSpeedStartTime = null;
+  }
+
   /// Add a track point and check for flight events
   FlightEvent? processTrackPoint(TrackPoint point) {
     _recentTrackPoints.add(point);

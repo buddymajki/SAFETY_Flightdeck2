@@ -29,11 +29,13 @@ class UpdateInfo {
   });
 
   factory UpdateInfo.fromFirestore(DocumentSnapshot doc) {
+    // doc['field'] throws StateError when the field is missing; read the map instead.
+    final data = (doc.data() as Map<String, dynamic>?) ?? const <String, dynamic>{};
     return UpdateInfo(
-      version: doc['version'] ?? '',
-      changelog: doc['changelog'] ?? '',
-      isForceUpdate: doc['isForceUpdate'] ?? false,
-      // downloadUrl: doc['downloadUrl'] ?? '',
+      version: (data['version'] ?? '').toString(),
+      changelog: (data['changelog'] ?? '').toString(),
+      isForceUpdate: data['isForceUpdate'] == true,
+      // downloadUrl: data['downloadUrl'] ?? '',
     );
   }
 

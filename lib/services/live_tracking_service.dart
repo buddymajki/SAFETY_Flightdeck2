@@ -119,8 +119,10 @@ class LiveTrackingService extends ChangeNotifier {
   String? _displayName;
   String? _licenseType;
   String? _glider;
-  bool _membershipValid = false;
-  bool _insuranceValid = false;
+  // null = not known (field missing / not loaded yet); only an explicit false is "invalid"
+  bool? _membershipValid;
+  bool? _insuranceValid;
+  String? _credentialsLoadedForUid;
 
   // Alert service for safety monitoring
   final AlertService _alertService = AlertService();
@@ -317,8 +319,11 @@ class LiveTrackingService extends ChangeNotifier {
     _licenseType = profile.license;
     _glider = profile.glider;
 
-    // Fetch membership and insurance status from Firestore (async, non-blocking)
-    _loadMembershipAndInsuranceStatus();
+    // Fetch membership and insurance status from Firestore once per user
+    // (this method runs on every ProfileService notification).
+    if (_credentialsLoadedForUid != _uid) {
+      _loadMembershipAndInsuranceStatus();
+    }
 
     log('[LiveTrackingService] ✓ Profile updated:');
     log('    UID: $_uid');
@@ -334,16 +339,14 @@ class LiveTrackingService extends ChangeNotifier {
     if (_uid == null) {
       debugPrint(
           '📋 [LiveTracking] UID is null, cannot fetch membership/insurance status');
-      _membershipValid = false;
-      _insuranceValid = false;
+      _membershipValid = null;
+      _insuranceValid = null;
       return;
     }
 
-    // Check connectivity first - skip Firestore call if offline
+    // Check connectivity first - skip Firestore call if offline (status stays unknown)
     if (!_connectivityService.isOnline) {
-      debugPrint('📋 [LiveTracking] Offline - using default membership/insurance status (false)');
-      _membershipValid = false;
-      _insuranceValid = false;
+      debugPrint('📋 [LiveTracking] Offline - membership/insurance status unknown');
       return;
     }
 
@@ -351,17 +354,18 @@ class LiveTrackingService extends ChangeNotifier {
       debugPrint(
           '📋 [LiveTracking] Fetching membership/insurance status from users/$_uid/');
       final doc = await _firestore.collection('users').doc(_uid).get();
+      _credentialsLoadedForUid = _uid;
 
       if (!doc.exists) {
         debugPrint('⚠️ [LiveTracking] User document not found in Firestore');
-        _membershipValid = false;
-        _insuranceValid = false;
+        _membershipValid = null;
+        _insuranceValid = null;
         return;
       }
 
       final data = doc.data();
-      _membershipValid = data?['membershipValid'] ?? false;
-      _insuranceValid = data?['insuranceValid'] ?? false;
+      _membershipValid = data?['membershipValid'] is bool ? data!['membershipValid'] as bool : null;
+      _insuranceValid = data?['insuranceValid'] is bool ? data!['insuranceValid'] as bool : null;
 
       debugPrint('✅ [LiveTracking] Membership/Insurance loaded:');
       debugPrint('   Membership: $_membershipValid');
@@ -370,8 +374,7 @@ class LiveTrackingService extends ChangeNotifier {
     } catch (e) {
       debugPrint('❌ [LiveTracking] Error fetching membership/insurance: $e');
       log('[LiveTrackingService] Error loading membership/insurance: $e');
-      _membershipValid = false;
-      _insuranceValid = false;
+      // Leave the status unknown; do not turn a read error into "expired" alerts.
     }
   }
 
@@ -514,10 +517,13 @@ class LiveTrackingService extends ChangeNotifier {
     if (_connectivityService.isOnline) {
       try {
         debugPrint('🛬 [LiveTracking] Updating Firestore document...');
-        await _firestore.collection('live_tracking').doc(_uid).update({
+        // set+merge instead of update: update() fails with NOT_FOUND when no position
+        // was ever uploaded (short/offline flight) and that failure was retried forever.
+        await _firestore.collection('live_tracking').doc(_uid).set({
+          'uid': _uid,
           'inFlight': false,
           'landingTime': FieldValue.serverTimestamp(),
-        });
+        }, SetOptions(merge: true));
         debugPrint('✅ [LiveTracking] ✓ Successfully marked as landed in Firestore');
         log('[LiveTrackingService] Marked as landed');
       } catch (e) {
@@ -696,8 +702,10 @@ class LiveTrackingService extends ChangeNotifier {
       'uid': _uid,
       'shvNumber': _shvNumber ?? '',
       'displayName': _displayName ?? 'Unknown',
-      'membershipValid': _membershipValid,
-      'insuranceValid': _insuranceValid,
+      // Admin app expects booleans here; unknown is reported as false (no alert is
+      // created for unknown - see AlertService.checkCredentialsAtTakeoff).
+      'membershipValid': _membershipValid ?? false,
+      'insuranceValid': _insuranceValid ?? false,
       'licenseType': _licenseType ?? 'unknown',
       'latitude': position.latitude,
       'longitude': position.longitude,
@@ -761,11 +769,12 @@ class LiveTrackingService extends ChangeNotifier {
           final type = update.additionalData['type'] as String? ?? 'position';
           
           if (type == 'landing') {
-            // Handle landing update
-            await _firestore.collection('live_tracking').doc(uid).update({
+            // Handle landing update (merge so a missing document cannot block the queue)
+            await _firestore.collection('live_tracking').doc(uid).set({
+              'uid': uid,
               'inFlight': false,
               'landingTime': FieldValue.serverTimestamp(),
-            });
+            }, SetOptions(merge: true));
           } else {
             // Handle position update - use the LATEST position only
             // (older positions are less relevant for live tracking)

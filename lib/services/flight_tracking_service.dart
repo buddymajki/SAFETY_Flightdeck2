@@ -57,6 +57,10 @@ class FlightTrackingService extends ChangeNotifier {
   // Current position state
   TrackPoint? _lastPosition;
   Timer? _autoCloseFlightTimer;
+  // The in-progress flight (with every track point) is persisted at most this often.
+  // Serialising the whole track on every 1 Hz position made saving O(n) per second.
+  static const Duration currentFlightSaveInterval = Duration(seconds: 10);
+  DateTime? _lastCurrentFlightSave;
   String _currentStatus = 'Idle';
   String? _nearestTakeoffSiteName;
   double? _nearestTakeoffSiteDistance;
@@ -218,8 +222,14 @@ class FlightTrackingService extends ChangeNotifier {
     _isTrackingEnabled = true;
     _updateStatus('Tracking Active');
 
-    // Reset detection service to prepare for new flight
-    _detectionService.reset();
+    // Reset detection service to prepare for new flight - unless a flight recovered
+    // from cache is still in progress, in which case the detector must stay airborne.
+    if (_currentFlight == null) {
+      _detectionService.reset();
+    } else {
+      _detectionService.markInFlight();
+      _updateStatus('IN FLIGHT - Takeoff: ${_currentFlight!.takeoffSiteName}');
+    }
 
     await _saveTrackingState();
     notifyListeners();
@@ -314,7 +324,11 @@ class FlightTrackingService extends ChangeNotifier {
       _currentFlight = _currentFlight!.copyWith(
         trackPoints: [..._currentFlight!.trackPoints, trackPoint],
       );
-      await _saveCurrentFlight();
+      final lastSave = _lastCurrentFlightSave;
+      if (lastSave == null || now.difference(lastSave) >= currentFlightSaveInterval) {
+        _lastCurrentFlightSave = now;
+        await _saveCurrentFlight();
+      }
       
       // Send position to live tracking service
       debugPrint('🌐 [FlightTracking] In flight, sending position to LiveTrackingService');
@@ -978,6 +992,10 @@ class FlightTrackingService extends ChangeNotifier {
       final currentJson = prefs.getString(_currentFlightCacheKey);
       if (currentJson != null) {
         _currentFlight = TrackedFlight.fromJson(json.decode(currentJson));
+        // Tell the detector we are already airborne, otherwise the next GPS points
+        // would trigger a second takeoff and overwrite the recovered flight.
+        _detectionService.markInFlight();
+        log('[FlightTrackingService] Recovered in-progress flight ${_currentFlight!.id} from cache');
       }
 
       log('[FlightTrackingService] Loaded ${_trackedFlights.length} flights from cache');
@@ -1192,6 +1210,7 @@ class FlightTrackingService extends ChangeNotifier {
     // FIX: Cancel all timers to prevent memory leaks
     stopSimulation();
     _cancelAutoCloseTimer();
+    _audioPlayer.dispose();
     super.dispose();
   }
 }

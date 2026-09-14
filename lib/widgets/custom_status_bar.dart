@@ -41,6 +41,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> with TickerProviderSt
   late Timer _timeTimer;
   late Timer _batteryTimer;
   late AnimationController _gpsPulseController;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   
   String _currentTime = '00:00';
   int _batteryLevel = 100;
@@ -80,8 +81,8 @@ class _CustomStatusBarState extends State<CustomStatusBar> with TickerProviderSt
     _updateBattery();
     _updateConnectivity();
     
-    // Listen to connectivity changes
-    _connectivity_service.onConnectivityChanged.listen((result) {
+    // Listen to connectivity changes (subscription is cancelled in dispose)
+    _connectivitySubscription = _connectivity_service.onConnectivityChanged.listen((result) {
       if (mounted) {
         setState(() {
           _connectivity = result;
@@ -257,6 +258,7 @@ class _CustomStatusBarState extends State<CustomStatusBar> with TickerProviderSt
   void dispose() {
     _timeTimer.cancel();
     _batteryTimer.cancel();
+    _connectivitySubscription?.cancel();
     _gpsPulseController.dispose();
     super.dispose();
   }

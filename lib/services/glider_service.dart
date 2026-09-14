@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,7 +15,10 @@ import '../models/user_glider.dart';
 /// 2. User's own gliders (from 'users/{uid}/gliders' subcollection) - CRUD
 class GliderService extends ChangeNotifier {
   static const String _globalGlidersCacheKey = 'global_gliders_cache';
-  static const String _userGlidersCacheKey = 'user_gliders_cache';
+  // Per-user key so another account on the same device never sees these gliders
+  static const String _userGlidersCacheKeyBase = 'user_gliders_cache';
+
+  static String _userGlidersCacheKeyFor(String uid) => '${_userGlidersCacheKeyBase}_$uid';
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -59,8 +63,9 @@ class GliderService extends ChangeNotifier {
         notifyListeners();
       }
 
-      // Load user gliders cache
-      final userJson = prefs.getString(_userGlidersCacheKey);
+      // Load user gliders cache (only for the signed-in user)
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final userJson = uid != null ? prefs.getString(_userGlidersCacheKeyFor(uid)) : null;
       if (userJson != null) {
         final List<dynamic> decoded = json.decode(userJson);
         _userGliders = decoded
@@ -82,10 +87,12 @@ class GliderService extends ChangeNotifier {
   }
 
   Future<void> _cacheUserGliders() async {
+    final uid = _currentUid;
+    if (uid == null) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       final cacheable = _userGliders.map((g) => g.toCache()).toList();
-      await prefs.setString(_userGlidersCacheKey, json.encode(cacheable));
+      await prefs.setString(_userGlidersCacheKeyFor(uid), json.encode(cacheable));
     } catch (e) {
       debugPrint('[GliderService] User gliders cache write error: $e');
     }
@@ -180,10 +187,20 @@ class GliderService extends ChangeNotifier {
 
   /// Reset service on logout
   Future<void> resetService() async {
+    final uid = _currentUid;
     await _userGlidersSubscription?.cancel();
+    _userGlidersSubscription = null;
     _userGliders = [];
     _currentUid = null;
     _isLoading = false;
+    if (uid != null) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_userGlidersCacheKeyFor(uid));
+      } catch (e) {
+        debugPrint('[GliderService] Cache clear error: $e');
+      }
+    }
     notifyListeners();
   }
 

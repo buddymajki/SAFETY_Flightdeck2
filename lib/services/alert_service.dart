@@ -750,14 +750,17 @@ class AlertService extends ChangeNotifier {
   }
 
   /// Check credentials at flight start (takeoff)
-  /// Call this when flight starts
+  /// Call this when flight starts.
+  /// `null` means "not known" (field missing on the user document or offline) and
+  /// creates no alert - only an explicit `false` does. Treating unknown as expired
+  /// produced a membership + insurance alert on every single takeoff.
   Future<void> checkCredentialsAtTakeoff({
     required String uid,
     required String displayName,
     required String shvNumber,
     required String licenseType,
-    required bool membershipValid,
-    required bool insuranceValid,
+    required bool? membershipValid,
+    required bool? insuranceValid,
     required double latitude,
     required double longitude,
     required double altitudeM,
@@ -767,7 +770,7 @@ class AlertService extends ChangeNotifier {
     }
 
     // Check membership validity
-    if (!membershipValid) {
+    if (membershipValid == false) {
       await createAlert(
         uid: uid,
         displayName: displayName,
@@ -785,7 +788,7 @@ class AlertService extends ChangeNotifier {
     }
 
     // Check insurance validity
-    if (!insuranceValid) {
+    if (insuranceValid == false) {
       await createAlert(
         uid: uid,
         displayName: displayName,
@@ -862,8 +865,10 @@ class AlertService extends ChangeNotifier {
     required String severity,
     Map<String, dynamic>? metadata,
   }) async {
-    // Generate a deterministic ID so we can update the SAME document later
-    final alertId = DateTime.now().millisecondsSinceEpoch.toString();
+    // Generate a deterministic ID so we can update the SAME document later.
+    // Prefixed with the uid: a bare millisecond timestamp could collide between two
+    // pilots and overwrite each other's alert.
+    final alertId = '${uid}_${DateTime.now().millisecondsSinceEpoch}';
 
     final alert = AlertRecord(
       id: alertId,

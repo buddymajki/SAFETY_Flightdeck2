@@ -155,6 +155,7 @@ class ProfileService extends ChangeNotifier {
   final ValueNotifier<int> _syncSuccessNotifier = ValueNotifier<int>(0);
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _profileSubscription;
   Completer<void>? _initializationCompleter; // Track initialization completion
+  String? _currentUidForStream; // uid the active profile stream belongs to
 
   UserProfile? get userProfile => _userProfile;
   List<Map<String, String>> get schools => _schools;
@@ -234,6 +235,15 @@ class ProfileService extends ChangeNotifier {
   // Main loading method
   /// Public initialization method called by ProxyProvider when user logs in
   Future<bool> initializeData(String uid) async {
+    // The ProxyProvider in main.dart calls this on every rebuild and the SplashScreen
+    // calls it once more. Keep the live profile stream of the same user instead of
+    // cancelling and recreating it; just wait for the first snapshot if still pending.
+    if (_currentUidForStream == uid && _profileSubscription != null) {
+      await waitForInitialData();
+      return _userProfile != null;
+    }
+    _currentUidForStream = uid;
+
     _isLoading = true;
     notifyListeners();
 
@@ -340,6 +350,8 @@ class ProfileService extends ChangeNotifier {
   /// Reset service state when user logs out
   Future<void> resetService() async {
     await _profileSubscription?.cancel();
+    _profileSubscription = null;
+    _currentUidForStream = null;
     _userProfile = null;
     _originalProfile = null;
     _schools = [];

@@ -180,7 +180,9 @@ class TakeoffPlaceStats {
 /// Stats are calculated directly from service data and persisted locally.
 /// Firestore is used only for backup and cross-device synchronization.
 class StatsService extends ChangeNotifier {
-  static const String _statsCacheKey = 'dashboard_stats';
+  // User-specific cache key: the previous account's numbers must not show up on the
+  // dashboard of the next account on a shared device.
+  static const String _statsCacheKeyBase = 'dashboard_stats';
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -190,6 +192,11 @@ class StatsService extends ChangeNotifier {
   String? _currentUid;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _statsSubscription;
   Completer<void>? _initializationCompleter;
+  // JSON of the last stats written to Firestore (without updatedAt) - avoids a write
+  // on every recalculation when nothing changed.
+  String? _lastSyncedStatsJson;
+
+  static String _cacheKeyFor(String uid) => '${_statsCacheKeyBase}_$uid';
 
   // References to data services (set externally)
   dynamic flightService;
@@ -206,19 +213,19 @@ class StatsService extends ChangeNotifier {
 
   // --- Cache Management ---
 
-  Future<void> _cacheStats(DashboardStats stats) async {
+  Future<void> _cacheStats(String uid, DashboardStats stats) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_statsCacheKey, json.encode(stats.toJson()));
+      await prefs.setString(_cacheKeyFor(uid), json.encode(stats.toJson()));
     } catch (e) {
       debugPrint('[StatsService] Cache error: $e');
     }
   }
 
-  Future<DashboardStats?> _getStatsFromCache() async {
+  Future<DashboardStats?> _getStatsFromCache(String uid) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString(_statsCacheKey);
+      final jsonString = prefs.getString(_cacheKeyFor(uid));
       if (jsonString != null) {
         final Map<String, dynamic> decoded = json.decode(jsonString);
         return DashboardStats.fromJson(decoded);
@@ -230,8 +237,10 @@ class StatsService extends ChangeNotifier {
   }
 
   Future<void> _loadDataFromCacheOnly() async {
-    final cached = await _getStatsFromCache();
-    if (cached != null) {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    final cached = await _getStatsFromCache(uid);
+    if (cached != null && _currentUid == null) {
       _stats = cached;
       notifyListeners();
     }
@@ -240,13 +249,25 @@ class StatsService extends ChangeNotifier {
   // --- Initialization & Stream Setup ---
 
   Future<void> initializeData(String uid) async {
+    // The ProxyProvider calls this on every FlightService / UserDataService /
+    // GlobalDataService notification. For an already-initialized user only the
+    // (cheap, local) recalculation is repeated; the cache read and the Firestore
+    // listener are set up once per user.
+    if (_currentUid == uid && _statsSubscription != null) {
+      await recalculateStats();
+      return;
+    }
+
     _isLoading = true;
     _currentUid = uid;
+    _lastSyncedStatsJson = null;
 
     // Load from local cache first (instant display)
-    final cached = await _getStatsFromCache();
+    final cached = await _getStatsFromCache(uid);
     if (cached != null) {
       _stats = cached;
+    } else {
+      _stats = DashboardStats(progress: ProgressStats());
     }
 
     notifyListeners();
@@ -280,7 +301,7 @@ class StatsService extends ChangeNotifier {
           if (remoteStats.updatedAt.isAfter(_stats.updatedAt)) {
             debugPrint('[StatsService] Remote stats are newer, updating local cache');
             _stats = remoteStats;
-            await _cacheStats(remoteStats);
+            await _cacheStats(uid, remoteStats);
             notifyListeners();
           }
         }
@@ -338,11 +359,17 @@ class StatsService extends ChangeNotifier {
 
       // Update local state and cache immediately (PRIMARY)
       _stats = newStats;
-      await _cacheStats(newStats);
+      await _cacheStats(uid, newStats);
       notifyListeners();
 
-      // Sync to Firestore in background (SECONDARY - fire and forget)
-      _syncToFirestoreBackground(uid, newStats);
+      // Sync to Firestore in background (SECONDARY - fire and forget), but only when
+      // the numbers actually changed - recalculations are triggered very frequently.
+      final comparable = Map<String, dynamic>.from(newStats.toJson())..remove('updatedAt');
+      final comparableJson = json.encode(comparable);
+      if (comparableJson != _lastSyncedStatsJson) {
+        _lastSyncedStatsJson = comparableJson;
+        _syncToFirestoreBackground(uid, newStats);
+      }
     } catch (e) {
       debugPrint('[StatsService] Recalculation error: $e');
     }
@@ -548,9 +575,7 @@ class StatsService extends ChangeNotifier {
         : flights.where((flight) {
             try {
               final date = DateTime.parse(flight.date);
-              final matches = date.year == selectedYear;
-              if (!matches) debugPrint('[StatsService] Flight date: ${flight.date}, year: ${date.year}, selected: $selectedYear');
-              return matches;
+              return date.year == selectedYear;
             } catch (e) {
               debugPrint('[StatsService] Date parse error for flight.date="${flight.date}": $e');
               return false;
@@ -642,18 +667,28 @@ class StatsService extends ChangeNotifier {
   }
 
   void resetService() {
+    final uid = _currentUid;
     _statsSubscription?.cancel();
+    _statsSubscription = null;
     _stats = DashboardStats(progress: ProgressStats());
     _isLoading = false;
     _currentUid = null;
     _initializationCompleter = null;
+    _lastSyncedStatsJson = null;
+    if (uid != null) {
+      clearCache(uid);
+    }
     notifyListeners();
   }
 
-  /// Clear cache
-  Future<void> clearCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_statsCacheKey);
+  /// Clear the on-device cache of the given user
+  Future<void> clearCache(String uid) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cacheKeyFor(uid));
+    } catch (e) {
+      debugPrint('[StatsService] Cache clear error: $e');
+    }
   }
 
   @override

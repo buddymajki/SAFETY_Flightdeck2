@@ -45,10 +45,12 @@ class CalendarEvent {
   }
 
   /// Parses a Firestore field that could be a Timestamp or an ISO8601 string.
+  /// Always returns local time: the Cloud Function stores ISO strings with a UTC offset,
+  /// and DateTime.parse keeps those in UTC, which made the UI show wrong hours/days.
   static DateTime? _parseDateTime(dynamic value) {
     if (value == null) return null;
-    if (value is Timestamp) return value.toDate();
-    if (value is String) return DateTime.tryParse(value);
+    if (value is Timestamp) return value.toDate().toLocal();
+    if (value is String) return DateTime.tryParse(value)?.toLocal();
     return null;
   }
 

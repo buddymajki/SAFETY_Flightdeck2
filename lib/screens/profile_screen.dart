@@ -2,6 +2,8 @@
 
 // ignore_for_file: unnecessary_cast, unused_local_variable
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // FIX: Removed unnecessary import - foundation.dart is already included via material.dart
@@ -57,7 +59,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   VoidCallback? _syncListener;
   int _lastSeenSyncTick = 0;
   bool _suppressAutoSave = false;
-  
+  // Autosave is debounced: every keystroke used to trigger a Firestore write, and the
+  // echoed snapshot then overwrote the text field while the user was still typing.
+  Timer? _autoSaveDebounce;
+  static const Duration _autoSaveDelay = Duration(milliseconds: 900);
+  // Height/weight are only written once the profile has a value or the user moved
+  // the slider - otherwise the slider defaults (170 cm / 65 kg) were saved as facts.
+  bool _heightKnown = false;
+  bool _weightKnown = false;
+
 
   // Top countries for quick access
   static const List<String> _topCountries = [
@@ -171,6 +181,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    if (_autoSaveDebounce?.isActive ?? false) {
+      _autoSaveDebounce!.cancel();
+      _saveProfileNow(); // don't lose the last edits when leaving the screen
+    }
     _familyNameController.dispose();
     _forenameController.dispose();
     _nicknameController.dispose();
@@ -294,6 +308,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _selectedCountry = profile.address4;
           _height = (profile.height != null && profile.height! > 0) ? profile.height!.toDouble() : 170.0;
           _weight = (profile.weight != null && profile.weight! > 0) ? profile.weight!.toDouble() : 65.0;
+          _heightKnown = _heightKnown || (profile.height != null && profile.height! > 0);
+          _weightKnown = _weightKnown || (profile.weight != null && profile.weight! > 0);
           
           final rawLicense = profile.license ?? 'Student';
           _selectedLicense = rawLicense.toLowerCase() == 'student' ? 'Student' : 'Pilot';
@@ -375,6 +391,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     _height = (profile.height != null && profile.height! > 0) ? profile.height!.toDouble() : 170.0;
     _weight = (profile.weight != null && profile.weight! > 0) ? profile.weight!.toDouble() : 65.0;
+    _heightKnown = profile.height != null && profile.height! > 0;
+    _weightKnown = profile.weight != null && profile.weight! > 0;
 
     _gliderController.text = profile.glider ?? '';
     _shvNumberController.text = profile.shvnumber ?? '';
@@ -422,9 +440,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _autoSaveProfile() {
     if (_suppressAutoSave) return;
+    if (!_formInitialized) return;
+    _autoSaveDebounce?.cancel();
+    _autoSaveDebounce = Timer(_autoSaveDelay, _saveProfileNow);
+  }
+
+  void _saveProfileNow() {
+    if (!mounted) return;
     final service = context.read<ProfileService>();
     final profile = service.userProfile;
-    
+
     if (profile == null || !_formInitialized) return;
 
     final updated = UserProfile(
@@ -442,8 +467,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       address4: _selectedCountry,
       emergencyContactName: _emergencyNameController.text.trim(),
       emergencyContactPhone: _emergencyPhoneController.text.trim(),
-      height: _height.round(),
-      weight: _weight.round(),
+      height: _heightKnown ? _height.round() : null,
+      weight: _weightKnown ? _weight.round() : null,
       glider: _gliderController.text.trim().isEmpty ? null : _gliderController.text.trim(),
       shvnumber: _shvNumberController.text.trim().isEmpty ? null : _shvNumberController.text.trim(),
       license: _selectedLicense,
@@ -733,7 +758,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           divisions: 60,
           label: '${_height.round()} cm',
           onChanged: (value) {
-            setState(() => _height = value);
+            setState(() {
+              _height = value;
+              _heightKnown = true;
+            });
             _autoSaveProfile();
           },
         ),
@@ -754,7 +782,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           divisions: 65,
           label: '${_weight.round()} kg',
           onChanged: (value) {
-            setState(() => _weight = value);
+            setState(() {
+              _weight = value;
+              _weightKnown = true;
+            });
             _autoSaveProfile();
           },
         ),

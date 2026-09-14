@@ -148,6 +148,10 @@ class TestService extends ChangeNotifier {
         submittedAt: DateTime.now(),
         status: status,
         reviewData: gradeResult,
+        // Keep what an instructor already wrote on this test; the full overwrite below
+        // used to wipe the feedback on every retry.
+        questionFeedback: existing?.questionFeedback,
+        instructorReviewedBy: existing?.instructorReviewedBy,
         scorePercent: scorePercent.toDouble(),
         passed: passed,
         retryAvailableAt: retryAvailableAt,

@@ -12,7 +12,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/flight.dart';
 
 class FlightService extends ChangeNotifier {
-  static const String _flightsCacheKey = 'flightbook_flights';
+  // Cache key is user-specific so a second account on the same device never sees
+  // the previous user's flights while its own stream is still loading.
+  static const String _flightsCacheKeyBase = 'flightbook_flights';
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -25,7 +27,7 @@ class FlightService extends ChangeNotifier {
   String? _currentSchoolId;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _flightsSubscription;
   Completer<void>? _initializationCompleter;
-  
+
   // Callback for stats updates (set by external service)
   Function()? onFlightDataChanged;
 
@@ -37,13 +39,15 @@ class FlightService extends ChangeNotifier {
     _loadDataFromCacheOnly();
   }
 
+  static String _cacheKeyFor(String uid) => '${_flightsCacheKeyBase}_$uid';
+
   // --- Cache Management ---
 
-  Future<void> _cacheFlights(List<Flight> flights) async {
+  Future<void> _cacheFlights(String uid, List<Flight> flights) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cacheable = flights.map((f) => f.toCache()).toList();
-      await prefs.setString(_flightsCacheKey, json.encode(cacheable));
+      await prefs.setString(_cacheKeyFor(uid), json.encode(cacheable));
     } catch (e) {
       debugPrint('[FlightService] Cache error: $e');
     }
@@ -52,7 +56,7 @@ class FlightService extends ChangeNotifier {
   Future<List<Flight>> _getFlightsFromCache(String uid) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString(_flightsCacheKey);
+      final jsonString = prefs.getString(_cacheKeyFor(uid));
       if (jsonString != null) {
         final List<dynamic> decoded = json.decode(jsonString);
         return decoded
@@ -70,12 +74,26 @@ class FlightService extends ChangeNotifier {
     if (uid == null) return;
 
     final cached = await _getFlightsFromCache(uid);
-    _flights = cached;
+    // Don't overwrite data that a stream delivered while the cache was loading
+    if (_flights.isEmpty && cached.isNotEmpty) {
+      _flights = cached;
+      notifyListeners();
+    }
   }
 
   // --- Initialization & Stream Setup ---
 
   Future<void> initializeData(String uid, String schoolId) async {
+    // Called both by the SplashScreen and by the ChangeNotifierProxyProvider on every
+    // ProfileService notification. Re-subscribing each time cancelled and recreated
+    // the Firestore listener over and over; keep the existing subscription for the
+    // same user and only remember the (currently unused) school id.
+    if (_currentUid == uid && _flightsSubscription != null) {
+      _currentSchoolId = schoolId;
+      await waitForInitialData();
+      return;
+    }
+
     _isLoading = true;
     _currentUid = uid;
     _currentSchoolId = schoolId;
@@ -96,13 +114,19 @@ class FlightService extends ChangeNotifier {
       (snapshot) async {
         final flights = <Flight>[];
         for (var doc in snapshot.docs) {
-          final flight = Flight.fromFirestore(doc.data(), doc.id, uid);
-          flights.add(flight);
+          try {
+            flights.add(Flight.fromFirestore(doc.data(), doc.id, uid));
+          } catch (e) {
+            // One malformed legacy document must not blank the whole Flight Book
+            debugPrint('[FlightService] Skipping unparsable flight ${doc.id}: $e');
+          }
         }
 
         // Sort by date descending (newest first), then by created_at descending for same-date flights
         flights.sort((a, b) {
-          final dateComparison = DateTime.parse(b.date).compareTo(DateTime.parse(a.date));
+          final aDate = DateTime.tryParse(a.date) ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final bDate = DateTime.tryParse(b.date) ?? DateTime.fromMillisecondsSinceEpoch(0);
+          final dateComparison = bDate.compareTo(aDate);
           if (dateComparison != 0) {
             return dateComparison;
           }
@@ -113,7 +137,7 @@ class FlightService extends ChangeNotifier {
         });
 
         _flights = flights;
-        await _cacheFlights(_flights);
+        await _cacheFlights(uid, _flights);
 
         _isLoading = false;
         notifyListeners();
@@ -145,63 +169,48 @@ class FlightService extends ChangeNotifier {
     final uid = _currentUid ?? _auth.currentUser?.uid;
     if (uid == null) throw StateError('User not authenticated');
 
-    // Generate temporary ID and mark as pending
+    // Generate temporary ID and mark as pending. copyWith keeps every field the form
+    // filled in (glider, gpsTracked, ...) - rebuilding the object by hand used to drop
+    // the selected glider, so glider_id was always null in Firestore.
     final tempId = _firestore.collection('flights').doc().id;
-    final flightWithId = Flight(
+    final now = DateTime.now();
+    final flightWithId = flight.copyWith(
       id: tempId,
       studentUid: uid,
-      mainSchoolId: flight.mainSchoolId,
-      thisFlightSchoolId: flight.thisFlightSchoolId,
-      date: flight.date,
-      takeoffName: flight.takeoffName,
-      takeoffId: flight.takeoffId,
-      takeoffAltitude: flight.takeoffAltitude,
-      landingName: flight.landingName,
-      landingId: flight.landingId,
-      landingAltitude: flight.landingAltitude,
-      altitudeDifference: flight.altitudeDifference,
-      flightTimeMinutes: flight.flightTimeMinutes,
-      comment: flight.comment,
-      startTypeId: flight.startTypeId,
-      flightTypeId: flight.flightTypeId,
-      advancedManeuvers: flight.advancedManeuvers,
-      schoolManeuvers: flight.schoolManeuvers,
-      licenseType: flight.licenseType,
       status: 'pending',
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      gpsTracked: flight.gpsTracked,
+      createdAt: now,
+      updatedAt: now,
       isPendingUpload: true,
     );
 
-    debugPrint('[FlightService] addFlight: gpsTracked=${flightWithId.gpsTracked}');
+    debugPrint('[FlightService] addFlight: gpsTracked=${flightWithId.gpsTracked}, glider=${flightWithId.gliderId}');
 
     // Optimistic cache update
     _flights.insert(0, flightWithId);
-    await _cacheFlights(_flights);
+    await _cacheFlights(uid, _flights);
     notifyListeners();
 
-    // Background sync (only write to user's flightlog collection)
-    try {
-      final now = FieldValue.serverTimestamp();
-      final payload = {
-        ...flightWithId.toFirestore(),
-        'created_at': now,
-        'updated_at': now,
-      };
+    // Trigger stats update from the optimistic state
+    onFlightDataChanged?.call();
 
-      // Write ONLY to user flightlog
-      // Cloud Functions will handle cross-user and school processing
-      await _firestore.collection('users').doc(uid).collection('flightlog').doc(tempId).set(payload);
-
-      log('[FlightService] Flight added: $tempId');
-      
-      // Trigger stats update
-      onFlightDataChanged?.call();
-    } catch (e) {
-      debugPrint('[FlightService] Background sync error: $e');
-      // Keep in cache even if sync fails
-    }
+    // Background sync (only write to user's flightlog collection).
+    // NOT awaited: with offline persistence the write future only completes once the
+    // server acknowledges it, which blocked the form's spinner forever while offline.
+    // Firestore queues the write locally and delivers it when the device is online.
+    final serverNow = FieldValue.serverTimestamp();
+    final payload = {
+      ...flightWithId.toFirestore(),
+      'created_at': serverNow,
+      'updated_at': serverNow,
+    };
+    unawaited(_firestore
+        .collection('users')
+        .doc(uid)
+        .collection('flightlog')
+        .doc(tempId)
+        .set(payload)
+        .then((_) => log('[FlightService] Flight added: $tempId'))
+        .catchError((e) => debugPrint('[FlightService] Background sync error: $e')));
 
     return tempId;
   }
@@ -222,58 +231,28 @@ class FlightService extends ChangeNotifier {
       return;
     }
 
-    // Optimistic cache update
-    // REFACTORED: Fixed incorrect field assignment - landingAltitude was using altitudeDifference
-    updatedFlight = Flight(
-      id: updatedFlight.id,
+    // Optimistic cache update (copyWith keeps glider / gpsTracked intact)
+    final localFlight = updatedFlight.copyWith(
       studentUid: uid,
-      mainSchoolId: updatedFlight.mainSchoolId,
-      thisFlightSchoolId: updatedFlight.thisFlightSchoolId,
-      date: updatedFlight.date,
-      takeoffName: updatedFlight.takeoffName,
-      takeoffId: updatedFlight.takeoffId,
-      takeoffAltitude: updatedFlight.takeoffAltitude,
-      landingName: updatedFlight.landingName,
-      landingId: updatedFlight.landingId,
-      landingAltitude: updatedFlight.landingAltitude,
-      altitudeDifference: updatedFlight.altitudeDifference,
-      flightTimeMinutes: updatedFlight.flightTimeMinutes,
-      comment: updatedFlight.comment,
-      startTypeId: updatedFlight.startTypeId,
-      flightTypeId: updatedFlight.flightTypeId,
-      advancedManeuvers: updatedFlight.advancedManeuvers,
-      schoolManeuvers: updatedFlight.schoolManeuvers,
-      licenseType: updatedFlight.licenseType,
-      status: updatedFlight.status,
-      createdAt: updatedFlight.createdAt,
       updatedAt: DateTime.now(),
       isPendingUpload: false,
     );
 
-    _flights[index] = updatedFlight;
-    await _cacheFlights(_flights);
+    _flights[index] = localFlight;
+    await _cacheFlights(uid, _flights);
     notifyListeners();
+    onFlightDataChanged?.call();
 
-    // Background sync (only write to user's flightlog collection)
-    try {
-      patch['updated_at'] = FieldValue.serverTimestamp();
-
-      // Update ONLY in user flightlog
-      // Cloud Functions will handle cross-user and school processing
-      await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('flightlog')
-          .doc(updatedFlight.id)
-          .update(patch);
-
-      log('[FlightService] Flight updated: ${updatedFlight.id}');
-      
-      // Trigger stats update
-      onFlightDataChanged?.call();
-    } catch (e) {
-      debugPrint('[FlightService] Update sync error: $e');
-    }
+    // Background sync (only write to user's flightlog collection) - not awaited, see addFlight
+    patch['updated_at'] = FieldValue.serverTimestamp();
+    unawaited(_firestore
+        .collection('users')
+        .doc(uid)
+        .collection('flightlog')
+        .doc(localFlight.id)
+        .update(patch)
+        .then((_) => log('[FlightService] Flight updated: ${localFlight.id}'))
+        .catchError((e) => debugPrint('[FlightService] Update sync error: $e')));
   }
 
   /// Delete a flight (offline-first)
@@ -283,27 +262,19 @@ class FlightService extends ChangeNotifier {
 
     // Optimistic cache removal
     _flights.removeWhere((f) => f.id == flightId);
-    await _cacheFlights(_flights);
+    await _cacheFlights(uid, _flights);
     notifyListeners();
+    onFlightDataChanged?.call();
 
-    // Background sync (only delete from user's flightlog collection)
-    try {
-      // Delete ONLY from user flightlog
-      // Cloud Functions will handle cross-user and school cleanup
-      await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('flightlog')
-          .doc(flightId)
-          .delete();
-
-      log('[FlightService] Flight deleted: $flightId');
-      
-      // Trigger stats update
-      onFlightDataChanged?.call();
-    } catch (e) {
-      debugPrint('[FlightService] Delete sync error: $e');
-    }
+    // Background sync (only delete from user's flightlog collection) - not awaited, see addFlight
+    unawaited(_firestore
+        .collection('users')
+        .doc(uid)
+        .collection('flightlog')
+        .doc(flightId)
+        .delete()
+        .then((_) => log('[FlightService] Flight deleted: $flightId'))
+        .catchError((e) => debugPrint('[FlightService] Delete sync error: $e')));
   }
 
   /// Get a flight by ID
@@ -323,12 +294,23 @@ class FlightService extends ChangeNotifier {
   }
 
   void resetService() {
+    final uid = _currentUid;
     _flightsSubscription?.cancel();
+    _flightsSubscription = null;
     _flights = [];
     _isLoading = false;
     _currentUid = null;
     _currentSchoolId = null;
     _initializationCompleter = null;
+    if (uid != null) {
+      // Remove the signed-out user's flights from the device cache
+      SharedPreferences.getInstance()
+          .then((prefs) => prefs.remove(_cacheKeyFor(uid)))
+          .catchError((e) {
+        debugPrint('[FlightService] Cache clear error: $e');
+        return false;
+      });
+    }
     notifyListeners();
   }
 

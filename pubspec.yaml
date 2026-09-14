@@ -24,21 +24,16 @@ dependencies:
   # Állapotkezelés
   provider: ^6.1.1
   shared_preferences: ^2.2.2
-  reorderables: ^0.4.2
-  
+
   # Segédprogramok
   intl: ^0.20.2
   url_launcher: ^6.2.4
   http: ^1.1.0
-  dio: ^5.3.0              # HTTP client for APK download
-  path_provider: ^2.1.1    # Access app cache directory
-  
+
   # GPS & Sensors for flight tracking
-  geolocator: ^13.0.2          # GPS location services
+  geolocator: ^13.0.2          # GPS location services (incl. Android foreground service)
   sensors_plus: ^6.1.1         # Accelerometer & gyroscope
   permission_handler: ^11.3.1  # Runtime permissions
-  flutter_background_service: ^5.0.10  # Background service
-  flutter_local_notifications: ^18.0.1 # Notifications for background service
   file_picker: ^8.1.2          # File selection for tracklogs (v2 embedding compatible)
   connectivity_plus: ^6.1.0    # Network connectivity monitoring for offline sync
   battery_plus: ^5.0.1         # Battery level monitoring for custom status bar

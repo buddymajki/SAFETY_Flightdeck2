@@ -46,10 +46,17 @@ class RestrictedZone {
   bool contains(double lat, double lng, double altitudeM) {
     // Skip informational airspaces (no entry restrictions)
     if (informational) return false;
-    
+
+    // A lower limit given above ground (e.g. "150 m AGL" / "600 m AGL") cannot be
+    // evaluated without terrain data: comparing it with the GPS (≈MSL) altitude treated
+    // every pilot flying over Swiss terrain as "inside" and produced false alerts.
+    // Until a terrain model is available these zones are not alerted on.
+    // Zones starting at ground level (0 m AGL / GND: CTR, airfields, R-areas) still work.
+    if (minAltitudeType == 'AGL' && minAltitude > 0) return false;
+
     // Check altitude range first (faster)
-    // Note: For AGL altitudes, we would need terrain data for accurate check
-    // For now, assume QNH/MSL altitudes
+    // Note: For AGL upper limits (3 zones in the Swiss data) we still compare with the
+    // GPS altitude, which errs on the side of alerting.
     if (altitudeM < minAltitude || altitudeM > maxAltitude) {
       return false;
     }
