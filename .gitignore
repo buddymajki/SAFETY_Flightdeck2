@@ -47,3 +47,11 @@ lib/firebase_oldexporttonew/serviceAccountKey.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Secrets and personal-data exports (never commit)
+**/serviceAccountKey*.json
+lib/oldfirebase_exp/user_*_full.json
+lib/oldfirebase_exp/judith_flights_info.json
+lib/oldfirebase_exp/node_modules/
+lib/firebase_oldexporttonew/node_modules/
+brands-firestore/serviceAccountKey.json
