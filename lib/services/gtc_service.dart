@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
@@ -159,12 +160,19 @@ class GTCService extends ChangeNotifier {
         'gtc_version': gtcData['gtc_version'] ?? '1.0',
       };
 
-      await _firestore
+      // cloud_firestore queues the write locally and resolves this Future
+      // only once the server acknowledges it. Awaiting it offline leaves the
+      // user staring at a spinner forever, so the write is fired and the
+      // local state updated straight away; the SDK syncs when back online.
+      unawaited(_firestore
           .collection('users')
           .doc(uid)
           .collection('gtc_acceptances')
           .doc(schoolId)
-          .set(acceptance, SetOptions(merge: true));
+          .set(acceptance, SetOptions(merge: true))
+          .catchError((Object e) {
+        if (kDebugMode) print('Error accepting GTC (queued write failed): $e');
+      }));
 
       // Set local acceptance with current DateTime immediately (server timestamp will sync later)
       final localAcceptance = {

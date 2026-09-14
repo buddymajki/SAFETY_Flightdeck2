@@ -9,6 +9,7 @@
 //
 // Uses ChangeNotifier for state management to integrate with Provider.
 
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -158,12 +159,18 @@ class TestService extends ChangeNotifier {
         attempts: allAttempts,
       );
 
-      await _firestore
+      // Not awaited on purpose: the Future resolves on server ack only, so
+      // submitting a test with no connection used to hang the screen. The SDK
+      // keeps the submission in its local queue and sends it when online.
+      unawaited(_firestore
           .collection('users')
           .doc(userId)
           .collection('tests')
           .doc(test.id)
-          .set(submission.toFirestore(), SetOptions(merge: false));
+          .set(submission.toFirestore(), SetOptions(merge: false))
+          .catchError((Object e) {
+        debugPrint('[TestService] Queued test submission failed: $e');
+      }));
 
       debugPrint('[TestService] Test submitted: score=$scorePercent%, passed=$passed, attempts=${allAttempts.length}');
 

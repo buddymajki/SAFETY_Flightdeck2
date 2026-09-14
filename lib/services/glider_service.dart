@@ -163,26 +163,36 @@ class GliderService extends ChangeNotifier {
 
   // --- User Glider CRUD ---
 
-  /// Add a glider to the user's collection
+  /// Add a glider to the user's collection.
+  ///
+  /// The write is not awaited: cloud_firestore resolves it only on server ack,
+  /// which never happens offline, and the local stream listener already
+  /// reflects the new glider immediately.
   Future<void> addUserGlider(UserGlider glider) async {
     if (_currentUid == null) return;
-    await _firestore
+    unawaited(_firestore
         .collection('users')
         .doc(_currentUid)
         .collection('gliders')
-        .add(glider.toFirestore());
+        .add(glider.toFirestore())
+        .then<void>((_) {}, onError: (Object e) {
+      debugPrint('[GliderService] Queued glider add failed: $e');
+    }));
     // The stream listener will automatically update _userGliders from Firestore
   }
 
   /// Remove a glider from the user's collection
   Future<void> removeUserGlider(String gliderId) async {
     if (_currentUid == null) return;
-    await _firestore
+    unawaited(_firestore
         .collection('users')
         .doc(_currentUid)
         .collection('gliders')
         .doc(gliderId)
-        .delete();
+        .delete()
+        .catchError((Object e) {
+      debugPrint('[GliderService] Queued glider delete failed: $e');
+    }));
   }
 
   /// Reset service on logout
