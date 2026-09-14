@@ -55,3 +55,16 @@ lib/oldfirebase_exp/judith_flights_info.json
 lib/oldfirebase_exp/node_modules/
 lib/firebase_oldexporttonew/node_modules/
 brands-firestore/serviceAccountKey.json
+
+# Legacy one-off migration scripts + raw exports with real personal data.
+# Archived outside the repo (external HDD), never track again.
+lib/oldfirebase_exp/
+lib/firebase_oldexporttonew/
+
+# Local-only tooling / leftovers
+bfg.jar
+analyze_output.txt
+miki.txt
+FIRESTORE_SECURITY_RULES.txt
+metadata_template.json
+functions/*.bak
