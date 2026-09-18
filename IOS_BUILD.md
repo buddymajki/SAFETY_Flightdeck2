@@ -118,10 +118,19 @@ flutter clean
 flutter pub get
 
 cd ios
+export LANG=en_US.UTF-8      # KELL, különben a pod install elhasal (lásd lent)
+export LC_ALL=en_US.UTF-8
 rm -rf Pods Podfile.lock
 pod install --repo-update
 cd ..
 ```
+
+> **Ha `Unicode Normalization not appropriate for ASCII-8BIT (Encoding::CompatibilityError)`
+> hibát kapsz:** a shelled nincs UTF-8 locale-on. A fenti két `export` megoldja.
+> Hogy soha többé ne jöjjön elő, tedd be a `~/.zshrc`-be:
+> ```bash
+> echo '\nexport LANG=en_US.UTF-8\nexport LC_ALL=en_US.UTF-8' >> ~/.zshrc
+> ```
 
 **Mit csinál a `pod install`?** A Flutter-pluginok natív iOS részeit (Firebase,
 GPS, hang stb.) tölti le és köti be az Xcode projektbe. Ez hozza létre a
@@ -143,6 +152,23 @@ Ez első alkalommal lassú (több perc, akár 10+), mert letölti a teljes pod-i
 ---
 
 ## 3. [TERM] A build
+
+> **⚠️ Melyik gépen buildelsz?** A terminálos `flutter build ipa` a repo **Manual**
+> aláírására épül, ami a nevesített **`FlightDeck-TestFlight`** provisioning profilt
+> keresi. Ez csak azon a gépen van meg, ahol azt a profilt egyszer letöltötted.
+> **Egy másik/friss gépen** (ahol csak Xcode-ból írtál eddig alá) a profil hiányzik,
+> és a terminálos build **garantáltan elhasal** az aláírásnál — akkor is, ha a
+> Distribution tanúsítvány fent van. Ellenőrzés:
+> ```bash
+> security find-identity -v -p codesigning | grep -i distribution   # cert megvan-e
+> ls ~/Library/MobileDevice/Provisioning\ Profiles/                 # profil megvan-e
+> ```
+> Ha a **cert megvan, de a profil nincs**, ne is próbáld a terminálos buildet —
+> ugorj egyből a **3B**-re (Xcode Archive **Automatic** signinggel). Az Xcode a
+> meglévő certből maga legyártja a profilt, és ez a megbízható út. Ilyenkor a
+> projekt `CODE_SIGN_STYLE`-ját állítsd `Automatic`-ra (Team `QNH8RGX236`) — a
+> `ios/Runner.xcodeproj/project.pbxproj`-ban vagy egyszerűen az Xcode UI-ban
+> (3B/3. pont), az felülírja.
 
 ```bash
 flutter build ipa --release
@@ -260,6 +286,9 @@ git push
 | A `pod install` végtelenségig pörög | CocoaPods CDN | `pod repo update` külön, utána `pod install` |
 | Az **Archive** menüpont szürke | szimulátor van kiválasztva | felül állítsd **Any iOS Device (arm64)**-re |
 | A build „megáll" 10 percre | nem állt meg, csak lassú | hagyd futni |
+| `pod install` → `Unicode Normalization ... ASCII-8BIT` | a shell nincs UTF-8 locale-on | `export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8`, majd `pod install` újra (2. lépés) |
+| Feltöltéskor **sárga** „Upload symbols failed / symbols are missing" | néhány framework dSYM-je nincs benne — csak a crash-logok szimbolizációját érinti | **ignoráld**, nem hiba, a TestFlight build érvényes |
+| `open ios/Runner.xcworkspace` → „file doesn't exist" | az `ios/` mappában állsz, így `ios/ios/...`-t keres | előbb `cd` a repo gyökerébe, vagy adj teljes útvonalat |
 
 ---
 
