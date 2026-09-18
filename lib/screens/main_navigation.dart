@@ -12,6 +12,7 @@ import 'gps_screen.dart';
 import 'tests_screen.dart';
 import '../services/app_config_service.dart';
 import '../services/app_version_service.dart';
+import '../config/feature_flags.dart';
 import '../services/update_service.dart';
 import '../services/calendar_service.dart';
 import '../widgets/responsive_layout.dart';
@@ -168,9 +169,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     _pageController = PageController();
     
     // Check for app updates - now screen is fully loaded and ready to show dialog
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkForUpdates();
-    });
+    if (FeatureFlags.updateCheckEnabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkForUpdates();
+      });
+    }
   }
 
   @override
@@ -248,15 +251,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 _onItemTapped(profileIndex, isStudentLicense);
               },
             ),
-            const Divider(color: Colors.grey),
-            ListTile(
-              leading: const Icon(Icons.system_update_alt, color: Colors.blue),
-              title: Text(_getLabel(context, 'check_updates')),
-              onTap: () {
-                Navigator.pop(context);
-                _manualCheckForUpdates();
-              },
-            ),
+            if (FeatureFlags.updateCheckEnabled) ...[
+              const Divider(color: Colors.grey),
+              ListTile(
+                leading: const Icon(Icons.system_update_alt, color: Colors.blue),
+                title: Text(_getLabel(context, 'check_updates')),
+                onTap: () {
+                  Navigator.pop(context);
+                  _manualCheckForUpdates();
+                },
+              ),
+            ],
             const Divider(color: Colors.grey),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
@@ -303,8 +308,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  /// Check for app updates and show dialog if update is available
+  /// Check for app updates and show dialog if update is available.
+  /// No-op while [FeatureFlags.updateCheckEnabled] is false.
   Future<void> _checkForUpdates() async {
+    if (!FeatureFlags.updateCheckEnabled) return;
     try {
       final updateService = context.read<UpdateService>();
 
@@ -335,8 +342,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
-  /// Manual check for updates (triggered by user from drawer menu)
+  /// Manual check for updates (triggered by user from drawer menu).
+  /// No-op while [FeatureFlags.updateCheckEnabled] is false.
   Future<void> _manualCheckForUpdates() async {
+    if (!FeatureFlags.updateCheckEnabled) return;
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(

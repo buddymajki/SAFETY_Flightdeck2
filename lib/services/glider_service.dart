@@ -143,6 +143,27 @@ class GliderService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Makes sure the glider catalogue is available before the picker is shown.
+  ///
+  /// The first load can come back empty - no connection at launch, or the
+  /// service was started before the session was restored - and without a retry
+  /// the pilot is left with an empty, unusable brand list.
+  Future<void> ensureCatalogLoaded() async {
+    if (_globalGliders.isNotEmpty || _catalogLoading) return;
+    _catalogLoading = true;
+    try {
+      await _loadGlobalGliders();
+    } finally {
+      _catalogLoading = false;
+      notifyListeners();
+    }
+  }
+
+  bool _catalogLoading = false;
+
+  /// True while a catalogue (re)load is in flight - the picker shows a spinner.
+  bool get isCatalogLoading => _catalogLoading;
+
   Future<void> _loadGlobalGliders() async {
     try {
       final snapshot = await _firestore.collection('gliders').get(

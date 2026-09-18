@@ -68,3 +68,6 @@ miki.txt
 FIRESTORE_SECURITY_RULES.txt
 metadata_template.json
 functions/*.bak
+
+# Kotlin incremental build state (Gradle 8+)
+android/.kotlin/

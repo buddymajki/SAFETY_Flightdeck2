@@ -10,6 +10,7 @@ import '../services/stats_service.dart';
 import '../services/user_data_service.dart';
 import '../services/profile_service.dart';
 import '../services/dashboard_config_service.dart';
+import '../services/glider_service.dart';
 import '../services/app_version_service.dart';
 import 'login_screen.dart';
 import 'main_navigation.dart';
@@ -53,6 +54,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final flight = context.read<FlightService>();
       final stats = context.read<StatsService>();
       final dashboardConfig = context.read<DashboardConfigService>();
+      final gliders = context.read<GliderService>();
 
       // Phase 1: Initialize global + user data + dashboard config
       await Future.wait<void>([
@@ -67,10 +69,17 @@ class _SplashScreenState extends State<SplashScreen> {
       // Get schoolId from profile for flight + stats initialization
       final schoolId = profile.currentMainSchoolId ?? '';
 
-      // Phase 3: Initialize flight + stats with proper user context
+      // Phase 3: Initialize flight + stats + gliders with proper user context.
+      //
+      // GliderService used to be initialized only from its ProxyProvider, which
+      // reads FirebaseAuth.currentUser while the app is still restoring the
+      // session. When that read came back null the service was never started at
+      // all: no glider catalogue, no saved gliders, and the profile's glider
+      // picker stayed empty with no way to choose one.
       await Future.wait<void>([
         flight.initializeData(uid, schoolId),
         stats.initializeData(uid),
+        gliders.initializeData(uid),
       ]);
 
       log('[Splash] Data load complete. globals=${global.globalChecklists?.length ?? 0} flights=${flight.flights.length} uid=$uid');

@@ -19,8 +19,7 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
   late TabController _tabController;
   List<String> _categoryIds = [];
   int _selectedTabIndex = 0;
-  late SharedPreferences _prefs;
-  late Future<void> _loadIndexFuture;
+  SharedPreferences? _prefs;
   bool _isDisposed = false;
 
   @override
@@ -42,7 +41,15 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
       _categoryIds = newCategoryIds;
       _tabController.removeListener(_onTabChanged); // Remove listener before disposing
       _tabController.dispose();
-      _tabController = TabController(length: _categoryIds.length, vsync: this);
+      // Start on the category the pilot last had open instead of snapping back
+      // to the first one every time the category list is rebuilt.
+      _tabController = TabController(
+        length: _categoryIds.length,
+        initialIndex: _categoryIds.isEmpty
+            ? 0
+            : _selectedTabIndex.clamp(0, _categoryIds.length - 1),
+        vsync: this,
+      );
       _tabController.addListener(_onTabChanged);
     }
   }
@@ -51,38 +58,45 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
   void initState() {
     super.initState();
     _tabController = TabController(length: 0, vsync: this);
-    _loadIndexFuture = _loadTabIndex();
+    _loadTabIndex();
   }
 
+  /// Restores the last opened category. Runs once, and only moves the tab bar
+  /// if the pilot has not already picked a category in the meantime.
   Future<void> _loadTabIndex() async {
-    _prefs = await SharedPreferences.getInstance();
-    _selectedTabIndex = _prefs.getInt('checklist_tab_index') ?? 0;
-    // Schedule the tab index update for after the widget builds
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_tabController.length > 0) {
-        final targetIndex = _selectedTabIndex.clamp(0, _tabController.length - 1);
-        _tabController.animateTo(
-          targetIndex,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
+    final prefs = await SharedPreferences.getInstance();
+    if (_isDisposed) return;
+    _prefs = prefs;
+
+    final savedIndex = prefs.getInt('checklist_tab_index') ?? 0;
+    if (savedIndex == _selectedTabIndex) return; // already there (or user moved)
+
+    _selectedTabIndex = savedIndex;
+    if (!mounted || _tabController.length == 0) return;
+    _tabController.animateTo(
+      savedIndex.clamp(0, _tabController.length - 1),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   Future<void> _saveTabIndex(int index) async {
-    await _prefs.setInt('checklist_tab_index', index);
+    await _prefs?.setInt('checklist_tab_index', index);
   }
 
+  /// Keeps [_selectedTabIndex] in step with the controller for *every* way the
+  /// tab can change: a tap (during which indexIsChanging is true), a swipe of
+  /// the content, and the chevron buttons.
   void _onTabChanged() {
-    if (!_tabController.indexIsChanging) {
-      if (mounted) {
-        setState(() {
-          _selectedTabIndex = _tabController.index;
-        });
-      }
-      _saveTabIndex(_tabController.index);
+    final index = _tabController.index;
+    if (index == _selectedTabIndex) return;
+
+    if (mounted) {
+      setState(() => _selectedTabIndex = index);
+    } else {
+      _selectedTabIndex = index;
     }
+    _saveTabIndex(index);
   }
 
   @override
@@ -130,111 +144,51 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
         .where((categoryId) => itemsByCategory.containsKey(categoryId))
         .toList();
 
-    // Animate to saved tab after future completes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_loadIndexFuture.toString().contains('_CompleteStreamFuture')) {
-        if (_tabController.length > 0 &&
-            _tabController.index != _selectedTabIndex.clamp(0, _tabController.length - 1)) {
-          _tabController.animateTo(
-            _selectedTabIndex.clamp(0, _tabController.length - 1),
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
-        }
-      }
-    });
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
-          // TabBar with floating chevron buttons
-          Stack(
+          // Category tab bar. The chevrons sit BESIDE the bar, not on top of
+          // it: as overlays they covered the first and last visible tab and
+          // swallowed taps meant for those tabs.
+          Row(
             children: [
-              // TabBar handles its own horizontal scrolling (isScrollable: true).
-              // It must NOT be wrapped in another horizontal scrollable, otherwise
-              // the nested scroll view swallows tab taps on iOS (only swipe works).
-              TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                indicatorSize: TabBarIndicatorSize.label,
-                tabAlignment: TabAlignment.start,
-                padding: EdgeInsets.zero,
-                labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                labelColor: theme.colorScheme.onSurface,
-                unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
-                unselectedLabelStyle: theme.textTheme.labelMedium,
-                indicatorColor: theme.colorScheme.primary,
-                tabs: [
-                  for (final categoryId in categoryIds)
-                    _buildTab(context, categoryId, itemsByCategory[categoryId]!, user, lang),
-                ],
+              _buildTabChevron(
+                theme,
+                icon: Icons.chevron_left,
+                tooltip: 'Previous category',
+                enabled: _selectedTabIndex > 0,
+                onTap: _goToPreviousTab,
               ),
-              // Left chevron - jumps to the previous tab
-              if (_selectedTabIndex > 0)
-                Positioned(
-                  left: 8,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: _goToPreviousTab,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(6),
-                          color: theme.colorScheme.primary.withValues(alpha: 0.8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 3,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.chevron_left,
-                          size: 18,
-                          color: Colors.white.withValues(alpha: 1.0),
-                        ),
-                      ),
-                    ),
-                  ),
+              Expanded(
+                // TabBar handles its own horizontal scrolling (isScrollable: true).
+                // It must NOT be wrapped in another horizontal scrollable, otherwise
+                // the nested scroll view swallows tab taps on iOS (only swipe works).
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  tabAlignment: TabAlignment.start,
+                  padding: EdgeInsets.zero,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  labelColor: theme.colorScheme.onSurface,
+                  unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                  labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+                  unselectedLabelStyle: theme.textTheme.labelMedium,
+                  indicatorColor: theme.colorScheme.primary,
+                  tabs: [
+                    for (final categoryId in categoryIds)
+                      _buildTab(context, categoryId, itemsByCategory[categoryId]!, user, lang),
+                  ],
                 ),
-              // Right chevron - jumps to the next tab
-              if (_selectedTabIndex < categoryIds.length - 1)
-                Positioned(
-                  right: 8,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: _goToNextTab,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(6),
-                          color: theme.colorScheme.primary.withValues(alpha: 0.8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 3,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.chevron_right,
-                          size: 18,
-                          color: Colors.white.withValues(alpha: 1.0),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              ),
+              _buildTabChevron(
+                theme,
+                icon: Icons.chevron_right,
+                tooltip: 'Next category',
+                enabled: _selectedTabIndex < categoryIds.length - 1,
+                onTap: _goToNextTab,
+              ),
             ],
           ),
           // TabBarView content
@@ -253,6 +207,40 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// A step-one-category button. Always occupies its slot so the tab bar does
+  /// not jump around when the first or last category becomes selected; it just
+  /// fades out when there is nothing to step to.
+  Widget _buildTabChevron(
+    ThemeData theme, {
+    required IconData icon,
+    required String tooltip,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.25,
+        child: Material(
+          color: theme.colorScheme.primary.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(6),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: enabled ? onTap : null,
+            child: Tooltip(
+              message: tooltip,
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: Icon(icon, size: 18, color: Colors.white),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

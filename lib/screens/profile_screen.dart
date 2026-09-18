@@ -163,6 +163,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Color_Grey': {'en': 'Grey', 'de': 'Grau', 'it': 'Grigio', 'fr': 'Gris'},
     'Success_Saved': {'en': 'Successfully saved!', 'de': 'Erfolgreich gespeichert!', 'it': 'Salvato con successo!', 'fr': 'Enregistré avec succès !'},
     'Error': {'en': 'Error', 'de': 'Fehler', 'it': 'Errore', 'fr': 'Erreur'},
+    'Loading_Gliders': {'en': 'Loading glider catalogue...', 'de': 'Gleitschirm-Katalog wird geladen...', 'it': 'Caricamento catalogo parapendio...', 'fr': 'Chargement du catalogue de parapentes...'},
+    'Glider_Catalog_Unavailable': {'en': 'Glider catalogue unavailable - check your connection', 'de': 'Gleitschirm-Katalog nicht verf\u00fcgbar - pr\u00fcfe deine Verbindung', 'it': 'Catalogo parapendio non disponibile - controlla la connessione', 'fr': 'Catalogue de parapentes indisponible - v\u00e9rifiez votre connexion'},
+    'Retry': {'en': 'Retry', 'de': 'Erneut versuchen', 'it': 'Riprova', 'fr': 'R\u00e9essayer'},
     'Glider_Already_Added': {'en': 'This glider is already in your collection', 'de': 'Dieser Gleitschirm befindet sich bereits in deiner Sammlung', 'it': 'Questo parapendio è già nella tua collezione', 'fr': 'Ce parapente est déjà dans votre collection'},
   };
 
@@ -1123,6 +1126,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// Show dialog to add a new glider
   void _showAddGliderDialog(String lang) {
     final gliderService = context.read<GliderService>();
+    // The catalogue may still be empty (no connection at launch, or the service
+    // was started before the session was restored). Without this the brand
+    // dropdown opens permanently empty and no glider can be picked at all.
+    gliderService.ensureCatalogLoaded();
     String? selectedBrand;
     Map<String, dynamic>? selectedGlider;
     String? selectedColor;
@@ -1147,27 +1154,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Brand dropdown - always visible
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        labelText: _t('Brand', lang),
-                        filled: true,
-                        fillColor: theme.cardColor,
+                    // Brand dropdown - always visible.
+                    // An empty catalogue used to render as a silently disabled
+                    // dropdown; say what is going on instead.
+                    if (brands.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            if (gliderService.isCatalogLoading) ...[
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              const SizedBox(width: 12),
+                            ],
+                            Expanded(
+                              child: Text(
+                                gliderService.isCatalogLoading
+                                    ? _t('Loading_Gliders', lang)
+                                    : _t('Glider_Catalog_Unavailable', lang),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                            if (!gliderService.isCatalogLoading)
+                              TextButton(
+                                onPressed: () async {
+                                  await gliderService.ensureCatalogLoaded();
+                                  setDialogState(() {});
+                                },
+                                child: Text(_t('Retry', lang)),
+                              ),
+                          ],
+                        ),
+                      )
+                    else
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          labelText: _t('Brand', lang),
+                          filled: true,
+                          fillColor: theme.cardColor,
+                        ),
+                        value: selectedBrand,
+                        hint: Text(_t('Select_Brand', lang)),
+                        items: brands
+                            .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                            .toList(),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedBrand = value;
+                            selectedGlider = null;
+                          });
+                        },
                       ),
-                      value: selectedBrand,
-                      hint: Text(_t('Select_Brand', lang)),
-                      items: brands.isEmpty
-                          ? null
-                          : brands
-                              .map((b) => DropdownMenuItem(value: b, child: Text(b)))
-                              .toList(),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          selectedBrand = value;
-                          selectedGlider = null;
-                        });
-                      },
-                    ),
 
                     // Glider dropdown - only visible after brand selected
                     if (selectedBrand != null) ...[                      
