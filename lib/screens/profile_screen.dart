@@ -165,6 +165,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Error': {'en': 'Error', 'de': 'Fehler', 'it': 'Errore', 'fr': 'Erreur'},
     'Loading_Gliders': {'en': 'Loading glider catalogue...', 'de': 'Gleitschirm-Katalog wird geladen...', 'it': 'Caricamento catalogo parapendio...', 'fr': 'Chargement du catalogue de parapentes...'},
     'Glider_Catalog_Unavailable': {'en': 'Glider catalogue unavailable - check your connection', 'de': 'Gleitschirm-Katalog nicht verf\u00fcgbar - pr\u00fcfe deine Verbindung', 'it': 'Catalogo parapendio non disponibile - controlla la connessione', 'fr': 'Catalogue de parapentes indisponible - v\u00e9rifiez votre connexion'},
+    'Glider_Catalog_Blocked': {'en': 'Glider catalogue is not available for your account yet - please tell your school.', 'de': 'Der Gleitschirm-Katalog ist f\u00fcr dein Konto noch nicht freigegeben - bitte melde es deiner Schule.', 'it': 'Il catalogo parapendio non \u00e8 ancora disponibile per il tuo account - avvisa la scuola.', 'fr': 'Le catalogue de parapentes n\'est pas encore accessible \u00e0 votre compte - pr\u00e9venez votre \u00e9cole.'},
     'Retry': {'en': 'Retry', 'de': 'Erneut versuchen', 'it': 'Riprova', 'fr': 'R\u00e9essayer'},
     'Glider_Already_Added': {'en': 'This glider is already in your collection', 'de': 'Dieser Gleitschirm befindet sich bereits in deiner Sammlung', 'it': 'Questo parapendio è già nella tua collezione', 'fr': 'Ce parapente est déjà dans votre collection'},
   };
@@ -1174,7 +1175,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Text(
                                 gliderService.isCatalogLoading
                                     ? _t('Loading_Gliders', lang)
-                                    : _t('Glider_Catalog_Unavailable', lang),
+                                    : _t(
+                                        gliderService.catalogError ==
+                                                GliderCatalogError.permissionDenied
+                                            ? 'Glider_Catalog_Blocked'
+                                            : 'Glider_Catalog_Unavailable',
+                                        lang,
+                                      ),
                                 style: theme.textTheme.bodySmall,
                               ),
                             ),

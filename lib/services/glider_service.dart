@@ -161,15 +161,20 @@ class GliderService extends ChangeNotifier {
   }
 
   bool _catalogLoading = false;
+  GliderCatalogError? _catalogError;
 
   /// True while a catalogue (re)load is in flight - the picker shows a spinner.
   bool get isCatalogLoading => _catalogLoading;
+
+  /// Why the last catalogue load came back empty, if it did.
+  GliderCatalogError? get catalogError => _catalogError;
 
   Future<void> _loadGlobalGliders() async {
     try {
       final snapshot = await _firestore.collection('gliders').get(
         const GetOptions(source: Source.serverAndCache),
       );
+      _catalogError = null;
       _globalGliders = snapshot.docs.map((doc) {
         final data = doc.data();
         data['id'] = doc.id;
@@ -178,7 +183,23 @@ class GliderService extends ChangeNotifier {
       _extractBrands();
       await _cacheGlobalGliders();
       notifyListeners();
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        // Not a connectivity problem: the Firestore security rules for the
+        // /gliders collection are not deployed, so every read is rejected and
+        // the catalogue stays empty on every platform.
+        _catalogError = GliderCatalogError.permissionDenied;
+        debugPrint(
+          '[GliderService] PERMISSION_DENIED reading /gliders - the security '
+          'rules for this collection are missing from the deployed ruleset. '
+          'Run: firebase deploy --only firestore:rules',
+        );
+      } else {
+        _catalogError = GliderCatalogError.unavailable;
+        debugPrint('[GliderService] Error loading global gliders (${e.code}): ${e.message}');
+      }
     } catch (e) {
+      _catalogError = GliderCatalogError.unavailable;
       debugPrint('[GliderService] Error loading global gliders: $e');
     }
   }
@@ -241,4 +262,13 @@ class GliderService extends ChangeNotifier {
     _userGlidersSubscription?.cancel();
     super.dispose();
   }
+}
+
+/// Why the glider catalogue could not be loaded.
+enum GliderCatalogError {
+  /// Firestore rejected the read - the /gliders rules are not deployed.
+  permissionDenied,
+
+  /// Anything else: offline, timeout, backend error.
+  unavailable,
 }
