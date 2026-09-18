@@ -151,6 +151,7 @@ class GliderService extends ChangeNotifier {
   Future<void> ensureCatalogLoaded() async {
     if (_globalGliders.isNotEmpty || _catalogLoading) return;
     _catalogLoading = true;
+    notifyListeners(); // so the picker can show a spinner, not "unavailable"
     try {
       await _loadGlobalGliders();
     } finally {
