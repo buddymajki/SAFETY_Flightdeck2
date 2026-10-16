@@ -72,9 +72,31 @@ service cloud.firestore {
     // Fields on users/{uid} that only admins may set. The owner must never be able to
     // change these, because isSchoolAdmin() and the Cloud Functions derive authorization
     // from them (self-promotion to school admin was possible before this rule).
+    // status / statusNote / statusChangedAt / lastEditedBy / lastEditedAt are set by the
+    // school admin dashboard (active or paused student/pilot, who edited and when).
     function ownerTouchesProtectedUserFields() {
       return request.resource.data.diff(resource == null ? {} : resource.data).affectedKeys()
-               .hasAny(['adminAt', 'role', 'membershipValid', 'insuranceValid']);
+               .hasAny(['adminAt', 'role', 'membershipValid', 'insuranceValid',
+                        'status', 'statusNote', 'statusChangedAt', 'lastEditedBy', 'lastEditedAt']);
+    }
+
+    // Edit of users/{uid} by a school admin (adminAt) from the admin dashboard.
+    // Only the profile/status fields the dashboard edits may change, the admin must
+    // manage both the current and the new main school, and the edit must be stamped
+    // with the admin's uid and the server time. adminAt, role, membershipValid and
+    // insuranceValid can never change this way.
+    function isSchoolAdminUserEdit() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return changed.hasOnly(['forename', 'familyname', 'nickname', 'shvnumber', 'license',
+                              'status', 'statusNote', 'statusChangedAt',
+                              'phonenumber', 'emergency_contact_name', 'emergency_contact_phone',
+                              'mainschool_id', 'lastEditedBy', 'lastEditedAt'])
+             && request.resource.data.lastEditedBy == request.auth.uid
+             && request.resource.data.lastEditedAt == request.time
+             && (!changed.hasAny(['status']) || request.resource.data.status in ['active', 'paused'])
+             && (!changed.hasAny(['license']) || request.resource.data.license in ['Student', 'Pilot'])
+             && isSchoolAdmin(resource.data.mainschool_id)
+             && isSchoolAdmin(request.resource.data.mainschool_id);
     }
 
     // User Data Access
@@ -83,6 +105,7 @@ service cloud.firestore {
       allow read: if isOwner(uid);
       allow create, update: if isOwner(uid) && !ownerTouchesProtectedUserFields();
       allow update: if isAdmin();
+      allow update: if isAuth() && isSchoolAdminUserEdit();
       allow delete: if isAdmin();
       
       // School admins can read users in their schools
