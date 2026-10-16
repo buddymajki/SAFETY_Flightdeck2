@@ -134,6 +134,10 @@ service cloud.firestore {
 
       match /tests/{document=**} {
         allow read, create, update, delete: if isOwner(uid);
+        // Admins can read for dashboard
+        allow read: if isAdmin() ||
+                        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                         isSchoolAdmin(get(/databases/$(database)/documents/users/$(uid)).data.mainschool_id));
       }
     }
 
