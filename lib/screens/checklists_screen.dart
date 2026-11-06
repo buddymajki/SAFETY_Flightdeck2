@@ -151,45 +151,48 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
           // Category tab bar. The chevrons sit BESIDE the bar, not on top of
           // it: as overlays they covered the first and last visible tab and
           // swallowed taps meant for those tabs.
-          Row(
-            children: [
-              _buildTabChevron(
-                theme,
-                icon: Icons.chevron_left,
-                tooltip: 'Previous category',
-                enabled: _selectedTabIndex > 0,
-                onTap: _goToPreviousTab,
-              ),
-              Expanded(
-                // TabBar handles its own horizontal scrolling (isScrollable: true).
-                // It must NOT be wrapped in another horizontal scrollable, otherwise
-                // the nested scroll view swallows tab taps on iOS (only swipe works).
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  tabAlignment: TabAlignment.start,
-                  padding: EdgeInsets.zero,
-                  labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  labelColor: theme.colorScheme.onSurface,
-                  unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
-                  unselectedLabelStyle: theme.textTheme.labelMedium,
-                  indicatorColor: theme.colorScheme.primary,
-                  tabs: [
-                    for (final categoryId in categoryIds)
-                      _buildTab(context, categoryId, itemsByCategory[categoryId]!, user, lang),
-                  ],
+          Container(
+            color: _tabBarBackground,
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            child: Row(
+              children: [
+                _buildTabChevron(
+                  theme,
+                  icon: Icons.chevron_left,
+                  tooltip: 'Previous category',
+                  enabled: _selectedTabIndex > 0,
+                  onTap: _goToPreviousTab,
                 ),
-              ),
-              _buildTabChevron(
-                theme,
-                icon: Icons.chevron_right,
-                tooltip: 'Next category',
-                enabled: _selectedTabIndex < categoryIds.length - 1,
-                onTap: _goToNextTab,
-              ),
-            ],
+                Expanded(
+                  // TabBar handles its own horizontal scrolling (isScrollable: true).
+                  // It must NOT be wrapped in another horizontal scrollable, otherwise
+                  // the nested scroll view swallows tab taps on iOS (only swipe works).
+                  // The selected tab is drawn as a filled pill by _buildTab, so the
+                  // TabBar's own indicator and divider are switched off.
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    padding: EdgeInsets.zero,
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 3),
+                    indicator: const BoxDecoration(),
+                    dividerColor: Colors.transparent,
+                    overlayColor: WidgetStateProperty.all(Colors.transparent),
+                    tabs: [
+                      for (int i = 0; i < categoryIds.length; i++)
+                        _buildTab(context, categoryIds[i], i == _selectedTabIndex, lang),
+                    ],
+                  ),
+                ),
+                _buildTabChevron(
+                  theme,
+                  icon: Icons.chevron_right,
+                  tooltip: 'Next category',
+                  enabled: _selectedTabIndex < categoryIds.length - 1,
+                  onTap: _goToNextTab,
+                ),
+              ],
+            ),
           ),
           // TabBarView content
           Expanded(
@@ -226,16 +229,16 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
       child: Opacity(
         opacity: enabled ? 1.0 : 0.25,
         child: Material(
-          color: theme.colorScheme.primary.withValues(alpha: 0.8),
-          borderRadius: BorderRadius.circular(6),
+          color: theme.colorScheme.primary.withValues(alpha: 0.55),
+          shape: const CircleBorder(),
           child: InkWell(
-            borderRadius: BorderRadius.circular(6),
+            customBorder: const CircleBorder(),
             onTap: enabled ? onTap : null,
             child: Tooltip(
               message: tooltip,
               child: SizedBox(
-                width: 32,
-                height: 32,
+                width: 30,
+                height: 30,
                 child: Icon(icon, size: 18, color: Colors.white),
               ),
             ),
@@ -262,21 +265,35 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
   }
 
 
-  /// Build a single tab with category name and progress indicator
+  /// Background of the category tab strip, a shade darker than the page.
+  static const Color _tabBarBackground = Color(0xFF2A3042);
+
+  /// A single category tab, drawn as a pill: filled with the primary colour
+  /// when selected, a faint outline-less chip otherwise.
   Widget _buildTab(
     BuildContext context,
     String categoryId,
-    List<ChecklistItem> items,
-    UserDataService user,
+    bool isSelected,
     String languageCode,
   ) {
+    final theme = Theme.of(context);
     final global = context.read<GlobalDataService>();
-    final shortName = global.getCategoryShortName(categoryId, languageCode);
+    final title = global.getCategoryTitle(categoryId, languageCode);
 
-    return Tab(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
-        child: Text(shortName),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? theme.colorScheme.primary : Colors.white.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          color: theme.colorScheme.onSurface,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        ),
       ),
     );
   }
@@ -298,22 +315,44 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Header with full category title and progress
+          // Header: category title, "done / total" and a progress bar
           Container(
             width: double.infinity,
             color: theme.scaffoldBackgroundColor,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  categoryTitle,
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        categoryTitle,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '$completedCount / $total',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  '$completedCount/$total',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: total == 0 ? 0 : completedCount / total,
+                    minHeight: 6,
+                    backgroundColor: Colors.white.withValues(alpha: 0.12),
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ],
@@ -326,7 +365,7 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
               children: [
                 for (int index = 0; index < items.length; index++) ...[
                   _buildChecklistItemCard(context, items[index], languageCode, user),
-                  if (index < items.length - 1) const SizedBox(height: 12),
+                  if (index < items.length - 1) const SizedBox(height: 10),
                 ],
               ],
             ),
@@ -348,19 +387,15 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
     final title = item.getTitle(languageCode);
     final description = item.getDescription(languageCode);
 
+    final onSurface = theme.colorScheme.onSurface;
+
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCompleted
-              ? theme.colorScheme.primary.withValues(alpha: 0.3)
-              : theme.dividerColor.withValues(alpha: 0.2),
-          width: 1.5,
-        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -374,31 +409,26 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
           },
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.fromLTRB(16, 14, 6, 14),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Checkbox with animation
+                // Rounded-square checkbox with animation
                 Padding(
-                  padding: const EdgeInsets.only(right: 12, top: 2),
+                  padding: const EdgeInsets.only(right: 14),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isCompleted
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.outline,
-                        width: 2,
-                      ),
+                      borderRadius: BorderRadius.circular(7),
+                      border: Border.all(color: theme.colorScheme.primary, width: 2),
                       color: isCompleted ? theme.colorScheme.primary : Colors.transparent,
                     ),
-                    width: 24,
-                    height: 24,
+                    width: 26,
+                    height: 26,
                     child: isCompleted
                         ? Icon(
                             Icons.check,
-                            size: 16,
+                            size: 18,
                             color: theme.colorScheme.onPrimary,
                           )
                         : null,
@@ -411,20 +441,20 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                     children: [
                       Text(
                         title,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          decoration: isCompleted ? TextDecoration.lineThrough : null,
-                          color: isCompleted
-                              ? theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6)
-                              : null,
-                          fontWeight: FontWeight.w600,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: isCompleted ? onSurface.withValues(alpha: 0.8) : onSurface,
                         ),
                       ),
                       if (description != null && description.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           description,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            height: 1.35,
+                            color: onSurface.withValues(alpha: 0.62),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -434,16 +464,13 @@ class _ChecklistsScreenState extends State<ChecklistsScreen> with TickerProvider
                   ),
                 ),
                 // Info button
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: IconButton(
-                    icon: const Icon(Icons.info_outline),
-                    iconSize: 20,
-                    color: theme.colorScheme.primary,
-                    onPressed: () {
-                      _showItemDetails(context, item, languageCode);
-                    },
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.info_outline),
+                  iconSize: 22,
+                  color: onSurface.withValues(alpha: 0.62),
+                  onPressed: () {
+                    _showItemDetails(context, item, languageCode);
+                  },
                 ),
               ],
             ),
